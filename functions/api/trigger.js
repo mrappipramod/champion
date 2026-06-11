@@ -1,4 +1,3 @@
-<< 'EOF'
 /**
  * Cloudflare Pages Function — /api/trigger
  * POST { type:"screener"|"single", cap, trade, min_score, single_stock, user_id }
@@ -86,4 +85,3 @@ export async function onRequestOptions() {
     },
   });
 }
-EOF
