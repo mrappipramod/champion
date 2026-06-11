@@ -1,20 +1,16 @@
 export async function onRequestPost({ request, env }) {
   try {
-    // 0. Check required env vars early
     if (!env.GH_USER || !env.GH_REPO || !env.GH_TOKEN) {
       return json({ ok: false, error: "Missing GitHub env vars (GH_USER, GH_REPO, GH_TOKEN)" });
     }
 
-    // 1. Validate bearer token against Supabase
     const auth = request.headers.get("Authorization") || "";
     const user = await validateSupabaseToken(auth, env);
     if (!user) return json({ ok: false, error: "Unauthorized" });
 
-    // 2. Parse request
     const body = await request.json();
     const { type, cap="all", trade="all", min_score="55", single_stock="" } = body;
 
-    // 3. Trigger GitHub Actions workflow
     const ghRes = await fetch(
       `https://api.github.com/repos/${env.GH_USER}/${env.GH_REPO}/actions/workflows/daily_scan.yml/dispatches`,
       {
@@ -24,6 +20,7 @@ export async function onRequestPost({ request, env }) {
           "Accept": "application/vnd.github+json",
           "X-GitHub-Api-Version": "2022-11-28",
           "Content-Type": "application/json",
+          "User-Agent": "Cloudflare-Pages-Function",
         },
         body: JSON.stringify({
           ref: "main",
@@ -41,7 +38,6 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: false, error: errMsg });
     }
 
-    // 4. Log run in Supabase (optional, don't fail if error)
     try {
       await fetch(`${env.SUPABASE_URL}/rest/v1/runs`, {
         method: "POST",
