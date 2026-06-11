@@ -1,5 +1,3 @@
-
-<< 'EOF'
 /**
  * Cloudflare Pages Function — /api/auth
  * POST { action: "login"|"signup"|"logout", email, password }
@@ -56,4 +54,3 @@ export async function onRequestOptions() {
     },
   });
 }
-EOF
