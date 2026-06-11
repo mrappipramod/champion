@@ -1,4 +1,3 @@
-<< 'PYEOF'
 """
 main.py — Trade Screener entry point
 
@@ -112,4 +111,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-PYEOF
