@@ -582,8 +582,7 @@ async function triggerScreener(btn) {
 
 // ═══════════════════════════ STOCK DATA + ANALYSIS ══════════════════
 async function fetchQuote(symbol) {
-  const url=`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}.NS?interval=1d&range=1y`;
-  const r = await fetch(url);
+  const r = await fetch(`/api/yahoo?symbol=${symbol}`);
   if(!r.ok) throw new Error(`No data for ${symbol}`);
   const data = await r.json();
   const res = data.chart.result?.[0];
