@@ -1,4 +1,3 @@
-<< 'EOF'
 /**
  * Cloudflare Pages Function — /api/results
  * GET ?limit=20 — fetch latest run results for the current user
@@ -45,4 +44,3 @@ export async function onRequestOptions() {
     },
   });
 }
-EOF
