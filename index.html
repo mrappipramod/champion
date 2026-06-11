@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trade Screener</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #fafaf8;
+      --bg2:       #f3f2ee;
+      --surface:   #ffffff;
+      --card:      #f7f6f2;
+      --border:    #e4e1d8;
+      --border2:   #d6d2c7;
+      --ink:       #1a1a2e;
+      --ink2:      #2d2d44;
+      --muted:     #7a7870;
+      --muted2:    #9e9b91;
+      --accent:    #d97706;   /* saffron gold */
+      --accent2:   #0369a1;   /* ocean blue */
+      --green:     #15803d;
+      --red:       #b91c1c;
+      --gold-bg:   #fffbeb;
+      --gold-bdr:  #fde68a;
+      --blue-bg:   #eff6ff;
+      --blue-bdr:  #bfdbfe;
+      --green-bg:  #f0fdf4;
+      --green-bdr: #bbf7d0;
+      --red-bg:    #fef2f2;
+      --red-bdr:   #fecaca;
+      --mono:      'JetBrains Mono', monospace;
+      --sans:      'Inter', sans-serif;
+      --shadow:    0 1px 3px rgba(26,26,46,0.07), 0 4px 16px rgba(26,26,46,0.05);
+      --shadow-lg: 0 4px 24px rgba(26,26,46,0.10), 0 1px 4px rgba(26,26,46,0.06);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Header ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(250,250,248,0.94);
+      backdrop-filter: blur(12px);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+
+    /* Candlestick icon — the signature element */
+    .logo-candles {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 22px;
+    }
+    .candle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+    }
+    .candle-wick  { width: 1px; background: currentColor; }
+    .candle-body  { width: 7px; border-radius: 1px; }
+    .c-bull { color: var(--green); }
+    .c-bear { color: var(--red); }
+    .c-bull .candle-body { background: var(--green); height: 10px; }
+    .c-bear .candle-body { background: var(--red);   height: 7px; }
+    .c-bull .candle-wick { height: 5px; }
+    .c-bear .candle-wick { height: 4px; }
+    .c-bull .candle-wick-b { height: 3px; }
+    .c-bear .candle-wick-b { height: 5px; }
+
+    .market-badge {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--muted);
+      border: 1px solid var(--border2);
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--card);
+    }
+
+    /* ── Layout ── */
+    main { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+
+    /* ── Section labels ── */
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+    }
+
+    .section-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    /* ── Config card ── */
+    .config-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 2.5rem;
+      box-shadow: var(--shadow);
+    }
+
+    .config-card label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+
+    .config-card input[type="text"],
+    .config-card input[type="password"] {
+      width: 100%;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 0.83rem;
+      padding: 0.6rem 0.9rem;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .config-card input:focus {
+      border-color: var(--accent2);
+      box-shadow: 0 0 0 3px rgba(3,105,161,0.10);
+      background: #fff;
+    }
+
+    .config-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    @media (max-width: 600px) { .config-row { grid-template-columns: 1fr; } }
+
+    .config-hint {
+      font-size: 0.71rem;
+      color: var(--muted2);
+      margin-top: 0.35rem;
+      line-height: 1.5;
+    }
+    .config-hint a { color: var(--accent2); }
+
+    .token-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.72rem;
+      margin-top: 0.6rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    .token-status.ok  { background: var(--green-bg);  color: var(--green); border: 1px solid var(--green-bdr); }
+    .token-status.err { background: var(--red-bg);    color: var(--red);   border: 1px solid var(--red-bdr); }
+
+    .btn-row { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+
+    .btn-primary {
+      padding: 0.55rem 1.25rem;
+      background: var(--ink);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--sans);
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-primary:hover { background: var(--ink2); transform: translateY(-1px); }
+
+    .btn-ghost {
+      padding: 0.55rem 1.25rem;
+      background: transparent;
+      color: var(--muted);
+      border: 1.5px solid var(--border2);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--sans);
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-ghost:hover { border-color: var(--muted); color: var(--ink); }
+
+    /* ── Screener grid ── */
+    .screener-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .screener-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+      position: relative;
+    }
+
+    .screener-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .screener-card.loading { border-color: var(--accent2); opacity: 0.75; cursor: default; }
+    .screener-card.done    { border-color: var(--green); background: var(--green-bg); }
+    .screener-card.error   { border-color: var(--red);   background: var(--red-bg); }
+
+    .card-icon { font-size: 1.5rem; margin-bottom: 0.65rem; }
+
+    .card-title {
+      font-weight: 700;
+      font-size: 0.88rem;
+      margin-bottom: 0.3rem;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+
+    .card-desc {
+      font-size: 0.74rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 0.8rem;
+    }
+
+    .tag {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      padding: 2px 7px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .tag.cap-l  { background: var(--blue-bg);  color: var(--accent2);  border: 1px solid var(--blue-bdr); }
+    .tag.cap-m  { background: var(--gold-bg);  color: #b45309;         border: 1px solid var(--gold-bdr); }
+    .tag.cap-s  { background: var(--green-bg); color: var(--green);    border: 1px solid var(--green-bdr); }
+    .tag.trade-lt { background: #fdf4ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+    .tag.trade-sw { background: var(--gold-bg); color: #92400e; border: 1px solid var(--gold-bdr); }
+    .tag.trade-id { background: var(--red-bg);  color: var(--red);  border: 1px solid var(--red-bdr); }
+
+    .run-btn {
+      margin-top: 1rem;
+      width: 100%;
+      padding: 0.55rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      font-family: var(--sans);
+      background: var(--ink);
+      border: none;
+      color: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      letter-spacing: 0.02em;
+    }
+    .run-btn:hover    { background: var(--ink2); transform: translateY(-1px); }
+    .run-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .run-btn.queued   { background: var(--green); }
+    .run-btn.failed   { background: var(--red); }
+
+    .spinner {
+      display: inline-block;
+      width: 11px; height: 11px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Single stock panel ── */
+    .stock-panel {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 2.5rem;
+      box-shadow: var(--shadow);
+    }
+
+    .stock-input-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+
+    .stock-input-wrap { flex: 1; }
+
+    .stock-input-wrap label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+
+    #stockSymbol {
+      width: 100%;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 1.05rem;
+      font-weight: 600;
+      padding: 0.65rem 1rem;
+      border-radius: 8px;
+      outline: none;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    #stockSymbol:focus {
+      border-color: var(--accent2);
+      box-shadow: 0 0 0 3px rgba(3,105,161,0.10);
+      background: #fff;
+    }
+    #stockSymbol::placeholder { font-weight: 400; letter-spacing: 0; color: var(--muted2); font-size: 0.85rem; }
+
+    .analyse-btn {
+      padding: 0.65rem 1.5rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: var(--sans);
+      transition: background 0.2s, transform 0.1s;
+      letter-spacing: 0.01em;
+    }
+    .analyse-btn:hover    { background: #b45309; transform: translateY(-1px); }
+    .analyse-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .quick-stocks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 1rem;
+      align-items: center;
+    }
+
+    .quick-label { font-size: 0.7rem; color: var(--muted2); }
+
+    .quick-stock {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border: 1.5px solid var(--border2);
+      border-radius: 20px;
+      cursor: pointer;
+      color: var(--muted);
+      background: var(--card);
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .quick-stock:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--gold-bg);
+    }
+
+    .inline-note {
+      font-size: 0.71rem;
+      color: var(--muted2);
+      margin-top: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* ── Run log ── */
+    .run-log {
+      background: var(--ink);
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-top: 1.5rem;
+      font-family: var(--mono);
+      font-size: 0.73rem;
+      line-height: 1.9;
+      max-height: 220px;
+      overflow-y: auto;
+      display: none;
+    }
+    .run-log.visible { display: block; }
+    .log-ts   { color: #4a5568; }
+    .log-info { color: #cbd5e0; }
+    .log-ok   { color: #68d391; }
+    .log-warn { color: #f6ad55; }
+    .log-err  { color: #fc8181; }
+    .log-accent { color: #76e4f7; }
+
+    /* ── History ── */
+    .history-wrap {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.79rem;
+    }
+
+    .history-table th {
+      text-align: left;
+      padding: 0.65rem 1rem;
+      font-size: 0.63rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .history-table td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      vertical-align: middle;
+    }
+
+    .history-table tr:last-child td { border-bottom: none; }
+    .history-table tr:hover td { background: var(--bg2); }
+
+    .sym-cell {
+      font-family: var(--mono);
+      font-weight: 700;
+      color: var(--ink);
+      font-size: 0.8rem;
+    }
+
+    .param-cell {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .status-pill {
+      font-size: 0.63rem;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .status-pill.ok  { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-bdr); }
+    .status-pill.err { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-bdr); }
+    .status-pill.run { background: var(--blue-bg);  color: var(--accent2); border: 1px solid var(--blue-bdr); }
+
+    .empty-history {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted2);
+      font-size: 0.8rem;
+    }
+
+    /* ── Divider ── */
+    hr.divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2.5rem 0;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.71rem;
+      color: var(--muted2);
+      border-top: 1px solid var(--border);
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo">
+    <div class="logo-candles" aria-hidden="true">
+      <div class="candle c-bull">
+        <div class="candle-wick"></div>
+        <div class="candle-body"></div>
+        <div class="candle-wick candle-wick-b"></div>
+      </div>
+      <div class="candle c-bear">
+        <div class="candle-wick"></div>
+        <div class="candle-body"></div>
+        <div class="candle-wick candle-wick-b"></div>
+      </div>
+      <div class="candle c-bull">
+        <div class="candle-wick"></div>
+        <div class="candle-body"></div>
+        <div class="candle-wick candle-wick-b"></div>
+      </div>
+    </div>
+    Trade Screener
+  </div>
+  <div class="market-badge" id="marketStatus">NSE • Loading…</div>
+</header>
+
+<main>
+
+  <!-- ── Config ── -->
+  <div class="config-card" id="configCard">
+    <div class="section-label">Setup — one time</div>
+    <h2>Connect to GitHub Actions</h2>
+    <p class="section-sub" style="margin-bottom:1.25rem;">Your credentials stay in this browser only — nothing is stored on any server.</p>
+
+    <div class="config-row">
+      <div>
+        <label>GitHub Username</label>
+        <input type="text" id="ghUser" placeholder="mrappipramod" autocomplete="off" />
+      </div>
+      <div>
+        <label>Repository Name</label>
+        <input type="text" id="ghRepo" placeholder="trade" autocomplete="off" />
+      </div>
+    </div>
+
+    <div style="margin-top:1rem;">
+      <label>Personal Access Token</label>
+      <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" />
+      <div class="config-hint">
+        Generate at <a href="https://github.com/settings/tokens/new?scopes=repo,workflow" target="_blank">github.com/settings/tokens</a>
+        — select <code>repo</code> + <code>workflow</code> scopes.
+      </div>
+      <div id="tokenStatus"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" onclick="saveConfig()">Save &amp; Verify</button>
+      <button class="btn-ghost"   onclick="clearConfig()">Clear</button>
+    </div>
+  </div>
+
+  <!-- ── Screeners ── -->
+  <div class="section-label">Market Screeners</div>
+  <h2>Run a Screener</h2>
+  <p class="section-sub">Click any card to trigger the scan. Results arrive on your Telegram groups and email.</p>
+
+  <div class="screener-grid" id="screenerGrid">
+
+    <div class="screener-card" data-cap="all" data-trade="all" data-score="55">
+      <div class="card-icon">🔍</div>
+      <div class="card-title">Full Market Scan</div>
+      <div class="card-desc">All caps, all trade types. The complete daily screener.</div>
+      <div class="card-tags">
+        <span class="tag cap-l">Large</span>
+        <span class="tag cap-m">Mid</span>
+        <span class="tag cap-s">Small</span>
+        <span class="tag trade-lt">Long Term</span>
+        <span class="tag trade-sw">Swing</span>
+        <span class="tag trade-id">Intraday</span>
+      </div>
+      <button class="run-btn" onclick="runScreener(this)">▶ Run Full Scan</button>
+    </div>
+
+    <div class="screener-card" data-cap="largecap" data-trade="longterm" data-score="65">
+      <div class="card-icon">🏛️</div>
+      <div class="card-title">Large Cap — Long Term</div>
+      <div class="card-desc">Blue-chip stocks for a 6–18 month investment horizon.</div>
+      <div class="card-tags">
+        <span class="tag cap-l">Large Cap</span>
+        <span class="tag trade-lt">Long Term</span>
+      </div>
+      <button class="run-btn" onclick="runScreener(this)">▶ Run</button>
+    </div>
+
+    <div class="screener-card" data-cap="midcap" data-trade="swing" data-score="60">
+      <div class="card-icon">🔄</div>
+      <div class="card-title">Mid Cap — Swing Picks</div>
+      <div class="card-desc">Mid cap momentum plays for 3–10 day holds.</div>
+      <div class="card-tags">
+        <span class="tag cap-m">Mid Cap</span>
+        <span class="tag trade-sw">Swing</span>
+      </div>
+      <button class="run-btn" onclick="runScreener(this)">▶ Run</button>
+    </div>
+
+    <div class="screener-card" data-cap="smallcap" data-trade="swing" data-score="60">
+      <div class="card-icon">💎</div>
+      <div class="card-title">Small Cap — Hidden Gems</div>
+      <div class="card-desc">Small cap swing candidates with strong momentum signals.</div>
+      <div class="card-tags">
+        <span class="tag cap-s">Small Cap</span>
+        <span class="tag trade-sw">Swing</span>
+      </div>
+      <button class="run-btn" onclick="runScreener(this)">▶ Run</button>
+    </div>
+
+    <div class="screener-card" data-cap="all" data-trade="intraday" data-score="60">
+      <div class="card-icon">⚡</div>
+      <div class="card-title">Intraday Picks</div>
+      <div class="card-desc">High volume, high momentum stocks for same-day trading.</div>
+      <div class="card-tags">
+        <span class="tag cap-l">Large</span>
+        <span class="tag cap-m">Mid</span>
+        <span class="tag trade-id">Intraday</span>
+      </div>
+      <button class="run-btn" onclick="runScreener(this)">▶ Run</button>
+    </div>
+
+    <div class="screener-card" data-cap="all" data-trade="longterm" data-score="70">
+      <div class="card-icon">📈</div>
+      <div class="card-title">Quality Compounders</div>
+      <div class="card-desc">Strict filter — score ≥70. Only fundamentally strong long-term picks.</div>
+      <div class="card-tags">
+        <span class="tag cap-l">Large</span>
+        <span class="tag cap-m">Mid</span>
+        <span class="tag cap-s">Small</span>
+        <span class="tag trade-lt">Long Term</span>
+      </div>
+      <button class="run-btn" onclick="runScreener(this)">▶ Run</button>
+    </div>
+
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ── Single Stock ── -->
+  <div class="section-label">Individual Analysis</div>
+  <h2>Analyse a Single Stock</h2>
+  <p class="section-sub">Full techno-fundamental report on any NSE stock, sent to your Telegram and email.</p>
+
+  <div class="stock-panel">
+    <div class="stock-input-row">
+      <div class="stock-input-wrap">
+        <label>NSE Symbol</label>
+        <input type="text" id="stockSymbol" placeholder="e.g. TCS  RELIANCE  HDFCBANK" maxlength="20" />
+      </div>
+      <button class="analyse-btn" id="analyseBtn" onclick="runSingleStock()">Analyse →</button>
+    </div>
+
+    <div class="quick-stocks" id="quickStocks">
+      <span class="quick-label">Quick:</span>
+    </div>
+
+    <div class="inline-note">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Triggers GitHub Actions — results sent to Telegram &amp; email in ~2 minutes.
+    </div>
+  </div>
+
+  <!-- ── Run Log ── -->
+  <div id="runLog" class="run-log"></div>
+
+  <hr class="divider" />
+
+  <!-- ── History ── -->
+  <div class="section-label">Activity</div>
+  <h2>Run History</h2>
+  <p class="section-sub" style="margin-bottom:1rem;">Stored in your browser. Click the run number to view logs on GitHub.</p>
+
+  <div class="history-wrap">
+    <table class="history-table" id="historyTable">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Screener</th>
+          <th>Parameters</th>
+          <th>Status</th>
+          <th>Run</th>
+        </tr>
+      </thead>
+      <tbody id="historyBody">
+        <tr><td colspan="5"><div class="empty-history">No runs yet — trigger a screener above to get started.</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<footer>
+  Trade Screener &nbsp;·&nbsp; trade.iamnewuser.com &nbsp;·&nbsp; Data via NSE / yfinance<br/>
+  Not financial advice. Always do your own research before investing.
+</footer>
+
+<script>
+// ── Constants ──────────────────────────────────────────────────────────────────
+const POPULAR_STOCKS = [
+  "TCS","RELIANCE","HDFCBANK","INFY","ICICIBANK",
+  "TATAMOTORS","SBIN","BAJFINANCE","TITAN","MARUTI",
+  "SUNPHARMA","AXISBANK","LT","ITC","WIPRO"
+];
+const WORKFLOW_FILE = "daily_scan.yml";
+
+// ── Config (localStorage) ──────────────────────────────────────────────────────
+function getConfig() {
+  return {
+    user:  localStorage.getItem("gh_user")  || "",
+    repo:  localStorage.getItem("gh_repo")  || "",
+    token: localStorage.getItem("gh_token") || "",
+  };
+}
+
+function saveConfig() {
+  const user  = document.getElementById("ghUser").value.trim();
+  const repo  = document.getElementById("ghRepo").value.trim();
+  const token = document.getElementById("ghToken").value.trim();
+  if (!user || !repo || !token) return showTokenStatus("Fill all three fields", false);
+  localStorage.setItem("gh_user",  user);
+  localStorage.setItem("gh_repo",  repo);
+  localStorage.setItem("gh_token", token);
+  verifyToken(user, repo, token);
+}
+
+function clearConfig() {
+  ["gh_user","gh_repo","gh_token"].forEach(k => localStorage.removeItem(k));
+  ["ghUser","ghRepo","ghToken"].forEach(id => document.getElementById(id).value = "");
+  showTokenStatus("", null);
+}
+
+function showTokenStatus(msg, ok) {
+  const el = document.getElementById("tokenStatus");
+  if (!msg) { el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="token-status ${ok===true?'ok':ok===false?'err':''}">${ok===true?"✓":ok===false?"✗":"⏳"} ${msg}</div>`;
+}
+
+async function verifyToken(user, repo, token) {
+  showTokenStatus("Verifying…", null);
+  try {
+    const r = await ghApi(`/repos/${user}/${repo}`, token);
+    if (r.ok) showTokenStatus(`Connected — ${user}/${repo}`, true);
+    else       showTokenStatus(`Error ${r.status}: repo not found or token invalid`, false);
+  } catch(e) {
+    showTokenStatus("Network error", false);
+  }
+}
+
+// ── GitHub API ─────────────────────────────────────────────────────────────────
+async function ghApi(path, token, method="GET", body=null) {
+  const opts = {
+    method,
+    headers: {
+      "Authorization": `token ${token}`,
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+    }
+  };
+  if (body) { opts.body = JSON.stringify(body); opts.headers["Content-Type"] = "application/json"; }
+  return fetch(`https://api.github.com${path}`, opts);
+}
+
+// ── Trigger workflow ───────────────────────────────────────────────────────────
+async function triggerWorkflow(inputs, label) {
+  const cfg = getConfig();
+  if (!cfg.user || !cfg.repo || !cfg.token) {
+    showLog();
+    return addLog("⚠️ Configure GitHub credentials first (top of page)", "warn");
+  }
+  showLog();
+  addLog(`Triggering: ${label}…`, "accent");
+
+  const r = await ghApi(
+    `/repos/${cfg.user}/${cfg.repo}/actions/workflows/${WORKFLOW_FILE}/dispatches`,
+    cfg.token, "POST", { ref: "main", inputs }
+  );
+
+  if (r.status === 204) {
+    addLog(`Workflow queued successfully`, "ok");
+    addLog(`Results will arrive on Telegram / email in ~2 minutes`, "info");
+    setTimeout(() => fetchLatestRun(cfg, label, inputs), 4000);
+    return true;
+  } else {
+    const err = await r.json().catch(() => ({}));
+    addLog(`Failed (${r.status}): ${err.message || "Unknown error"}`, "err");
+    if (r.status === 401) addLog("→ Check your GitHub token has repo + workflow scopes", "warn");
+    if (r.status === 404) addLog("→ Check username, repo name, and workflow file name", "warn");
+    if (r.status === 422) addLog("→ Enable Actions in the GitHub repository settings", "warn");
+    return false;
+  }
+}
+
+async function fetchLatestRun(cfg, label, inputs) {
+  try {
+    const r    = await ghApi(`/repos/${cfg.user}/${cfg.repo}/actions/workflows/${WORKFLOW_FILE}/runs?per_page=1`, cfg.token);
+    const data = await r.json();
+    const run  = data.workflow_runs?.[0];
+    if (run) {
+      addLog(`Run #${run.run_number} → ${run.html_url}`, "info");
+      addRunToHistory(label, inputs, run);
+    }
+  } catch(e) { /* silent */ }
+}
+
+// ── Card handler ───────────────────────────────────────────────────────────────
+async function runScreener(btn) {
+  const card  = btn.closest(".screener-card");
+  const cap   = card.dataset.cap;
+  const trade = card.dataset.trade;
+  const score = card.dataset.score;
+  const title = card.querySelector(".card-title").textContent;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Queuing…';
+  card.classList.add("loading");
+
+  const ok = await triggerWorkflow({ cap, trade, min_score: score }, title);
+
+  btn.disabled = false;
+  card.classList.remove("loading");
+
+  if (ok) {
+    btn.textContent = "✓ Queued";
+    btn.classList.add("queued");
+    card.classList.add("done");
+    setTimeout(() => {
+      btn.textContent = "▶ Run";
+      btn.classList.remove("queued");
+      card.classList.remove("done");
+    }, 8000);
+  } else {
+    btn.textContent = "✗ Failed — Retry";
+    btn.classList.add("failed");
+    card.classList.add("error");
+    setTimeout(() => {
+      btn.textContent = "▶ Run";
+      btn.classList.remove("failed");
+      card.classList.remove("error");
+    }, 6000);
+  }
+}
+
+// ── Single stock ───────────────────────────────────────────────────────────────
+async function runSingleStock() {
+  const input  = document.getElementById("stockSymbol");
+  const btn    = document.getElementById("analyseBtn");
+  const symbol = input.value.trim().toUpperCase();
+  if (!symbol) { input.focus(); return; }
+
+  btn.disabled = true;
+  btn.textContent = "Queuing…";
+
+  const ok = await triggerWorkflow(
+    { single_stock: symbol, cap: "all", trade: "all", min_score: "0" },
+    `${symbol} Analysis`
+  );
+
+  btn.disabled = false;
+  btn.textContent = ok ? "✓ Sent" : "Analyse →";
+  if (ok) setTimeout(() => { btn.textContent = "Analyse →"; }, 6000);
+}
+
+// ── Log ────────────────────────────────────────────────────────────────────────
+function showLog() { document.getElementById("runLog").classList.add("visible"); }
+
+function addLog(msg, type="info") {
+  const log = document.getElementById("runLog");
+  const ts  = new Date().toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", second:"2-digit" });
+  const div = document.createElement("div");
+  div.innerHTML = `<span class="log-ts">[${ts}]</span>  <span class="log-${type}">${msg}</span>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ── History ────────────────────────────────────────────────────────────────────
+let history = JSON.parse(localStorage.getItem("run_history") || "[]");
+
+function addRunToHistory(label, inputs, run) {
+  const entry = {
+    ts:     new Date().toLocaleString("en-IN"),
+    label,
+    params: inputs.single_stock
+      ? inputs.single_stock
+      : `${inputs.cap} · ${inputs.trade} · ≥${inputs.min_score}`,
+    url:    run.html_url,
+    runNum: run.run_number,
+  };
+  history.unshift(entry);
+  if (history.length > 25) history.pop();
+  localStorage.setItem("run_history", JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const tbody = document.getElementById("historyBody");
+  if (!history.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-history">No runs yet — trigger a screener above to get started.</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = history.map(h => `
+    <tr>
+      <td>${h.ts}</td>
+      <td class="sym-cell">${h.label}</td>
+      <td class="param-cell">${h.params}</td>
+      <td><span class="status-pill run">queued</span></td>
+      <td><a href="${h.url}" target="_blank" style="color:var(--accent2);font-family:var(--mono);font-size:0.72rem;font-weight:600;">#${h.runNum} ↗</a></td>
+    </tr>
+  `).join("");
+}
+
+// ── Market status ──────────────────────────────────────────────────────────────
+function updateMarketStatus() {
+  const el  = document.getElementById("marketStatus");
+  const ist = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  const h   = ist.getHours(), m = ist.getMinutes(), d = ist.getDay();
+  const min = h * 60 + m;
+  const open = d >= 1 && d <= 5 && min >= 555 && min < 930;
+  const t    = ist.toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", timeZone:"Asia/Kolkata" });
+
+  el.textContent = open ? `NSE Open · ${t} IST` : `NSE Closed · ${t} IST`;
+  el.style.color  = open ? "var(--green)"  : "var(--muted)";
+  el.style.border = open ? "1px solid var(--green-bdr)" : "1px solid var(--border2)";
+  el.style.background = open ? "var(--green-bg)" : "var(--card)";
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+(function init() {
+  const cfg = getConfig();
+  if (cfg.user)  document.getElementById("ghUser").value  = cfg.user;
+  if (cfg.repo)  document.getElementById("ghRepo").value  = cfg.repo;
+  if (cfg.token) {
+    document.getElementById("ghToken").value = cfg.token;
+    verifyToken(cfg.user, cfg.repo, cfg.token);
+  }
+
+  const wrap = document.getElementById("quickStocks");
+  POPULAR_STOCKS.forEach(sym => {
+    const s = document.createElement("span");
+    s.className = "quick-stock";
+    s.textContent = sym;
+    s.onclick = () => {
+      document.getElementById("stockSymbol").value = sym;
+      document.getElementById("stockSymbol").focus();
+    };
+    wrap.appendChild(s);
+  });
+
+  document.getElementById("stockSymbol")?.addEventListener("keydown", e => {
+    if (e.key === "Enter") runSingleStock();
+  });
+
+  updateMarketStatus();
+  setInterval(updateMarketStatus, 30000);
+  renderHistory();
+})();
+</script>
+</body>
+</html>
