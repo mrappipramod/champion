@@ -1,4 +1,3 @@
-<< 'EOF'
 """
 db_writer.py
 Writes screener / single-stock results back to Supabase
@@ -140,4 +139,3 @@ def mark_run_complete(run_id: str, count: int) -> bool:
 
 def mark_run_failed(run_id: str, error: str) -> bool:
     return _patch("runs", run_id, {"status": "failed", "params": {"error": error}})
-EOF
