@@ -13,6 +13,7 @@ export async function onRequestGet({ request, env }) {
     const token = auth.slice(7);
 
     // 3. Authenticate the User via Supabase Auth
+    // We still do this to ensure ONLY logged-in users on your site can hit this API
     const userRes = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
       headers: { 
         "apikey": env.SUPABASE_ANON_KEY, 
@@ -23,19 +24,19 @@ export async function onRequestGet({ request, env }) {
     if (!userRes.ok) {
       return json({ ok: false, error: "Unauthorized: Invalid or expired token" }, 401);
     }
-    const user = await userRes.json();
-
+    
     // 4. Parse Query Parameters
     const url = new URL(request.url);
     const limit = url.searchParams.get("limit") || "50";
 
     // 5. Fetch Data from Supabase Rest API
+    // Notice: We removed the user_id filter here so it grabs the GitHub Action results!
     const r = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/run_results?user_id=eq.${user.id}&order=created_at.desc&limit=${limit}`,
+      `${env.SUPABASE_URL}/rest/v1/run_results?order=created_at.desc&limit=${limit}`,
       {
         headers: {
           "apikey": env.SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${token}`, // Passes the user's token so RLS applies properly
+          "Authorization": `Bearer ${token}`, 
         },
       }
     );
