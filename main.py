@@ -1,3 +1,5 @@
+<< 'PYEOF'
+"""
 main.py — Trade Screener entry point
 
 Usage:
