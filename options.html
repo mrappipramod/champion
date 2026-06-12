@@ -566,18 +566,20 @@ function showToast(msg,isErr=false){
 }
 
 // ══════════════════ YAHOO PROXY — SPOT PRICE ══════════════════
-const yahooMap = {
-  'NIFTY':     '%5ENSEI',      // ^NSEI
-  'BANKNIFTY': '%5ENSEBANK',   // ^NSEBANK
-  'SENSEX':    '%5EBSESN',     // ^BSESN
-  'FINNIFTY':  '%5ENSEI',      // No direct Yahoo symbol – fallback to NIFTY
-  'MIDCPNIFTY':'%5ENSEI',      // fallback to NIFTY
-  'NIFTYIT':   '%5ENSEI'       // fallback (adjust if you find a better symbol)
-};
-const isIndex = NSE_INDICES.includes(sym.toUpperCase());
-const yf = isIndex
-    ? (yahooMap[sym] || '%5ENSEI')
-    : `${sym}.NS`;
+  const yahooMap = {
+    'NIFTY': '%5ENSEI',
+    'BANKNIFTY': '%5ENSEBANK',
+    'SENSEX': '%5EBSESN',
+    'FINNIFTY': '%5ENSEI',
+    'MIDCPNIFTY': '%5ENSEI',
+    'NIFTYIT': '%5ENSEI'
+  };
+  const isIndex = NSE_INDICES.includes(sym.toUpperCase());
+  const yf = isIndex ? (yahooMap[sym] || '%5ENSEI') : `${sym}.NS`;
+  const r = await fetch(`/api/yahoo?symbol=${yf}`);
+  // ... rest of the function unchanged
+}
+
 // ══════════════════ EXPIRY DATES ══════════════════
 function initExpiries(){
   const expiries = generateNSEExpiries();
