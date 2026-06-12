@@ -347,6 +347,11 @@
         <div class="section-label">Recent Results</div>
         <h2>Latest Screener Output</h2>
         <p class="sub">Results are saved automatically after each run. Showing most recent 50 stocks.</p>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:.75rem">
+          <button class="btn btn-ghost btn-sm" onclick="loadResults()" style="display:flex;align-items:center;gap:5px">
+            ↻ Refresh results
+          </button>
+        </div>
         <div class="tbl-wrap">
           <table><thead><tr><th>Symbol</th><th>Cap</th><th>Score</th><th>Grade</th><th>Best Trade</th><th>Entry</th><th>T1</th><th>T2</th><th>SL</th><th>R:R</th><th>Trend</th><th>RSI</th><th>Watchlist</th></tr></thead>
           <tbody id="resultsBody"><tr><td colspan="13" style="text-align:center;padding:2rem;color:var(--muted2)">Run a screener above to see results here.</td></tr></tbody></table>
@@ -561,7 +566,7 @@ async function triggerScreener(btn) {
 
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Queuing…';
   card.classList.add("loading");
-  document.getElementById("scStatus").textContent="Triggering workflow…";
+  setScStatus("info", `Triggering ${label}…`);
 
   const d = await apiFetch("/api/trigger", {
     method:"POST",
@@ -569,20 +574,44 @@ async function triggerScreener(btn) {
   });
 
   btn.disabled=false; card.classList.remove("loading");
+
   if(d.ok) {
-    btn.textContent="✓ Queued — ~2 min";
+    btn.textContent="✓ Queued";
     card.classList.add("done");
-    document.getElementById("scStatus").textContent=`✓ ${label} triggered. Results will appear in the table below and on Telegram (scheduled runs only).`;
-    setTimeout(()=>{ btn.textContent="▶ Run & Save Results"; card.classList.remove("done"); },10000);
+    setScStatus("ok", `✓ ${label} triggered — GitHub Actions is running (~2 min). Polling for results…`);
+    setTimeout(()=>{ btn.innerHTML="▶ Run &amp; Save Results"; card.classList.remove("done"); }, 12000);
+    // Poll every 20s for up to 3 minutes, refresh table when new rows arrive
+    pollForResults();
   } else {
-    btn.textContent="▶ Retry";
-    document.getElementById("scStatus").textContent=`✗ ${d.error||"Unknown error"}`;
+    btn.innerHTML="▶ Retry";
+    setScStatus("err", `✗ ${d.error||"Unknown error"}`);
   }
+}
+
+let _pollTimer=null;
+function pollForResults() {
+  let attempts=0;
+  const MAX=9; // 9 × 20s = 3 min
+  clearInterval(_pollTimer);
+  _pollTimer = setInterval(async ()=>{
+    attempts++;
+    await loadResults();
+    setScStatus("ok", `Polling for results… (${attempts}/${MAX})`);
+    if(attempts>=MAX){ clearInterval(_pollTimer); setScStatus("ok","Done polling — results above are the latest."); }
+  }, 20000);
+}
+
+function setScStatus(type, msg) {
+  const el=document.getElementById("scStatus");
+  const colors={"ok":"var(--green)","err":"var(--red)","info":"var(--muted)"};
+  el.style.color=colors[type]||"var(--muted)";
+  el.textContent=msg;
 }
 
 // ═══════════════════════════ STOCK DATA + ANALYSIS ══════════════════
 async function fetchQuote(symbol) {
-  const r = await fetch(`/api/yahoo?symbol=${symbol}`);
+  const url=`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}.NS?interval=1d&range=1y`;
+  const r = await fetch(url);
   if(!r.ok) throw new Error(`No data for ${symbol}`);
   const data = await r.json();
   const res = data.chart.result?.[0];
@@ -777,17 +806,26 @@ async function generateAI() {
 
 // ═══════════════════════════ RESULTS ════════════════════════════════
 async function loadResults() {
-  const data = await apiFetch("/api/results?limit=50");
-  renderResultsTable("resultsBody", data);
+  try {
+    const res = await apiFetch("/api/results?limit=50");
+    const rows = res?.data ?? res ?? [];
+    renderResultsTable("resultsBody", Array.isArray(rows) ? rows : []);
+  } catch(e) { console.error("loadResults:", e); }
 }
 async function loadAllResults() {
-  const data = await apiFetch("/api/results?limit=200");
-  renderResultsTable("allResultsBody", data, true);
+  try {
+    const res = await apiFetch("/api/results?limit=200");
+    const rows = res?.data ?? res ?? [];
+    renderResultsTable("allResultsBody", Array.isArray(rows) ? rows : [], true);
+  } catch(e) { console.error("loadAllResults:", e); }
 }
 
 function renderResultsTable(tbodyId, rows, showDate=false) {
   const tbody=document.getElementById(tbodyId);
-  if(!rows?.length){tbody.innerHTML=`<tr><td colspan="13"><div class="empty-state">No results yet.</div></td></tr>`;return;}
+  if(!rows?.length){
+    tbody.innerHTML=`<tr><td colspan="13"><div class="empty-state">No results yet — run a screener above and wait ~2 minutes for GitHub Actions to complete.</div></td></tr>`;
+    return;
+  }
   const gc={"A+":"#15803d","A":"#16a34a","B+":"#65a30d","B":"#d97706","C":"#ea580c","D":"#dc2626"};
   const ti={"INTRADAY":"⚡","SWING":"🔄","LONG_TERM":"📈","AVOID":"🚫"};
   tbody.innerHTML=rows.map(r=>`<tr>
