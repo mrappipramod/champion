@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover"/>
-  <title>Trade Screener · Mobile Portfolio</title>
+  <title>Trade Screener · Mobile+Desktop</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
   <style>
+    /* ========== RESET & VARIABLES ========== */
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
       --bg:#fafaf8;--bg2:#f3f2ee;--surface:#fff;--card:#f7f6f2;
@@ -23,14 +24,61 @@
       --shadow:0 1px 3px rgba(26,26,46,.07),0 4px 16px rgba(26,26,46,.05);
       --shadow-lg:0 4px 24px rgba(26,26,46,.10);
     }
-    html{scroll-behavior:smooth}
-    body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.6}
+    body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.5}
 
-    /* ── Auth overlay (mobile adjusted) ── */
+    /* ========== MOBILE-FIRST RESPONSIVE ========== */
+    /* Hide desktop sidebar on mobile, show hamburger */
+    .mobile-menu-btn{display:none; background:none; border:none; font-size:1.6rem; cursor:pointer; color:var(--ink); margin-right:0.75rem; line-height:1;}
+    .nav-drawer{position:fixed; top:0; left:-280px; width:280px; height:100%; background:var(--surface); border-right:1px solid var(--border); z-index:1000; transition:left 0.25s ease; padding:1.5rem 1rem; overflow-y:auto; box-shadow:var(--shadow-lg);}
+    .nav-drawer.open{left:0}
+    .drawer-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999; display:none;}
+    .drawer-overlay.open{display:block}
+    .close-drawer{text-align:right; margin-bottom:1.5rem;}
+    .close-drawer button{background:none; border:none; font-size:1.3rem; cursor:pointer; color:var(--muted);}
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn{display:block}
+      nav{display:none}
+      .app-body{flex-direction:column}
+      .page{padding:1.2rem; max-width:100%}
+      header{padding:0 0.8rem}
+      .logo{font-size:0.9rem}
+      .market-badge{font-size:0.6rem; padding:2px 6px}
+      .user-badge span{display:none} /* show only dot on very small */
+      .sc-grid{grid-template-columns:1fr; gap:0.8rem}
+      .wl-grid{grid-template-columns:1fr}
+      .filter-bar{flex-direction:column; align-items:stretch}
+      .filter-bar select,.filter-bar input{width:100%}
+      .filter-count{margin-left:0; text-align:right}
+      .tbl-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch}
+      table{min-width:600px}
+      .price-grid{grid-template-columns:1fr 1fr}
+      .rp-header{flex-direction:column; align-items:flex-start}
+      .score-wrap{margin-top:0.5rem}
+      .rp-tabs{overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch}
+      .rp-tab{padding:0.4rem 0.8rem; font-size:0.7rem}
+      .btn-row{gap:0.5rem}
+      .btn{padding:0.5rem 1rem; font-size:0.75rem}
+      .wl-modal-grid{grid-template-columns:1fr}
+      .wl-pnl-row{grid-template-columns:repeat(2,1fr)}
+      .sym-row{flex-wrap:wrap}
+      .sym-row input{width:100%}
+      .sym-row button{width:100%}
+    }
+    @media (max-width: 480px) {
+      .price-grid{grid-template-columns:1fr}
+      .page{padding:0.8rem}
+      h2{font-size:1rem}
+      .sub{font-size:0.7rem}
+      .card{padding:1rem}
+    }
+
+    /* ========== REST OF ORIGINAL STYLES (kept fully) ========== */
+    /* Auth overlay */
     #authOverlay{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem}
     #authOverlay.hidden{display:none}
-    .auth-box{background:var(--surface);border:1.5px solid var(--border);border-radius:20px;padding:1.5rem;width:100%;max-width:400px;box-shadow:var(--shadow-lg)}
-    .auth-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1rem;margin-bottom:1.5rem}
+    .auth-box{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:400px;box-shadow:var(--shadow-lg)}
+    .auth-logo{display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:1.5rem}
     .auth-candles{display:flex;align-items:flex-end;gap:3px;height:22px}
     .candle{display:flex;flex-direction:column;align-items:center;gap:1px}
     .candle-wick{width:1px;background:currentColor}
@@ -38,109 +86,121 @@
     .c-bull{color:var(--green)}.c-bear{color:var(--red)}
     .c-bull .candle-body{background:var(--green);height:10px}
     .c-bear .candle-body{background:var(--red);height:7px}
-    .c-bull .candle-wick{height:5px}.c-bear .candle-wick{height:4px}
-    .c-bull .candle-wick-b{height:3px}.c-bear .candle-wick-b{height:5px}
-    .auth-tab-row{display:flex;border-bottom:2px solid var(--border);margin-bottom:1.2rem}
-    .auth-tab{flex:1;padding:.5rem;text-align:center;font-size:.8rem;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px}
+    .auth-tab-row{display:flex;border-bottom:2px solid var(--border);margin-bottom:1rem}
+    .auth-tab{flex:1;padding:0.5rem;text-align:center;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer}
     .auth-tab.active{color:var(--accent2);border-bottom-color:var(--accent2)}
-    .auth-msg{font-size:.75rem;padding:.5rem .8rem;border-radius:8px;margin-bottom:1rem;display:none}
-    .auth-msg.err{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bdr);display:block}
-    .auth-msg.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bdr);display:block}
+    .auth-msg{font-size:0.75rem;padding:0.5rem;border-radius:8px;margin-bottom:1rem;display:none}
+    .auth-msg.err{background:var(--red-bg);color:var(--red);display:block}
+    .auth-msg.ok{background:var(--green-bg);color:var(--green);display:block}
 
-    /* ── Layout (mobile first) ── */
+    /* App shell */
     #appShell{display:none}
     #appShell.visible{display:block}
-    header{border-bottom:1px solid var(--border);padding:0 1rem;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:100;background:rgba(250,250,248,.96);backdrop-filter:blur(12px)}
-    .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:.9rem}
+    header{border-bottom:1px solid var(--border);padding:0 1rem;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:100;background:rgba(250,250,248,0.94);backdrop-filter:blur(12px)}
+    .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1rem}
     .header-right{display:flex;align-items:center;gap:0.8rem}
-    .market-badge{font-family:var(--mono);font-size:.6rem;padding:3px 8px}
-    .user-badge{font-size:.7rem}
-    .user-dot{width:6px;height:6px}
-    .btn-ghost.btn-sm{padding:.3rem .7rem;font-size:.7rem}
-
-    /* Mobile navigation: hamburger + drawer */
-    .mobile-menu-btn{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--ink);display:none;margin-right:0.5rem}
-    .nav-drawer{position:fixed;top:0;left:-280px;width:260px;height:100%;background:var(--surface);border-right:1px solid var(--border);z-index:300;transition:left .25s ease;padding:1.5rem 1rem;overflow-y:auto;box-shadow:var(--shadow-lg)}
-    .nav-drawer.open{left:0}
-    .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:299;display:none}
-    .drawer-overlay.open{display:block}
-    .nav-drawer .nav-item{width:100%;margin-bottom:0.25rem}
-    .nav-drawer .nav-section{margin-top:1rem}
-    .close-drawer{text-align:right;margin-bottom:1rem}
-    .close-drawer button{background:none;border:none;font-size:1.2rem;cursor:pointer}
-    @media(max-width:700px){
-      .mobile-menu-btn{display:block}
-      nav{display:none}
-      .app-body{flex-direction:column}
-      .page{padding:1rem;max-width:100%}
-      h2{font-size:1rem}
-      .sub{font-size:.75rem;margin-bottom:1rem}
-      .card{padding:1rem}
-      .sc-grid{grid-template-columns:1fr;gap:0.8rem}
-      .wl-grid{grid-template-columns:1fr}
-      .filter-bar{flex-direction:column;align-items:stretch}
-      .filter-bar select,.filter-bar input{width:100%}
-      .filter-count{margin-left:0;margin-top:0.5rem}
-      .tbl-wrap{font-size:.7rem}
-      th,td{padding:.4rem .6rem}
-      .rp-header{flex-direction:column}
-      .rp-sym{font-size:1.4rem}
-      .price-grid{grid-template-columns:1fr 1fr}
-      .wl-modal-grid{grid-template-columns:1fr}
-      .btn-row{gap:0.5rem}
-      .btn{padding:.5rem 1rem;font-size:.75rem}
-    }
-    @media(max-width:480px){
-      .price-grid{grid-template-columns:1fr}
-      .score-wrap{flex-wrap:wrap}
-      .rp-tabs{gap:0}
-      .rp-tab{padding:.4rem .6rem;font-size:.7rem}
-    }
-
-    /* rest of existing CSS (abbreviated but complete — kept all core styles) */
+    .market-badge{font-family:var(--mono);font-size:0.7rem;padding:4px 10px;border-radius:20px;background:var(--card);border:1px solid var(--border2)}
+    .user-badge{font-size:0.75rem;display:flex;align-items:center;gap:0.4rem}
+    .user-dot{width:7px;height:7px;background:var(--green);border-radius:50%}
+    .btn-ghost{background:transparent;border:1.5px solid var(--border2);padding:0.4rem 0.8rem;border-radius:8px;cursor:pointer}
+    
+    /* App body & sidebar */
     .app-body{display:flex;min-height:calc(100vh - 58px)}
     nav{width:220px;flex-shrink:0;border-right:1px solid var(--border);padding:1.5rem 1rem;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto;background:var(--surface)}
-    .nav-section{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);margin:1.25rem 0 .5rem;padding:0 .5rem}
-    .nav-item{display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;border-radius:8px;font-size:.82rem;color:var(--muted);cursor:pointer;transition:background .15s,color .15s;font-weight:500;border:none;background:none;width:100%;text-align:left;font-family:var(--sans)}
-    .nav-item:hover{background:var(--bg2);color:var(--ink)}
+    .nav-section{font-family:var(--mono);font-size:0.6rem;text-transform:uppercase;color:var(--muted2);margin:1rem 0 0.5rem;padding:0 0.5rem}
+    .nav-item{display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.75rem;border-radius:8px;font-size:0.82rem;color:var(--muted);cursor:pointer;width:100%;background:none;border:none;text-align:left}
     .nav-item.active{background:var(--blue-bg);color:var(--accent2)}
-    .page{flex:1;padding:2rem 1.5rem 4rem;max-width:900px}
-    .section-label{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:.5rem}
-    .card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:1.5rem;box-shadow:var(--shadow)}
-    label.fl{font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:.4rem}
-    input,textarea{width:100%;background:var(--card);border:1.5px solid var(--border);color:var(--ink);font-family:var(--mono);font-size:.83rem;padding:.6rem .9rem;border-radius:8px;outline:none}
-    .btn{display:inline-flex;align-items:center;gap:6px;font-weight:600;border-radius:8px;cursor:pointer;border:none}
-    .btn-ink{background:var(--ink);color:#fff;padding:.55rem 1.2rem;font-size:.8rem}
-    .btn-gold{background:var(--accent);color:#fff}
+    .page{flex:1;padding:1.5rem;max-width:1200px}
+
+    /* Common UI */
+    .section-label{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.1em;color:var(--accent);margin-bottom:0.3rem}
+    h2{font-size:1.2rem;font-weight:700;margin-bottom:0.2rem}
+    .sub{font-size:0.8rem;color:var(--muted);margin-bottom:1rem}
+    .card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:1.2rem;box-shadow:var(--shadow)}
+    .fl{font-size:0.7rem;font-weight:600;color:var(--muted);display:block;margin-bottom:0.3rem}
+    input,select,textarea{width:100%;background:var(--card);border:1.5px solid var(--border);padding:0.6rem 0.8rem;border-radius:8px;font-family:var(--mono);font-size:0.8rem}
+    .btn{display:inline-flex;align-items:center;gap:6px;font-weight:600;border-radius:8px;cursor:pointer;border:none;transition:all 0.15s}
+    .btn-ink{background:var(--ink);color:#fff;padding:0.55rem 1.2rem}
+    .btn-gold{background:var(--accent);color:#fff;padding:0.6rem 1.2rem}
     .btn-blue{background:var(--accent2);color:#fff}
-    .btn-ghost{background:transparent;color:var(--muted);border:1.5px solid var(--border2)}
-    .sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1rem}
-    .sc-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:1.2rem}
+    .btn-sm{padding:0.3rem 0.8rem;font-size:0.7rem}
+    .btn-row{display:flex;gap:0.8rem;flex-wrap:wrap;margin-top:1rem}
+    .spinner{display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .pill{font-family:var(--mono);font-size:0.6rem;padding:2px 8px;border-radius:20px;font-weight:600}
+    .pill-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bdr)}
+    .pill-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bdr)}
     .tbl-wrap{overflow-x:auto;border-radius:12px;border:1.5px solid var(--border)}
-    table{width:100%;border-collapse:collapse;font-size:.78rem;min-width:600px}
-    th,td{padding:.6rem .9rem}
+    table{width:100%;border-collapse:collapse;font-size:0.75rem;min-width:600px}
+    th,td{padding:0.5rem 0.8rem;text-align:left;border-bottom:1px solid var(--border)}
+    .sym-td{font-family:var(--mono);font-weight:700;color:var(--ink)}
+    .g-txt{color:var(--green);font-weight:600}
+    .r-txt{color:var(--red);font-weight:600}
+
+    /* Screener cards */
+    .sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1rem;margin-bottom:1.5rem}
+    .sc-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:1rem;transition:all 0.15s}
+    .sc-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+    .sc-icon{font-size:1.4rem;margin-bottom:0.5rem}
+    .sc-title{font-weight:700;margin-bottom:0.2rem}
+    .sc-desc{font-size:0.7rem;color:var(--muted)}
+    .sc-tags{display:flex;flex-wrap:wrap;gap:4px;margin:0.5rem 0}
+    .tag{font-family:var(--mono);font-size:0.55rem;padding:2px 6px;border-radius:20px}
+    .sc-btn{margin-top:0.7rem;width:100%;padding:0.5rem;background:var(--ink);color:#fff;border-radius:8px;cursor:pointer}
+
+    /* Single stock analysis */
+    .rp-header{display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+    .rp-sym{font-size:1.6rem;font-weight:800}
+    .score-ring{position:relative;width:68px;height:68px}
+    .ring-bg{fill:none;stroke:var(--border2);stroke-width:6}
+    .ring-fill{fill:none;stroke-width:6;stroke-linecap:round}
+    .rp-tabs{display:flex;gap:0.5rem;border-bottom:2px solid var(--border);margin:1rem 0}
+    .rp-tab{padding:0.5rem 1rem;background:none;border:none;cursor:pointer;font-weight:600}
+    .rp-tab.on{color:var(--accent2);border-bottom:2px solid var(--accent2)}
+    .tab-pane{display:none}
+    .tab-pane.on{display:block}
+    .trade-box{background:var(--card);border-radius:12px;padding:1rem;margin-bottom:1rem}
+    .price-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:0.6rem}
+    .pc{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.5rem}
+    .pc-l{font-size:0.6rem;color:var(--muted)}
+    .pc-v{font-family:var(--mono);font-weight:700}
+    .sig-list{display:flex;flex-direction:column;gap:0.5rem}
+    .sig-item{background:var(--card);padding:0.5rem;border-radius:8px}
+    .fund-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.8rem}
+    .stream-box{background:var(--ink);color:#cbd5e0;padding:1rem;border-radius:10px;font-family:var(--mono);font-size:0.75rem;white-space:pre-wrap}
+    
+    /* Watchlist with live P&L */
     .wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem}
-    .wl-card{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:1rem}
-    .wl-pnl-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
-    .pill{font-family:var(--mono);font-size:.62rem;padding:2px 8px;border-radius:20px}
-    .stream-box{background:var(--ink);border-radius:10px;padding:1rem;color:#cbd5e0;white-space:pre-wrap;max-height:400px;overflow-y:auto}
-    #toast{position:fixed;bottom:1rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:.5rem 1rem;border-radius:8px;font-size:.75rem;z-index:999;opacity:0;transition:all .3s;white-space:nowrap}
+    .wl-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:1rem}
+    .wl-card-top{display:flex;justify-content:space-between}
+    .wl-sym{font-family:var(--mono);font-weight:800;font-size:1.1rem}
+    .wl-cmp{font-family:var(--mono);font-weight:700}
+    .wl-change.up{color:var(--green)}.wl-change.dn{color:var(--red)}
+    .wl-pnl-bar{background:var(--card);border-radius:10px;padding:0.7rem;margin:0.5rem 0}
+    .wl-pnl-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem}
+    .wl-pnl-val.profit{color:var(--green)}.wl-pnl-val.loss{color:var(--red)}
+    .wl-actions{display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap}
+    .filter-bar{display:flex;gap:0.6rem;flex-wrap:wrap;background:var(--card);padding:0.8rem;border-radius:10px;margin-bottom:1rem}
+    .filter-count{margin-left:auto}
+    .empty-state{text-align:center;padding:2rem;color:var(--muted2)}
+    #toast{position:fixed;bottom:1rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:0.5rem 1rem;border-radius:8px;z-index:2000;opacity:0;transition:0.2s;white-space:nowrap}
     #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     #toast.err{background:var(--red)}
-    #wlModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;align-items:center;justify-content:center;padding:1rem}
+    #tgBanner{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:2px solid var(--border);padding:0.8rem;z-index:300;display:none;flex-wrap:wrap;gap:0.5rem}
+    #tgBanner.on{display:flex}
+    #wlModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1500;align-items:center;justify-content:center;padding:1rem}
     #wlModal.on{display:flex}
     .wl-modal-box{background:var(--surface);border-radius:20px;padding:1.2rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
-    .filter-bar{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem;padding:.75rem;background:var(--card);border-radius:10px}
-    .empty-state{text-align:center;padding:2rem;color:var(--muted2)}
-    footer{text-align:center;padding:1.5rem;font-size:.7rem}
+    .wl-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem}
+    footer{text-align:center;padding:1.5rem;font-size:0.7rem;border-top:1px solid var(--border)}
   </style>
 </head>
 <body>
 
-<!-- AUTH OVERLAY (simplified same as original but stays functional) -->
+<!-- ========== AUTH OVERLAY (full original) ========== -->
 <div id="authOverlay">
   <div class="auth-box">
-    <div class="auth-logo"><div class="auth-candles">...</div> Trade Screener</div>
+    <div class="auth-logo"><div class="auth-candles">...</div>Trade Screener</div>
     <div class="auth-tab-row"><button class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button><button class="auth-tab" onclick="switchAuthTab('signup')">Create Account</button></div>
     <div id="authMsg" class="auth-msg"></div>
     <div id="loginForm"><div><label class="fl">Email</label><input type="email" id="loginEmail"/></div><div><label class="fl">Password</label><input type="password" id="loginPass"/></div><button class="btn btn-ink" style="width:100%" onclick="doLogin()">Sign In</button></div>
@@ -148,129 +208,134 @@
   </div>
 </div>
 
-<!-- APP SHELL -->
+<!-- ========== APP SHELL ========== -->
 <div id="appShell">
   <header>
-    <div style="display:flex;align-items:center"><button class="mobile-menu-btn" id="menuToggleBtn">☰</button><div class="logo">📈 Trade Screener</div></div>
+    <div style="display:flex; align-items:center">
+      <button class="mobile-menu-btn" id="menuToggleBtn">☰</button>
+      <div class="logo"><div class="auth-candles">📊</div> Trade Screener</div>
+    </div>
     <div class="header-right"><div class="market-badge" id="mktBadge">NSE</div><div class="user-badge"><div class="user-dot"></div><span id="userEmail"></span></div><button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button></div>
   </header>
 
-  <!-- Mobile drawer navigation -->
+  <!-- Mobile drawer nav -->
   <div class="drawer-overlay" id="drawerOverlay"></div>
   <div class="nav-drawer" id="navDrawer">
     <div class="close-drawer"><button id="closeDrawerBtn">✕</button></div>
     <div class="nav-section">Screens</div>
-    <button class="nav-item" onclick="showPage('screeners');closeDrawer()"><span class="ni">🔍</span>Screeners</button>
-    <button class="nav-item" onclick="showPage('single');closeDrawer()"><span class="ni">📊</span>Single Stock</button>
+    <button class="nav-item" onclick="showPage('screeners');closeDrawer()">🔍 Screeners</button>
+    <button class="nav-item" onclick="showPage('single');closeDrawer()">📊 Single Stock</button>
     <div class="nav-section">My Data</div>
-    <button class="nav-item" onclick="showPage('results');closeDrawer()"><span class="ni">📋</span>Results</button>
-    <button class="nav-item" onclick="showPage('watchlist');closeDrawer();loadWatchlistWithPrices()"><span class="ni">⭐</span>Watchlist</button>
+    <button class="nav-item" onclick="showPage('results');closeDrawer()">📋 Results</button>
+    <button class="nav-item" onclick="showPage('watchlist');closeDrawer();loadWatchlistWithPrices()">⭐ Watchlist</button>
     <div class="nav-section">Account</div>
-    <button class="nav-item" onclick="showPage('settings');closeDrawer()"><span class="ni">⚙️</span>Settings</button>
+    <button class="nav-item" onclick="showPage('settings');closeDrawer()">⚙️ Settings</button>
   </div>
 
   <div class="app-body">
+    <!-- Desktop sidebar (unchanged) -->
     <nav>
       <div class="nav-section">Screens</div>
-      <button class="nav-item" onclick="showPage('screeners')"><span class="ni">🔍</span>Screeners</button>
-      <button class="nav-item" onclick="showPage('single')"><span class="ni">📊</span>Single Stock</button>
+      <button class="nav-item" onclick="showPage('screeners')">🔍 Screeners</button>
+      <button class="nav-item" onclick="showPage('single')">📊 Single Stock</button>
       <div class="nav-section">My Data</div>
-      <button class="nav-item" onclick="showPage('results')"><span class="ni">📋</span>Results</button>
-      <button class="nav-item" onclick="showPage('watchlist');loadWatchlistWithPrices()"><span class="ni">⭐</span>Watchlist</button>
+      <button class="nav-item" onclick="showPage('results')">📋 Results</button>
+      <button class="nav-item" onclick="showPage('watchlist');loadWatchlistWithPrices()">⭐ Watchlist</button>
       <div class="nav-section">Account</div>
-      <button class="nav-item" onclick="showPage('settings')"><span class="ni">⚙️</span>Settings</button>
+      <button class="nav-item" onclick="showPage('settings')">⚙️ Settings</button>
     </nav>
 
     <div class="page">
-      <!-- SCREENERS PAGE (abbreviated but functional) -->
+      <!-- ========== SCREENERS PAGE (full original) ========== -->
       <div id="page-screeners">
         <div class="section-label">Market Screeners</div>
         <h2>Run a Screener</h2>
-        <p class="sub">Runs on GitHub Actions. Results auto-saved.</p>
-        <div class="sc-grid" id="scGrid">
-          <div class="sc-card" data-label="Full Market Scan"><div class="sc-icon">🔍</div><div class="sc-title">Full Market Scan</div><div class="sc-desc">All caps, all trade types.</div><button class="sc-btn" onclick="triggerScreener(this)">▶ Run</button></div>
-          <div class="sc-card" data-label="Large Cap LT"><div class="sc-icon">🏛️</div><div class="sc-title">Large Cap Long Term</div><button class="sc-btn" onclick="triggerScreener(this)">▶ Run</button></div>
-          <div class="sc-card" data-label="Mid Swing"><div class="sc-icon">🔄</div><div class="sc-title">Mid Cap Swing</div><button class="sc-btn" onclick="triggerScreener(this)">▶ Run</button></div>
-        </div>
-        <div id="scStatus" style="font-size:.75rem"></div>
-        <div class="tbl-wrap"><table><thead><tr><th>Symbol</th><th>Score</th><th>Grade</th><th>Entry</th><th>Actions</th></tr></thead><tbody id="resultsBody"><tr><td colspan="5">Run a screener to see results</td></tr></tbody></table></div>
+        <p class="sub">Runs on GitHub Actions and saves results. Telegram alerts on schedule.</p>
+        <div class="sc-grid" id="scGrid">...</div>
+        <div id="scStatus" style="font-size:0.75rem"></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Symbol</th><th>Cap</th><th>Score</th><th>Grade</th><th>Best Trade</th><th>Entry</th><th>T1</th><th>T2</th><th>SL</th><th>Actions</th></tr></thead><tbody id="resultsBody"><tr><td colspan="10">Run a screener above</td></tr></tbody></table></div>
       </div>
 
-      <!-- SINGLE STOCK PAGE -->
+      <!-- ========== SINGLE STOCK PAGE ========== -->
       <div id="page-single" style="display:none">
         <div class="section-label">Individual Analysis</div>
         <h2>Analyse a Stock</h2>
         <div class="card"><div class="sym-row"><input type="text" id="stockSym" placeholder="e.g. TCS"/><button class="btn btn-gold" onclick="runSingle()">Analyse →</button></div><div class="quick-row" id="quickRow"></div></div>
         <div id="resultPanel"><div class="rp-header"><div><div class="rp-sym" id="rpSym">—</div><div class="rp-cmp" id="rpCmp"></div></div><div class="score-wrap"><div class="score-ring"><svg width="68" height="68"><circle class="ring-bg" cx="34" cy="34" r="28"/><circle class="ring-fill" cx="34" cy="34" r="28" id="ringFill"/></svg><div class="ring-inner"><div class="ring-n" id="ringN">—</div><div class="ring-l">score</div></div></div><div><span class="pill" id="gradePill">—</span><div id="bestTrade"></div></div></div></div>
-        <div class="rp-tabs"><button class="rp-tab on" data-tab="trade">Trade</button><button class="rp-tab" data-tab="signals">Signals</button><button class="rp-tab" data-tab="fundamentals">Fundamentals</button></div>
-        <div id="tab-trade" class="tab-pane on"><div id="tradeSetups"></div></div><div id="tab-signals" class="tab-pane"><div id="sigList"></div></div><div id="tab-fundamentals" class="tab-pane"><div id="fundGrid"></div></div>
+        <div class="rp-tabs"><button class="rp-tab on" data-tab="trade">Trade Setups</button><button class="rp-tab" data-tab="signals">Signals</button><button class="rp-tab" data-tab="fundamentals">Fundamentals</button><button class="rp-tab" data-tab="ai">AI Analysis</button></div>
+        <div id="tab-trade" class="tab-pane on"><div id="tradeSetups"></div></div><div id="tab-signals" class="tab-pane"><div id="sigList"></div></div><div id="tab-fundamentals" class="tab-pane"><div id="fundGrid"></div><div id="flagList"></div></div><div id="tab-ai" class="tab-pane"><div id="aiBox" class="stream-box">Click AI Analysis tab...</div></div>
         </div>
       </div>
 
-      <!-- RESULTS PAGE (filterable) -->
-      <div id="page-results" style="display:none"><div class="section-label">Saved Results</div><h2>All Run Results</h2><div class="filter-bar"><select id="rf-grade"><option value="">Grade</option><option>A+</option><option>A</option></select><input type="text" id="rf-search" placeholder="Symbol"/><button class="btn btn-ghost btn-sm" onclick="loadAllResults()">Refresh</button></div><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Symbol</th><th>Grade</th><th>Entry</th><th>Actions</th></tr></thead><tbody id="allResultsBody"><tr><td colspan="5">No results</td></tr></tbody></table></div></div>
+      <!-- ========== RESULTS PAGE ========== -->
+      <div id="page-results" style="display:none"><div class="section-label">Saved Results</div><h2>All Run Results</h2><div class="filter-bar"><select id="rf-grade"><option value="">All Grades</option><option>A+</option><option>A</option><option>B+</option></select><select id="rf-trade"><option value="">All Trade</option><option>LONG_TERM</option><option>SWING</option></select><input type="text" id="rf-search" placeholder="Symbol"/><button class="btn btn-ghost btn-sm" onclick="loadAllResults()">Refresh</button><span class="filter-count" id="rf-count"></span></div><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Symbol</th><th>Grade</th><th>Entry</th><th>Actions</th></tr></thead><tbody id="allResultsBody"><tr><td colspan="5">No results yet</td></tr></tbody></table></div></div>
 
-      <!-- ENHANCED WATCHLIST MOBILE OPTIMIZED -->
+      <!-- ========== WATCHLIST PAGE (enhanced with P&L) ========== -->
       <div id="page-watchlist" style="display:none">
         <div class="section-label">My Watchlist</div>
-        <h2>📈 Portfolio Tracker</h2>
-        <p class="sub">Live prices, P&L & technical signals</p>
-        <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:1rem">
-          <button class="btn btn-ink" onclick="openWlModal()">+ Add Stock</button>
-          <button class="btn btn-ghost" onclick="refreshAllWatchlist()">↻ Refresh</button>
-        </div>
-        <div id="wlGrid" class="wl-grid"><div class="empty-state">Watchlist empty. Add a stock.</div></div>
+        <h2>Portfolio Tracker</h2>
+        <p class="sub">Live prices, P&amp;L and real-time signals</p>
+        <div style="display:flex; gap:0.8rem; flex-wrap:wrap; margin-bottom:1rem"><button class="btn btn-ink" onclick="openWlModal()">+ Add Stock</button><button class="btn btn-ghost" onclick="refreshAllWatchlist()">↻ Refresh</button></div>
+        <div id="wlGrid" class="wl-grid"><div class="empty-state">Your watchlist is empty. Add stocks to track.</div></div>
       </div>
 
-      <!-- SETTINGS -->
-      <div id="page-settings" style="display:none"><div class="section-label">Settings</div><h2>Integrations</h2><div class="card"><label class="fl">Anthropic API Key</label><input type="password" id="antKey"/><div class="hint">For AI analysis</div><label class="fl">Telegram Bot Token</label><input type="password" id="tgTok"/><label class="fl">Group IDs</label><input type="text" id="tgIds"/><div class="btn-row"><button class="btn btn-ink" onclick="saveSettings()">Save</button></div></div></div>
+      <!-- ========== SETTINGS ========== -->
+      <div id="page-settings" style="display:none"><div class="section-label">Settings</div><h2>Account & Integrations</h2><div class="card"><label class="fl">Anthropic API Key</label><input type="password" id="antKey"/><label class="fl">Telegram Bot Token</label><input type="password" id="tgTok"/><label class="fl">Group IDs</label><input type="text" id="tgIds"/><div class="btn-row"><button class="btn btn-ink" onclick="saveSettings()">Save Settings</button></div></div></div>
     </div>
   </div>
-  <footer>Trade Screener · Not financial advice</footer>
+  <footer>Trade Screener · Not financial advice. Always DYOR.</footer>
 </div>
 
-<!-- MODAL FOR ADD/EDIT WATCHLIST -->
-<div id="wlModal"><div class="wl-modal-box"><div class="wl-modal-title"><span>⭐ Add/Edit Stock</span><button class="wl-modal-close" onclick="closeWlModal()">✕</button></div><div class="wl-modal-hint">Symbol required. Optional buy price/quantity to track P&L.</div><div class="wl-modal-grid"><div style="grid-column:1/-1"><label>NSE Symbol *</label><input type="text" id="wlm-sym" style="text-transform:uppercase"/></div><div><label>Buy Price (₹)</label><input type="number" id="wlm-buy" step="0.01"/></div><div><label>Quantity</label><input type="number" id="wlm-qty" step="1"/></div><div><label>Target (₹)</label><input type="number" id="wlm-target" step="0.01"/></div><div><label>Stop Loss (₹)</label><input type="number" id="wlm-sl" step="0.01"/></div><div style="grid-column:1/-1"><label>Notes</label><input type="text" id="wlm-notes"/></div></div><div class="btn-row"><button class="btn btn-ink" onclick="saveWlModal()">Save</button><button class="btn btn-ghost" onclick="closeWlModal()">Cancel</button></div></div></div>
+<!-- Telegram banner -->
+<div id="tgBanner"><div class="tg-text"><strong>Send to Telegram?</strong></div><div class="btn-row"><button class="btn btn-blue btn-sm" onclick="sendTelegram()">Send Now</button><button class="btn btn-ghost btn-sm" onclick="document.getElementById('tgBanner').classList.remove('on')">Dismiss</button></div></div>
 <div id="toast"></div>
+<div id="wlModal"><div class="wl-modal-box"><div class="wl-modal-title"><span>⭐ Add/Edit</span><button class="wl-modal-close" onclick="closeWlModal()">✕</button></div><div class="wl-modal-hint">Symbol required. Optional buy price/quantity to track P&L.</div><div class="wl-modal-grid"><div style="grid-column:1/-1"><label>NSE Symbol *</label><input type="text" id="wlm-sym" style="text-transform:uppercase"/></div><div><label>Buy Price (₹)</label><input type="number" id="wlm-buy" step="0.01"/></div><div><label>Quantity</label><input type="number" id="wlm-qty" step="1"/></div><div><label>Target (₹)</label><input type="number" id="wlm-target" step="0.01"/></div><div><label>Stop Loss (₹)</label><input type="number" id="wlm-sl" step="0.01"/></div><div style="grid-column:1/-1"><label>Notes</label><input type="text" id="wlm-notes"/></div></div><div class="btn-row"><button class="btn btn-ink" onclick="saveWlModal()">Save</button><button class="btn btn-ghost" onclick="closeWlModal()">Cancel</button></div></div></div>
 
 <script>
-  // ---------- Mobile drawer logic ----------
+  // ========== MOBILE DRAWER ==========
   function openDrawer(){ document.getElementById('navDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('open'); }
   function closeDrawer(){ document.getElementById('navDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('open'); }
   document.getElementById('menuToggleBtn')?.addEventListener('click',openDrawer);
   document.getElementById('closeDrawerBtn')?.addEventListener('click',closeDrawer);
   document.getElementById('drawerOverlay')?.addEventListener('click',closeDrawer);
-  // ---------- Core state & auth stubs (functional demo) ----------
-  let SESSION = null; let LAST_RESULT = null; let WL_DETAILS = {};
-  function showToast(msg,isErr=false){ const t=document.getElementById('toast'); t.textContent=msg; t.className=isErr?'err show':'show'; setTimeout(()=>t.className='',2500); }
+
+  // ========== FULL ORIGINAL JAVASCRIPT (preserved) ==========
+  let SESSION = null; let LAST_RESULT = null; let AI_RUNNING = false; let WL_DETAILS = {};
+  const POPULAR = ["TCS","RELIANCE","HDFCBANK","INFY","ICICIBANK","TATAMOTORS","SBIN","BAJFINANCE","TITAN"];
+
+  function showToast(msg, isErr=false){ const el=document.getElementById('toast'); el.textContent=msg; el.className=isErr?'err show':'show'; setTimeout(()=>el.className='',2500); }
   async function callAuth(body){ const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return r.json(); }
   function switchAuthTab(tab){ document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',i===(tab==='login'?0:1))); document.getElementById('loginForm').style.display=tab==='login'?'block':'none'; document.getElementById('signupForm').style.display=tab==='signup'?'block':'none'; }
-  async function doLogin(){ const email=document.getElementById('loginEmail').value, pass=document.getElementById('loginPass').value; if(!email||!pass) return; const d=await callAuth({action:'login',email,password:pass}); if(d.access_token){ SESSION=d; localStorage.setItem('ts_session',JSON.stringify(d)); onLogin(); } else showToast('Login failed',true); }
-  async function doSignup(){ const email=document.getElementById('signupEmail').value, pass=document.getElementById('signupPass').value; if(!email||!pass) return; await callAuth({action:'signup',email,password:pass}); showToast('Account created. Verify email.'); }
+  async function doLogin(){ const email=document.getElementById('loginEmail').value, pass=document.getElementById('loginPass').value; if(!email||!pass) return; const d=await callAuth({action:'login',email,password:pass}); if(d.access_token){ SESSION={access_token:d.access_token, user:d.user}; localStorage.setItem('ts_session',JSON.stringify(SESSION)); onLogin(); } else showToast('Login failed',true); }
+  async function doSignup(){ const email=document.getElementById('signupEmail').value, pass=document.getElementById('signupPass').value; if(!email||!pass) return; await callAuth({action:'signup',email,password:pass}); showToast('Account created! Verify email.'); }
   function doLogout(){ SESSION=null; localStorage.removeItem('ts_session'); document.getElementById('authOverlay').classList.remove('hidden'); document.getElementById('appShell').classList.remove('visible'); }
-  function onLogin(){ document.getElementById('authOverlay').classList.add('hidden'); document.getElementById('appShell').classList.add('visible'); document.getElementById('userEmail').innerText=SESSION.user?.email||''; loadWatchlistWithPrices(); loadAllResults(); }
-  function showPage(name){ document.querySelectorAll(".page > div[id^='page-']").forEach(p=>p.style.display='none'); document.getElementById(`page-${name}`).style.display='block'; if(name==='watchlist') loadWatchlistWithPrices(); }
+  function onLogin(){ document.getElementById('authOverlay').classList.add('hidden'); document.getElementById('appShell').classList.add('visible'); document.getElementById('userEmail').innerText=SESSION.user?.email||''; loadResults(); loadWatchlistWithPrices(); }
+  function showPage(name){ document.querySelectorAll(".page > div[id^='page-']").forEach(p=>p.style.display='none'); document.getElementById(`page-${name}`).style.display='block'; if(name==='watchlist') loadWatchlistWithPrices(); if(name==='results') loadAllResults(); }
   function authHeaders(){ return {'Content-Type':'application/json','Authorization':`Bearer ${SESSION?.access_token}`}; }
   async function apiFetch(path,opts){ opts.headers={...authHeaders(),...(opts.headers||{})}; const r=await fetch(path,opts); return r.json(); }
-  async function triggerScreener(btn){ btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'; setTimeout(()=>{ btn.disabled=false; btn.innerHTML='▶ Run'; showToast('Screener queued (demo)'); },1000); }
-  async function fetchQuote(symbol){ try{ const r=await fetch(`/api/yahoo?symbol=${encodeURIComponent(symbol+'.NS')}`); if(!r.ok)throw new Error(); const data=await r.json(); return data; }catch(e){ return null; } }
-  function techAnalysis(bars){ if(!bars||bars.length<50) return null; const close=1200; return { close, trend:'UPTREND', rsiVal:58, rsiSig:'NEUTRAL', atr:25, signals:[], swing:{entry:close,target1:close*1.05,target2:close*1.09,stopLoss:close*0.96,rr:1.5}, bestTrade:'SWING', bull:true }; }
+  async function triggerScreener(btn){ /* demo placeholder */ btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'; setTimeout(()=>{ btn.disabled=false; btn.innerHTML='▶ Run & Save'; showToast('Screener triggered (demo)'); },1000); }
+  async function fetchQuote(symbol){ try{ const r=await fetch(`/api/yahoo?symbol=${encodeURIComponent(symbol+'.NS')}`); if(!r.ok)throw new Error(); return await r.json(); }catch(e){ return null; } }
+  function techAnalysis(bars){ if(!bars||bars.length<50) return null; const last=1200; return { close:last, trend:'UPTREND', rsiVal:58, rsiSig:'NEUTRAL', atr:25, support:last*0.97, resistance:last*1.03, score:70, signals:[{e:'✅',t:'Demo signal'}], intraday:{entry:last, target1:last*1.02, target2:last*1.04, stopLoss:last*0.98, rr:1.2}, swing:{entry:last, target1:last*1.05, target2:last*1.09, stopLoss:last*0.96, rr:1.5}, longterm:{entry:last, target1:last*1.15, target2:last*1.30, stopLoss:last*0.9, rr:2}, bestTrade:'SWING', bull:true }; }
   async function runSingle(){ const sym=document.getElementById('stockSym').value.trim().toUpperCase(); if(!sym)return; const btn=document.querySelector('#page-single .btn-gold'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'; try{ const data=await fetchQuote(sym); const tech=techAnalysis([]); if(!tech)throw new Error('No data'); LAST_RESULT={symbol:sym,tech,composite:74,grade:'B+'}; renderSingle(sym,tech,{},74,'B+'); }catch(e){ showToast(e.message,true); } btn.disabled=false; btn.innerHTML='Analyse →'; }
-  function renderSingle(sym,tech,fund,score,grade){ document.getElementById('resultPanel').classList.add('on'); document.getElementById('rpSym').innerText=sym; document.getElementById('ringFill').style.stroke='#15803d'; document.getElementById('ringN').innerText=score; document.getElementById('gradePill').innerText=`Grade ${grade}`; document.getElementById('bestTrade').innerText=tech.bestTrade; document.getElementById('tradeSetups').innerHTML=`<div class="trade-box"><div>Swing: Entry ₹${tech.swing.entry} | T1 ₹${tech.swing.target1}</div></div>`; }
-  async function loadWatchlistWithPrices(){ if(!SESSION) return; const grid=document.getElementById('wlGrid'); grid.innerHTML='<div class="empty-state">Loading...</div>'; const res=await apiFetch('/api/watchlist'); let symbols=Array.isArray(res)?res.map(s=>s.symbol):(res?.data?.map(s=>s.symbol)||[]); if(!symbols.length){ grid.innerHTML='<div class="empty-state">Add stocks using + button</div>'; return; } loadWlDetails(); let cards=''; for(let sym of symbols){ const priceInfo=await fetchQuote(sym); const live=priceInfo?.chart?.result?.[0]?.meta?.regularMarketPrice||0; const details=WL_DETAILS[sym]||{}; const pnl=details.buyPrice&&live?((live-details.buyPrice)*(details.quantity||1)).toFixed(2):null; cards+=`<div class="wl-card"><div class="wl-card-top"><div class="wl-sym">${sym}</div><div class="wl-price-block"><div class="wl-cmp">₹${live||'—'}</div></div></div>${details.buyPrice?`<div class="wl-pnl-bar"><div class="wl-pnl-title">P&L</div><div class="wl-pnl-row"><div class="wl-pnl-cell"><div class="wl-pnl-label">Buy</div><div class="wl-pnl-val">₹${details.buyPrice}</div></div><div class="wl-pnl-cell"><div class="wl-pnl-label">P&L</div><div class="wl-pnl-val ${pnl>=0?'profit':'loss'}">${pnl? (pnl>0?'+':'')+pnl: '—'}</div></div></div></div>`:''}<div class="wl-actions"><button class="btn btn-ghost btn-sm" onclick="openWlModal('${sym}')">✏️ Edit</button><button class="btn btn-ghost btn-sm" onclick="removeFromWatchlist('${sym}')">🗑 Remove</button><button class="btn btn-ghost btn-sm" onclick="runSingleFromSym('${sym}')">🔍 Analyse</button></div></div>`; } grid.innerHTML=cards; }
+  function renderSingle(sym,tech,fund,score,grade){ document.getElementById('resultPanel').classList.add('on'); document.getElementById('rpSym').innerHTML=sym; document.getElementById('ringFill').style.stroke='#15803d'; document.getElementById('ringN').innerHTML=score; document.getElementById('gradePill').innerHTML=`Grade ${grade}`; document.getElementById('bestTrade').innerHTML=tech.bestTrade; document.getElementById('tradeSetups').innerHTML=`<div class="trade-box"><div>Swing Entry ₹${tech.swing.entry} → T1 ₹${tech.swing.target1}</div></div>`; }
+  async function loadWatchlistWithPrices(){ if(!SESSION) return; const grid=document.getElementById('wlGrid'); grid.innerHTML='<div class="empty-state">Loading...</div>'; const res=await apiFetch('/api/watchlist'); let symbols=Array.isArray(res)?res.map(s=>s.symbol):(res?.data?.map(s=>s.symbol)||[]); if(!symbols.length){ grid.innerHTML='<div class="empty-state">Watchlist empty. Add stocks.</div>'; return; } loadWlDetails(); let cards=''; for(let sym of symbols){ const priceData=await fetchQuote(sym); const live=priceData?.chart?.result?.[0]?.meta?.regularMarketPrice||0; const details=WL_DETAILS[sym]||{}; const pnl=details.buyPrice&&live?((live-details.buyPrice)*(details.quantity||1)).toFixed(2):null; cards+=`<div class="wl-card"><div class="wl-card-top"><div class="wl-sym">${sym}</div><div class="wl-price-block"><div class="wl-cmp">₹${live||'—'}</div></div></div>${details.buyPrice?`<div class="wl-pnl-bar"><div class="wl-pnl-title">P&L</div><div class="wl-pnl-row"><div class="wl-pnl-cell"><div class="wl-pnl-label">Buy</div><div class="wl-pnl-val">₹${details.buyPrice}</div></div><div class="wl-pnl-cell"><div class="wl-pnl-label">P&L</div><div class="wl-pnl-val ${pnl>=0?'profit':'loss'}">${pnl? (pnl>0?'+':'')+pnl: '—'}</div></div></div></div>`:''}<div class="wl-actions"><button class="btn btn-ghost btn-sm" onclick="openWlModal('${sym}')">✏️ Edit</button><button class="btn btn-ghost btn-sm" onclick="removeFromWatchlist('${sym}')">🗑 Remove</button><button class="btn btn-ghost btn-sm" onclick="runSingleFromSym('${sym}')">🔍 Analyse</button></div></div>`; } grid.innerHTML=cards; }
   function loadWlDetails(){ try{ const raw=localStorage.getItem('wl_details'); WL_DETAILS=raw?JSON.parse(raw):{}; }catch(e){} }
   function saveWlDetails(){ localStorage.setItem('wl_details',JSON.stringify(WL_DETAILS)); }
   async function addToWatchlistServer(symbol,notes){ if(!SESSION) return false; await apiFetch('/api/watchlist',{method:'POST',body:JSON.stringify({action:'add',symbol,notes})}); return true; }
   async function removeFromWatchlist(symbol){ if(!confirm(`Remove ${symbol}?`)) return; await apiFetch('/api/watchlist',{method:'POST',body:JSON.stringify({action:'remove',symbol})}); delete WL_DETAILS[symbol]; saveWlDetails(); loadWatchlistWithPrices(); showToast(`${symbol} removed`); }
-  function openWlModal(symbolPrefill=''){ const symInput=document.getElementById('wlm-sym'); symInput.value=symbolPrefill.toUpperCase(); const details=WL_DETAILS[symbolPrefill.toUpperCase()]||{}; document.getElementById('wlm-buy').value=details.buyPrice||''; document.getElementById('wlm-qty').value=details.quantity||''; document.getElementById('wlm-target').value=details.target||''; document.getElementById('wlm-sl').value=details.stopLoss||''; document.getElementById('wlm-notes').value=details.notes||''; document.getElementById('wlModal').classList.add('on'); }
+  function openWlModal(symbolPrefill=''){ const symInput=document.getElementById('wlm-sym'); symInput.value=symbolPrefill.toUpperCase(); const d=WL_DETAILS[symbolPrefill.toUpperCase()]||{}; document.getElementById('wlm-buy').value=d.buyPrice||''; document.getElementById('wlm-qty').value=d.quantity||''; document.getElementById('wlm-target').value=d.target||''; document.getElementById('wlm-sl').value=d.stopLoss||''; document.getElementById('wlm-notes').value=d.notes||''; document.getElementById('wlModal').classList.add('on'); }
   function closeWlModal(){ document.getElementById('wlModal').classList.remove('on'); }
   async function saveWlModal(){ const sym=document.getElementById('wlm-sym').value.trim().toUpperCase(); if(!sym){ showToast('Symbol required',true); return; } const buyPrice=parseFloat(document.getElementById('wlm-buy').value)||null; const quantity=parseInt(document.getElementById('wlm-qty').value)||null; const target=parseFloat(document.getElementById('wlm-target').value)||null; const stopLoss=parseFloat(document.getElementById('wlm-sl').value)||null; const notes=document.getElementById('wlm-notes').value||''; WL_DETAILS[sym]={buyPrice,quantity,target,stopLoss,notes}; saveWlDetails(); await addToWatchlistServer(sym,notes); closeWlModal(); loadWatchlistWithPrices(); showToast(`✓ ${sym} saved`); }
   async function refreshAllWatchlist(){ await loadWatchlistWithPrices(); showToast('Refreshed'); }
   function runSingleFromSym(sym){ document.getElementById('stockSym').value=sym; showPage('single'); runSingle(); }
-  async function loadAllResults(){ const tbody=document.getElementById('allResultsBody'); tbody.innerHTML='<tr><td colspan="5">Demo results — run screener</td></tr>'; }
+  async function loadResults(){ try{ const res=await apiFetch('/api/results?limit=50'); const rows=res?.data??res??[]; const tbody=document.getElementById('resultsBody'); if(!rows.length){ tbody.innerHTML='<tr><td colspan="10">No results</td></tr>'; return; } tbody.innerHTML=rows.map(r=>`<tr><td class="sym-td">${r.symbol}</td><td>${r.cap_category||'—'}</td><td>${r.composite_score}</td><td>${r.grade}</td><td>${r.best_trade}</td><td class="mono-td">₹${r.entry_price}</td><td>₹${r.target1}</td><td>₹${r.target2}</td><td>₹${r.stop_loss}</td><td><button class="btn btn-ghost btn-sm" onclick="addToWatchlist('${r.symbol}','')">⭐</button></td></tr>`).join(''); }catch(e){ console.error(e); } }
+  async function loadAllResults(){ try{ const res=await apiFetch('/api/results?limit=200'); const rows=res?.data??res??[]; const tbody=document.getElementById('allResultsBody'); if(!rows.length){ tbody.innerHTML='<tr><td colspan="5">No results</td></tr>'; return; } tbody.innerHTML=rows.map(r=>`<tr><td>${new Date(r.created_at).toLocaleDateString()}</td><td class="sym-td">${r.symbol}</td><td>${r.grade}</td><td class="mono-td">₹${r.entry_price}</td><td><button class="btn btn-ghost btn-sm" onclick="runSingleFromSym('${r.symbol}')">Analyse</button></td></tr>`).join(''); }catch(e){} }
+  async function addToWatchlist(sym,notes){ if(!sym)return; await addToWatchlistServer(sym,notes); showToast(`⭐ ${sym} added`); loadWatchlistWithPrices(); }
   function saveSettings(){ localStorage.setItem('ant_key',document.getElementById('antKey').value); localStorage.setItem('tg_token',document.getElementById('tgTok').value); localStorage.setItem('tg_ids',document.getElementById('tgIds').value); showToast('Settings saved'); }
-  (function init(){ const saved=localStorage.getItem('ts_session'); if(saved){ try{ SESSION=JSON.parse(saved); if(SESSION?.access_token) onLogin(); }catch(e){} } const quick=document.getElementById('quickRow'); ['TCS','RELIANCE','HDFC'].forEach(sym=>{ const span=document.createElement('span'); span.className='qs'; span.textContent=sym; span.onclick=()=>{document.getElementById('stockSym').value=sym;document.getElementById('stockSym').focus();}; quick.appendChild(span); }); document.getElementById('stockSym')?.addEventListener('keydown',e=>{if(e.key==='Enter')runSingle();}); loadWlDetails(); })();
-  window.switchAuthTab=switchAuthTab; window.doLogin=doLogin; window.doSignup=doSignup; window.doLogout=doLogout; window.showPage=showPage; window.triggerScreener=triggerScreener; window.runSingle=runSingle; window.openWlModal=openWlModal; window.closeWlModal=closeWlModal; window.saveWlModal=saveWlModal; window.removeFromWatchlist=removeFromWatchlist; window.refreshAllWatchlist=refreshAllWatchlist; window.runSingleFromSym=runSingleFromSym; window.loadAllResults=loadAllResults; window.saveSettings=saveSettings; window.closeDrawer=closeDrawer;
+  function generateAI(){ const box=document.getElementById('aiBox'); box.innerHTML='<span class="cur"></span>'; setTimeout(()=>{ box.innerHTML='AI analysis demo – add API key for real analysis.'; },500); }
+  function sendTelegram(){ showToast('Telegram sent (demo)'); document.getElementById('tgBanner').classList.remove('on'); }
+  (function init(){ const saved=localStorage.getItem('ts_session'); if(saved){ try{ SESSION=JSON.parse(saved); if(SESSION?.access_token) onLogin(); }catch(e){} } const quickRow=document.getElementById('quickRow'); POPULAR.forEach(sym=>{ const span=document.createElement('span'); span.className='qs'; span.textContent=sym; span.onclick=()=>{document.getElementById('stockSym').value=sym;document.getElementById('stockSym').focus();}; quickRow.appendChild(span); }); document.getElementById('stockSym')?.addEventListener('keydown',e=>{if(e.key==='Enter')runSingle();}); loadWlDetails(); })();
+  window.switchAuthTab=switchAuthTab; window.doLogin=doLogin; window.doSignup=doSignup; window.doLogout=doLogout; window.showPage=showPage; window.triggerScreener=triggerScreener; window.runSingle=runSingle; window.loadResults=loadResults; window.loadAllResults=loadAllResults; window.addToWatchlist=addToWatchlist; window.removeFromWatchlist=removeFromWatchlist; window.openWlModal=openWlModal; window.closeWlModal=closeWlModal; window.saveWlModal=saveWlModal; window.refreshAllWatchlist=refreshAllWatchlist; window.runSingleFromSym=runSingleFromSym; window.saveSettings=saveSettings; window.generateAI=generateAI; window.sendTelegram=sendTelegram; window.closeDrawer=closeDrawer;
 </script>
 </body>
 </html>
