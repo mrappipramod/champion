@@ -566,9 +566,18 @@ function showToast(msg,isErr=false){
 }
 
 // ══════════════════ YAHOO PROXY — SPOT PRICE ══════════════════
-async function fetchSpot(sym){
-  const yf = NSE_INDICES.includes(sym.toUpperCase())
-    ? `%5E${sym==='NIFTY'?'NSEI':sym==='BANKNIFTY'?'NSEBANK':sym==='SENSEX'?'BSESN':sym+'NS'}`
+// Yahoo symbol mapping for indices
+const yahooMap = {
+  'NIFTY':     '%5ENSEI',      // ^NSEI
+  'BANKNIFTY': '%5ENSEBANK',   // ^NSEBANK
+  'SENSEX':    '%5EBSESN',     // ^BSESN
+  'FINNIFTY':  '%5ENSEI',      // No direct Yahoo symbol – fallback to NIFTY
+  'MIDCPNIFTY':'%5ENSEI',      // fallback to NIFTY
+  'NIFTYIT':   '%5ENSEI'       // fallback (adjust if you find a better symbol)
+};
+const isIndex = NSE_INDICES.includes(sym.toUpperCase());
+const yf = isIndex
+    ? (yahooMap[sym] || '%5ENSEI')
     : `${sym}.NS`;
   const r = await fetch(`/api/yahoo?symbol=${yf}`);
   if(!r.ok) throw new Error(`Could not fetch ${sym}`);
