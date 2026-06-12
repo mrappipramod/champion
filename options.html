@@ -566,7 +566,6 @@ function showToast(msg,isErr=false){
 }
 
 // ══════════════════ YAHOO PROXY — SPOT PRICE ══════════════════
-// Yahoo symbol mapping for indices
 const yahooMap = {
   'NIFTY':     '%5ENSEI',      // ^NSEI
   'BANKNIFTY': '%5ENSEBANK',   // ^NSEBANK
@@ -579,20 +578,6 @@ const isIndex = NSE_INDICES.includes(sym.toUpperCase());
 const yf = isIndex
     ? (yahooMap[sym] || '%5ENSEI')
     : `${sym}.NS`;
-  const r = await fetch(`/api/yahoo?symbol=${yf}`);
-  if(!r.ok) throw new Error(`Could not fetch ${sym}`);
-  const d = await r.json();
-  const res = d.chart?.result?.[0];
-  if(!res) throw new Error('No data for '+sym);
-  const q = res.indicators.quote[0];
-  const last = q.close.filter(Boolean);
-  return {
-    spot: parseFloat(last[last.length-1].toFixed(2)),
-    meta: res.meta,
-    symbol: sym.toUpperCase()
-  };
-}
-
 // ══════════════════ EXPIRY DATES ══════════════════
 function initExpiries(){
   const expiries = generateNSEExpiries();
