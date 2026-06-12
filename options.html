@@ -1,0 +1,29 @@
+// options.js (or inside your new page)
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  'https://your-project.supabase.co',
+  'your-anon-key'
+)
+
+async function checkUser() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    window.location.href = '/login'  // your existing login flow
+  }
+  return user
+}
+
+async function fetchOptions(symbol, expiry) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token
+  const res = await fetch('https://options-api.yourdomain.workers.dev/chain', {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    method: 'POST',
+    body: JSON.stringify({ symbol, expiry })
+  })
+  return res.json()
+}
