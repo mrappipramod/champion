@@ -1045,19 +1045,226 @@ function quickSignal(sym){
   document.getElementById('signalSym').value = sym;
   generateTradeSignal();
 }
+// ══════════════════ ADVANCED STRATEGY ENGINE (NEW) ══════════════════
+function estimateDaysToExpiry(expiryStr){
+  const parts = expiryStr.split('-');
+  const monthsMap = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+  const expDate = new Date(parseInt(parts[2]), monthsMap[parts[1]], parseInt(parts[0]));
+  const today = new Date();
+  const diff = Math.ceil((expDate - today) / (1000*60*60*24));
+  return Math.max(1, diff);
+}
+
+function recommendAdvancedStrategy(sym, spot, chain, expiry, daysToExpiry = 7) {
+  const { rows, baseIV, atm, si, lotSize } = chain;
+  const totalCallOI = rows.reduce((a,r)=>a+r.call.oi,0);
+  const totalPutOI = rows.reduce((a,r)=>a+r.put.oi,0);
+  const pcr = totalPutOI / totalCallOI;
+  const maxPain = calcMaxPain(rows);
+  const mpDiffPct = ((maxPain - spot)/spot)*100;
+  
+  // Find support / resistance using OI concentrations
+  let maxCallOIStrike = null, maxCallOIVal = 0;
+  let maxPutOIStrike = null, maxPutOIVal = 0;
+  for(let r of rows){
+    if(r.call.oi > maxCallOIVal){ maxCallOIVal = r.call.oi; maxCallOIStrike = r.strike; }
+    if(r.put.oi > maxPutOIVal){ maxPutOIVal = r.put.oi; maxPutOIStrike = r.strike; }
+  }
+  const resistance = maxCallOIStrike;
+  const support = maxPutOIStrike;
+  
+  const atmStrike = atm;
+  const T = daysToExpiry / 365;
+  const rfr = 0.065;
+  
+  const priceOpt = (strike, type) => {
+    const moneyness = (strike - spot)/spot;
+    const iv = type === 'call' ? baseIV + Math.max(0,moneyness)*80 - Math.max(0,-moneyness)*20 : baseIV - Math.max(0,moneyness)*20 + Math.max(0,-moneyness)*80;
+    return bsPrice(spot, strike, T, iv/100, rfr, type).price;
+  };
+  
+  let strategy = null;
+  
+  // 1) High IV (>25%) and neutral PCR → Iron Condor
+  if(baseIV > 25 && pcr >= 0.8 && pcr <= 1.2 && Math.abs(mpDiffPct) < 1.5) {
+    const putSpreadWing = Math.max(5, Math.floor(spot * 0.02 / si)) * si;
+    const callSpreadWing = putSpreadWing;
+    const shortPut = atmStrike - putSpreadWing;
+    const longPut = shortPut - putSpreadWing;
+    const shortCall = atmStrike + callSpreadWing;
+    const longCall = shortCall + callSpreadWing;
+    const premShortPut = priceOpt(shortPut, 'put');
+    const premLongPut = priceOpt(longPut, 'put');
+    const premShortCall = priceOpt(shortCall, 'call');
+    const premLongCall = priceOpt(longCall, 'call');
+    const netCredit = (premShortPut - premLongPut) + (premShortCall - premLongCall);
+    const maxLoss = (putSpreadWing - netCredit) * lotSize;
+    const maxProfit = netCredit * lotSize;
+    const probOTM = (normCDF(-(shortCall-spot)/(spot*baseIV/100*Math.sqrt(T))) + (1-normCDF((spot-shortPut)/(spot*baseIV/100*Math.sqrt(T)))))/2;
+    strategy = {
+      name: "Iron Condor",
+      type: "Credit / Neutral",
+      legs: [
+        { action: "SELL", type: "PUT", strike: shortPut, premium: premShortPut },
+        { action: "BUY",  type: "PUT", strike: longPut,  premium: premLongPut },
+        { action: "SELL", type: "CALL", strike: shortCall, premium: premShortCall },
+        { action: "BUY",  type: "CALL", strike: longCall,  premium: premLongCall }
+      ],
+      netCredit: netCredit,
+      maxProfit: maxProfit,
+      maxLoss: maxLoss,
+      breakevens: [shortPut - netCredit, shortCall + netCredit],
+      probability: (probOTM * 100).toFixed(1)+'%',
+      capitalRequired: maxLoss,
+      rationale: `IV is high (${baseIV.toFixed(0)}%) and market is range-bound (PCR ${pcr.toFixed(2)}, Max Pain near spot). Iron Condor profits from time decay and volatility contraction.`,
+      lotSize: lotSize
+    };
+  }
+  // 2) Low IV (<14%) and strong trend → Long Strangle
+  else if(baseIV < 14 && (pcr > 1.3 || pcr < 0.7)) {
+    const otmOffset = pcr > 1.3 ? -si*2 : si*2;
+    const callStrike = atmStrike + (pcr > 1.3 ? otmOffset : si);
+    const putStrike = atmStrike + (pcr < 0.7 ? otmOffset : -si);
+    const callPrem = priceOpt(callStrike, 'call');
+    const putPrem = priceOpt(putStrike, 'put');
+    const totalDebit = (callPrem + putPrem) * lotSize;
+    const maxLoss = totalDebit;
+    const upBE = callStrike + totalDebit/lotSize;
+    const downBE = putStrike - totalDebit/lotSize;
+    strategy = {
+      name: pcr > 1.3 ? "Bullish Strangle" : "Bearish Strangle",
+      type: "Debit / Directional Volatility",
+      legs: [
+        { action: "BUY", type: "CALL", strike: callStrike, premium: callPrem },
+        { action: "BUY", type: "PUT",  strike: putStrike, premium: putPrem }
+      ],
+      netDebit: totalDebit / lotSize,
+      maxProfit: "Unlimited",
+      maxLoss: maxLoss,
+      breakevens: [downBE, upBE],
+      probability: "~40-50%",
+      capitalRequired: maxLoss,
+      rationale: `IV is low (${baseIV.toFixed(0)}%) and PCR indicates strong ${pcr>1.3?'bullish':'bearish'} sentiment. A breakout is expected. Strangle captures large moves cheaply.`,
+      lotSize: lotSize
+    };
+  }
+  // 3) Clear support/resistance from OI and moderate IV → Butterfly
+  else if(support && resistance && (resistance - support) / spot > 0.03 && (resistance - support) / spot < 0.08 && baseIV > 15 && baseIV < 30) {
+    const lower = support;
+    const upper = resistance;
+    const middle = Math.round((lower + upper)/2 / si) * si;
+    const callButterfly = [
+      { action: "BUY", type: "CALL", strike: lower, premium: priceOpt(lower, 'call') },
+      { action: "SELL", type: "CALL", strike: middle, premium: priceOpt(middle, 'call'), qty: 2 },
+      { action: "BUY", type: "CALL", strike: upper, premium: priceOpt(upper, 'call') }
+    ];
+    const netDebit = (callButterfly[0].premium + callButterfly[2].premium - 2*callButterfly[1].premium) * lotSize;
+    const maxProfit = (middle - lower - netDebit/lotSize) * lotSize;
+    const maxLoss = netDebit;
+    strategy = {
+      name: "Call Butterfly",
+      type: "Debit / Range-bound",
+      legs: callButterfly,
+      netDebit: netDebit / lotSize,
+      maxProfit: maxProfit,
+      maxLoss: maxLoss,
+      breakevens: [lower + netDebit/lotSize, upper - netDebit/lotSize],
+      probability: "~30-40%",
+      capitalRequired: maxLoss,
+      rationale: `Clear support at ${support} and resistance at ${resistance} from OI. Butterfly profits if spot stays near ${middle} at expiry. IV is moderate.`,
+      lotSize: lotSize
+    };
+  }
+  // 4) Default: directional with risk defined – Bull/Bear spread
+  else {
+    const direction = pcr > 1.1 ? "bullish" : (pcr < 0.9 ? "bearish" : "neutral");
+    if(direction === "bullish") {
+      const buyStrike = atmStrike;
+      const sellStrike = atmStrike + si * 2;
+      const buyPrem = priceOpt(buyStrike, 'call');
+      const sellPrem = priceOpt(sellStrike, 'call');
+      const netDebit = (buyPrem - sellPrem) * lotSize;
+      const maxProfit = (sellStrike - buyStrike - (buyPrem - sellPrem)) * lotSize;
+      const maxLoss = netDebit;
+      strategy = {
+        name: "Bull Call Spread",
+        type: "Debit / Directional",
+        legs: [
+          { action: "BUY", type: "CALL", strike: buyStrike, premium: buyPrem },
+          { action: "SELL", type: "CALL", strike: sellStrike, premium: sellPrem }
+        ],
+        netDebit: netDebit / lotSize,
+        maxProfit: maxProfit,
+        maxLoss: maxLoss,
+        breakevens: [buyStrike + netDebit/lotSize],
+        probability: ( (1 - normCDF((sellStrike-buyStrike)/(spot*baseIV/100*Math.sqrt(T))) ) * 100 ).toFixed(0)+'%',
+        capitalRequired: maxLoss,
+        rationale: `Moderate bullish view (PCR ${pcr.toFixed(2)}). Limited risk spread with high probability of success.`,
+        lotSize: lotSize
+      };
+    } else if(direction === "bearish") {
+      const buyStrike = atmStrike;
+      const sellStrike = atmStrike - si * 2;
+      const buyPrem = priceOpt(buyStrike, 'put');
+      const sellPrem = priceOpt(sellStrike, 'put');
+      const netDebit = (buyPrem - sellPrem) * lotSize;
+      const maxProfit = (buyStrike - sellStrike - (buyPrem - sellPrem)) * lotSize;
+      const maxLoss = netDebit;
+      strategy = {
+        name: "Bear Put Spread",
+        type: "Debit / Directional",
+        legs: [
+          { action: "BUY", type: "PUT", strike: buyStrike, premium: buyPrem },
+          { action: "SELL", type: "PUT", strike: sellStrike, premium: sellPrem }
+        ],
+        netDebit: netDebit / lotSize,
+        maxProfit: maxProfit,
+        maxLoss: maxLoss,
+        breakevens: [buyStrike - netDebit/lotSize],
+        probability: ( normCDF((buyStrike-sellStrike)/(spot*baseIV/100*Math.sqrt(T))) * 100 ).toFixed(0)+'%',
+        capitalRequired: maxLoss,
+        rationale: `Moderate bearish view (PCR ${pcr.toFixed(2)}). Defined risk put spread.`,
+        lotSize: lotSize
+      };
+    } else {
+      const callPrem = priceOpt(atmStrike, 'call');
+      const putPrem = priceOpt(atmStrike, 'put');
+      const netCredit = (callPrem + putPrem) * lotSize;
+      strategy = {
+        name: "Short Straddle",
+        type: "Credit / Neutral",
+        legs: [
+          { action: "SELL", type: "CALL", strike: atmStrike, premium: callPrem },
+          { action: "SELL", type: "PUT", strike: atmStrike, premium: putPrem }
+        ],
+        netCredit: netCredit / lotSize,
+        maxProfit: netCredit,
+        maxLoss: "Unlimited (theoretical)",
+        breakevens: [atmStrike - netCredit/lotSize, atmStrike + netCredit/lotSize],
+        probability: "High if range-bound",
+        capitalRequired: "Margin approx ₹50,000+",
+        rationale: `Neutral PCR and Max Pain nearby. Selling straddle captures premium, but beware of sudden moves.`,
+        lotSize: lotSize
+      };
+    }
+  }
+  return strategy;
+}
+
 async function generateTradeSignal(){
   const sym = document.getElementById('signalSym').value.trim().toUpperCase();
   if(!sym){ showToast('Enter a symbol', true); return; }
   const expiry = document.getElementById('signalExpirySelect').value;
+  const daysToExp = estimateDaysToExpiry(expiry);
   const btn = document.querySelector('#page-signals .btn-gold');
   if(btn){ btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Analyzing…'; }
   document.getElementById('signalResult').style.display='none';
   try{
     const {spot} = await fetchSpot(sym);
-    const chain = buildSyntheticChain(spot, sym, 10);
-    const analysis = analyzeForSignal(sym, spot, chain, expiry);
-    renderSignal(analysis);
-    showToast(`Signal generated for ${sym}`, false);
+    const chain = buildSyntheticChain(spot, sym, 15);
+    const strategy = recommendAdvancedStrategy(sym, spot, chain, expiry, daysToExp);
+    renderAdvancedStrategy(strategy, sym, spot, expiry);
+    showToast(`Advanced strategy generated for ${sym}`, false);
   } catch(e){
     showToast(`⚠️ ${e.message}`, true);
     document.getElementById('signalResult').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
@@ -1066,73 +1273,38 @@ async function generateTradeSignal(){
   if(btn){ btn.disabled=false; btn.innerHTML='Generate Signal →'; }
 }
 
-function analyzeForSignal(sym, spot, chain, expiry){
-  const {rows, baseIV, atm} = chain;
-  const totalCallOI = rows.reduce((a,r)=>a+r.call.oi,0);
-  const totalPutOI = rows.reduce((a,r)=>a+r.put.oi,0);
-  const pcr = totalPutOI / totalCallOI;
-  const maxPain = calcMaxPain(rows);
-  const mpDiff = ((maxPain - spot)/spot)*100;
-  const atmRow = rows.find(r=>r.atm);
-  const atmCallDelta = atmRow ? atmRow.call.delta : 0.5;
-  const atmPutDelta = atmRow ? atmRow.put.delta : -0.5;
-  // OI buildup: find strikes with highest OI change
-  let maxCallOIChg = 0, maxPutOIChg = 0;
-  let callBuildupStrike = null, putBuildupStrike = null;
-  for(let r of rows){
-    if(Math.abs(r.call.oiChg) > maxCallOIChg){ maxCallOIChg = Math.abs(r.call.oiChg); callBuildupStrike = r.strike; }
-    if(Math.abs(r.put.oiChg) > maxPutOIChg){ maxPutOIChg = Math.abs(r.put.oiChg); putBuildupStrike = r.strike; }
-  }
-  const callBuildupSide = callBuildupStrike > spot ? 'Resistance' : (callBuildupStrike < spot ? 'Support' : 'Neutral');
-  const putBuildupSide = putBuildupStrike < spot ? 'Support' : (putBuildupStrike > spot ? 'Resistance' : 'Neutral');
-  // Determine bias
-  let bias = 'Neutral';
-  let confidence = 'Low';
-  let riskScore = 5;
-  let signal = 'HOLD';
-  let stopLoss = 0;
-  let entryZone = '';
-  let recommendation = '';
-  if(pcr > 1.2 && mpDiff < -1){ bias = 'Bullish'; confidence = 'High'; riskScore = 3; signal = 'BUY CALL'; stopLoss = spot * 0.98; entryZone = `₹${spot} - ₹${spot*1.01}`; }
-  else if(pcr < 0.8 && mpDiff > 1){ bias = 'Bearish'; confidence = 'High'; riskScore = 3; signal = 'BUY PUT'; stopLoss = spot * 1.02; entryZone = `₹${spot*0.99} - ₹${spot}`; }
-  else if(pcr > 1.2 && mpDiff > 1){ bias = 'Bearish (overbought)'; confidence = 'Medium'; riskScore = 6; signal = 'SELL CALL'; stopLoss = spot * 1.03; entryZone = `₹${spot} - ₹${spot*1.02}`; }
-  else if(pcr < 0.8 && mpDiff < -1){ bias = 'Bullish (oversold)'; confidence = 'Medium'; riskScore = 6; signal = 'SELL PUT'; stopLoss = spot * 0.97; entryZone = `₹${spot*0.98} - ₹${spot}`; }
-  else if(baseIV > 25){ bias = 'Neutral (High IV)'; confidence = 'Low'; riskScore = 8; signal = 'SELL STRANGLE'; stopLoss = spot * (pcr>1?0.97:1.03); entryZone = 'Wait for IV crush'; }
-  else if(baseIV < 12){ bias = 'Neutral (Low IV)'; confidence = 'Medium'; riskScore = 4; signal = 'BUY STRADDLE'; stopLoss = spot*0.95; entryZone = 'Buy ATM options'; }
-  else{ bias = 'Neutral'; confidence = 'Low'; riskScore = 5; signal = 'HOLD'; stopLoss = 0; entryZone = 'No clear setup'; }
-  // Additional nuance: OI buildup
-  if(callBuildupSide === 'Resistance') recommendation += `🔴 Call OI buildup at ${callBuildupStrike} – strong resistance. `;
-  if(putBuildupSide === 'Support') recommendation += `🟢 Put OI buildup at ${putBuildupStrike} – strong support. `;
-  recommendation += `PCR is ${pcr.toFixed(2)}. Max pain ${mpDiff>0?'above':'below'} spot by ${Math.abs(mpDiff).toFixed(1)}%. `;
-  recommendation += `IV percentile ${baseIV>20?'high':baseIV<12?'low':'moderate'}. `;
-  recommendation += `Best to ${signal==='HOLD'?'wait for confirmation':`${signal} with stop at ₹${stopLoss.toFixed(0)}`}. `;
-  recommendation += `Risk score ${riskScore}/10 – ${riskScore>6?'high risk, size small':riskScore<4?'low risk, can size normal':'moderate risk'}.`;
-  return { sym, spot, expiry, pcr, maxPain, baseIV, signal, bias, confidence, riskScore, stopLoss, entryZone, recommendation, callBuildupStrike, putBuildupStrike, callBuildupSide, putBuildupSide };
-}
-
-function renderSignal(analysis){
+function renderAdvancedStrategy(strategy, sym, spot, expiry){
+  const legsHtml = strategy.legs.map(l => `
+    <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border);">
+      <span><strong>${l.action}</strong> ${l.type.toUpperCase()}</span>
+      <span>Strike ₹${l.strike.toLocaleString('en-IN')}</span>
+      <span>Premium ₹${l.premium.toFixed(2)}</span>
+    </div>
+  `).join('');
+  
   const html = `
     <div class="signal-card">
-      <div class="signal-badge">${analysis.bias} • ${analysis.confidence} confidence</div>
-      <div class="signal-title" style="color:${analysis.signal.includes('BUY')?'var(--green)':analysis.signal.includes('SELL')?'var(--red)':'var(--accent2)'}">${analysis.signal}</div>
-      <div class="signal-desc">Recommendation for ${analysis.sym} expiring ${analysis.expiry}</div>
+      <div class="signal-badge">${strategy.type} • ${strategy.probability || 'N/A'} probability</div>
+      <div class="signal-title" style="font-size:1.4rem;">${strategy.name}</div>
+      <div class="signal-desc">Auto‑selected for ${sym} (expiry ${expiry})</div>
       <div class="signal-metrics">
-        <div class="metric"><div class="metric-label">Spot Price</div><div class="metric-value">₹${analysis.spot.toLocaleString('en-IN')}</div><div class="metric-sub"></div></div>
-        <div class="metric"><div class="metric-label">PCR (OI)</div><div class="metric-value">${analysis.pcr.toFixed(2)}</div><div class="metric-sub">${analysis.pcr>1.2?'Bullish bias':analysis.pcr<0.8?'Bearish bias':'Neutral'}</div></div>
-        <div class="metric"><div class="metric-label">Max Pain</div><div class="metric-value">₹${analysis.maxPain.toLocaleString('en-IN')}</div><div class="metric-sub">${((analysis.maxPain-analysis.spot)/analysis.spot*100).toFixed(1)}% from spot</div></div>
-        <div class="metric"><div class="metric-label">IV Percentile</div><div class="metric-value">${analysis.baseIV.toFixed(0)}%</div><div class="metric-sub">${analysis.baseIV>20?'High IV':analysis.baseIV<12?'Low IV':'Moderate'}</div></div>
-        <div class="metric"><div class="metric-label">Risk Score</div><div class="metric-value ${analysis.riskScore>6?'risk-high':analysis.riskScore<4?'risk-low':'risk-med'}">${analysis.riskScore}/10</div><div class="metric-sub">${analysis.riskScore>6?'Aggressive sizing not advised':'Manage risk normally'}</div></div>
+        <div class="metric"><div class="metric-label">Spot</div><div class="metric-value">₹${spot.toLocaleString('en-IN')}</div></div>
+        <div class="metric"><div class="metric-label">Max Profit</div><div class="metric-value">₹${typeof strategy.maxProfit === 'number' ? strategy.maxProfit.toLocaleString('en-IN') : strategy.maxProfit}</div></div>
+        <div class="metric"><div class="metric-label">Max Loss</div><div class="metric-value">₹${typeof strategy.maxLoss === 'number' ? strategy.maxLoss.toLocaleString('en-IN') : strategy.maxLoss}</div></div>
+        <div class="metric"><div class="metric-label">Breakeven(s)</div><div class="metric-value">${strategy.breakevens.map(be => `₹${Math.round(be).toLocaleString('en-IN')}`).join(' / ')}</div></div>
+        <div class="metric"><div class="metric-label">Capital Required</div><div class="metric-value">${typeof strategy.capitalRequired === 'number' ? `₹${strategy.capitalRequired.toLocaleString('en-IN')}` : strategy.capitalRequired}</div></div>
       </div>
-      <table class="rec-table">
-        <tr><td>Suggested Action</td><td><strong>${analysis.signal}</strong></td></tr>
-        <tr><td>Entry Zone</td><td>${analysis.entryZone}</td></tr>
-        ${analysis.stopLoss ? `<tr><td>Stop Loss (SL)</td><td>₹${analysis.stopLoss.toLocaleString('en-IN')} (${(((analysis.stopLoss-analysis.spot)/analysis.spot)*100).toFixed(1)}%)</td></tr>` : ''}
-        <tr><td>Capital Protection</td><td>${analysis.riskScore>6?'Use smaller position size (e.g., 1-2% of capital). Avoid leverage.':'Normal position size (2-5% of capital) with defined stop.'}</td></tr>
-        <tr><td>Analysis</td><td>${analysis.recommendation}</td></tr>
+      <div style="margin:1rem 0;"><strong>Strategy Legs (per lot = ${strategy.lotSize} shares)</strong></div>
+      ${legsHtml}
+      <div style="margin-top:1rem; padding:0.8rem; background:var(--blue-bg); border-radius:12px;">
+        <strong>🧠 Rationale</strong><br>${strategy.rationale}
+      </div>
+      <table class="rec-table" style="margin-top:1rem;">
+        <tr><th style="width:35%">Risk Management</th><td>${strategy.maxLoss === "Unlimited (theoretical)" ? 'Use strict stop-loss or hedge with opposite options' : `Risk defined to ₹${strategy.maxLoss.toLocaleString('en-IN')}. Do not risk more than 2% of capital.`}</td></tr>
+        <tr><th>When to take profit</th><td>${strategy.type.includes('Credit') ? 'Close at 50% of max profit or 10 days before expiry' : 'Target 25-50% of max profit'}</td></tr>
+        <tr><th>When to exit early</th><td>If spot breaches breakeven levels by >5%, or IV changes drastically (up/down 30%)</td></tr>
       </table>
-      <div style="margin-top:1rem; font-size:.7rem; color:var(--muted2); border-top:1px solid var(--border); padding-top:.7rem;">
-        ⚠️ This is an AI-generated signal based on aggregated data. Not financial advice. Always backtest and manage risk.
-      </div>
+      <div class="signal-desc" style="margin-top:1rem; font-size:.7rem;">⚠️ This is an automated strategy suggestion. Always backtest and consult a financial advisor.</div>
     </div>
   `;
   document.getElementById('signalResult').innerHTML = html;
