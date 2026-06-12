@@ -1,77 +1,63 @@
 export async function onRequestGet({ request, env }) {
   try {
-    // 1. Guard check for missing Environment Variables
     if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
-      return json({ ok: false, error: "Server error: Missing Supabase variables" }, 500);
+      return json({ ok: false, error: "Server error: Missing Supabase config" }, 500);
     }
 
-    // 2. Validate Authorization Header
     const auth = request.headers.get("Authorization") || "";
     if (!auth.startsWith("Bearer ")) {
-      return json({ ok: false, error: "Unauthorized: Missing or invalid token" }, 401);
+      return json({ ok: false, error: "Unauthorized" }, 401);
     }
     const token = auth.slice(7);
 
-    // 3. Authenticate the User via Supabase Auth
-    // We still do this to ensure ONLY logged-in users on your site can hit this API
+    // Validate JWT
     const userRes = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
-      headers: { 
-        "apikey": env.SUPABASE_ANON_KEY, 
-        "Authorization": `Bearer ${token}` 
-      },
+      headers: { "apikey": env.SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` },
     });
-    
-    if (!userRes.ok) {
-      return json({ ok: false, error: "Unauthorized: Invalid or expired token" }, 401);
-    }
-    
-    // 4. Parse Query Parameters
-    const url = new URL(request.url);
-    const limit = url.searchParams.get("limit") || "50";
+    if (!userRes.ok) return json({ ok: false, error: "Unauthorized" }, 401);
 
-    // 5. Fetch Data from Supabase Rest API
-    // Notice: We removed the user_id filter here so it grabs the GitHub Action results!
+    const url    = new URL(request.url);
+    const limit  = Math.min(parseInt(url.searchParams.get("limit")  || "50"),  200);
+    const offset = Math.max(parseInt(url.searchParams.get("offset") || "0"),   0);
+
+    // Use the SERVICE key here so RLS doesn't block rows written by GitHub Actions
+    // (those rows have no user_id, so anon-key + user JWT can't read them)
     const r = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/run_results?order=created_at.desc&limit=${limit}`,
+      `${env.SUPABASE_URL}/rest/v1/run_results?order=created_at.desc&limit=${limit}&offset=${offset}`,
       {
         headers: {
-          "apikey": env.SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${token}`, 
+          "apikey":        env.SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
         },
       }
     );
 
     if (!r.ok) {
       const errText = await r.text();
-      return json({ ok: false, error: `Supabase query failed: ${r.status} ${errText}` }, r.status);
+      return json({ ok: false, error: `DB error ${r.status}: ${errText}` }, r.status);
     }
 
     const data = await r.json();
-    return json({ ok: true, data }, 200);
+    return json({ ok: true, data, count: data.length });
 
   } catch (e) {
-    return json({ ok: false, error: e.message || "Internal Server Error" }, 500);
+    return json({ ok: false, error: e.message || "Internal error" }, 500);
   }
 }
 
-// Helper function to standardize JSON responses and headers
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 
-      "Content-Type": "application/json", 
-      "Access-Control-Allow-Origin": "*" 
-    },
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
   });
 }
 
-// Handle CORS preflight requests
 export async function onRequestOptions() {
   return new Response(null, {
     headers: {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin":  "*",
       "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
     },
   });
 }
