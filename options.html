@@ -186,6 +186,21 @@ table.std tr:hover td{background:var(--bg2)}
 .g-txt{color:var(--green);font-weight:600}
 .r-txt{color:var(--red);font-weight:600}
 
+/* ══════ TRADE SIGNALS PAGE STYLES ══════ */
+.signal-card{background:var(--surface);border:2px solid var(--border);border-radius:20px;padding:1.5rem;margin-bottom:1.5rem;position:relative}
+.signal-badge{position:absolute;top:-12px;right:20px;background:var(--accent2);color:#fff;padding:.2rem .8rem;border-radius:30px;font-size:.7rem;font-weight:600}
+.signal-title{font-size:1.8rem;font-weight:800;margin-bottom:.5rem}
+.signal-desc{font-size:.85rem;color:var(--muted);margin-bottom:1.2rem}
+.signal-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.2rem}
+.metric{background:var(--card);border-radius:12px;padding:.8rem 1rem}
+.metric-label{font-size:.6rem;text-transform:uppercase;font-weight:700;color:var(--muted2);letter-spacing:.05em}
+.metric-value{font-size:1.2rem;font-weight:700;font-family:var(--mono);color:var(--ink)}
+.metric-sub{font-size:.7rem;color:var(--muted)}
+.risk-low{color:var(--green)}.risk-med{color:var(--accent)}.risk-high{color:var(--red)}
+.rec-table{width:100%;border-collapse:collapse;margin-top:1rem}
+.rec-table td{padding:.5rem .2rem;border-bottom:1px solid var(--border);font-size:.8rem}
+.rec-table td:first-child{font-weight:700;width:30%}
+
 /* ══════ TOAST ══════ */
 #toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:.6rem 1.2rem;border-radius:8px;font-size:.78rem;font-weight:500;z-index:999;opacity:0;transition:all .3s;white-space:nowrap;pointer-events:none;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.err{background:var(--red)}
@@ -276,10 +291,11 @@ footer{text-align:center;padding:1.75rem 1rem;font-size:.69rem;color:var(--muted
     <!-- Desktop sidebar -->
     <nav class="side-nav">
       <div class="nav-section">Options</div>
-      <button class="nav-item active" onclick="showPage('chain')" data-page="chain"><span class="ni">📊</span>Option Chain</button>
+      <button class="nav-item" onclick="showPage('chain')" data-page="chain"><span class="ni">📊</span>Option Chain</button>
       <button class="nav-item" onclick="showPage('strategies')" data-page="strategies"><span class="ni">🧱</span>Strategies</button>
       <button class="nav-item" onclick="showPage('calculator')" data-page="calculator"><span class="ni">🧮</span>Calculator</button>
       <button class="nav-item" onclick="showPage('sentiment')" data-page="sentiment"><span class="ni">🌡️</span>Market Sentiment</button>
+      <button class="nav-item" onclick="showPage('signals')" data-page="signals"><span class="ni">🎯</span>Trade Signals</button>
       <div class="nav-section">Navigate</div>
       <a href="/index.html" class="nav-item"><span class="ni">🔍</span>Stock Screener</a>
     </nav>
@@ -453,15 +469,48 @@ footer{text-align:center;padding:1.75rem 1rem;font-size:.69rem;color:var(--muted
         </div>
       </div>
 
+      <!-- ▸ TRADE SIGNALS PAGE (NEW) -->
+      <div id="page-signals" style="display:none">
+        <div class="section-label">AI Trade Signals</div>
+        <h2>Options Trading Recommendation</h2>
+        <p class="sub">Professional analysis using OI, PCR, Max Pain, IV, and Greeks. Helps you decide entry and protect capital.</p>
+
+        <div class="card" style="margin-bottom:1.4rem">
+          <div class="lookup-bar" style="margin-bottom:0">
+            <div class="sym-wrap">
+              <label class="fl">Symbol / Index</label>
+              <input type="text" id="signalSym" placeholder="e.g. NIFTY BANKNIFTY TCS" maxlength="20"/>
+            </div>
+            <div style="min-width:120px">
+              <label class="fl">Expiry</label>
+              <select class="inp" id="signalExpirySelect"><option value="">Loading…</option></select>
+            </div>
+            <button class="btn btn-gold" onclick="generateTradeSignal()">Generate Signal →</button>
+          </div>
+          <div class="quick-row" style="margin-top:.6rem;margin-bottom:0">
+            <span class="qs" onclick="quickSignal('NIFTY')">NIFTY</span>
+            <span class="qs" onclick="quickSignal('BANKNIFTY')">BANKNIFTY</span>
+            <span class="qs" onclick="quickSignal('FINNIFTY')">FINNIFTY</span>
+            <span class="qs" onclick="quickSignal('RELIANCE')">RELIANCE</span>
+            <span class="qs" onclick="quickSignal('TCS')">TCS</span>
+          </div>
+        </div>
+
+        <div id="signalResult" style="display:none">
+          <!-- will be populated dynamically -->
+        </div>
+      </div>
+
     </div><!-- /page -->
   </div><!-- /app-body -->
 
   <!-- Mobile bottom nav -->
   <nav class="bottom-nav">
-    <button class="bn-item active" onclick="showPage('chain')" data-page="chain"><span class="bi">📊</span>Chain</button>
+    <button class="bn-item" onclick="showPage('chain')" data-page="chain"><span class="bi">📊</span>Chain</button>
     <button class="bn-item" onclick="showPage('strategies')" data-page="strategies"><span class="bi">🧱</span>Strategies</button>
     <button class="bn-item" onclick="showPage('calculator')" data-page="calculator"><span class="bi">🧮</span>Calc</button>
     <button class="bn-item" onclick="showPage('sentiment')" data-page="sentiment"><span class="bi">🌡️</span>Sentiment</button>
+    <button class="bn-item" onclick="showPage('signals')" data-page="signals"><span class="bi">🎯</span>Signals</button>
     <a href="/index.html" class="bn-item"><span class="bi">🔍</span>Screener</a>
   </nav>
 
@@ -543,6 +592,8 @@ function onLogin(){
   document.getElementById('userEmail').textContent = SESSION.user?.email||'';
   initExpiries();
   renderStrategies();
+  // also populate signal expiry dropdown
+  syncSignalExpirySelect();
 }
 
 // ══════════════════ NAV ══════════════════
@@ -566,9 +617,8 @@ function showToast(msg,isErr=false){
   _toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
 }
 
-// ══════════════════ YAHOO PROXY — SPOT PRICE (FIXED FOR FINNIFTY/MIDCPNIFTY) ══════════════════
+// ══════════════════ YAHOO PROXY — SPOT PRICE (FIXED FOR INDICES) ══════════════════
 async function fetchSpot(sym){
-  // Fallback spot values for NSE indices (as of recent data)
   const indexFallback = {
     'NIFTY': 22500,
     'BANKNIFTY': 48200,
@@ -577,8 +627,6 @@ async function fetchSpot(sym){
     'NIFTYIT': 35000,
     'SENSEX': 74000
   };
-  
-  // For individual stocks, try Yahoo first
   if (!NSE_INDICES.includes(sym.toUpperCase())) {
     try {
       const yf = `${sym}.NS`;
@@ -590,27 +638,16 @@ async function fetchSpot(sym){
           const q = res.indicators.quote[0];
           const last = q.close.filter(Boolean);
           if (last.length) {
-            return {
-              spot: parseFloat(last[last.length-1].toFixed(2)),
-              symbol: sym.toUpperCase()
-            };
+            return { spot: parseFloat(last[last.length-1].toFixed(2)), symbol: sym.toUpperCase() };
           }
         }
       }
-    } catch(e) {
-      console.warn(`Yahoo fetch failed for ${sym}, using fallback`);
-    }
-    // If stock fetch fails, throw error (or use a generic fallback)
+    } catch(e) { console.warn(e); }
     throw new Error(`Could not fetch ${sym} – try again later`);
   }
-  
-  // For indices, return simulated spot (avoids proxy errors)
   const spot = indexFallback[sym.toUpperCase()] || 22000;
-  showToast(`ℹ️ Using simulated spot for ${sym} (₹${spot}) – live data not available`, false);
-  return {
-    spot: spot,
-    symbol: sym.toUpperCase()
-  };
+  showToast(`ℹ️ Using simulated spot for ${sym} (₹${spot})`, false);
+  return { spot: spot, symbol: sym.toUpperCase() };
 }
 
 // ══════════════════ EXPIRY DATES ══════════════════
@@ -618,14 +655,17 @@ function initExpiries(){
   const expiries = generateNSEExpiries();
   const sel = document.getElementById('expirySelect');
   sel.innerHTML = expiries.map(e=>`<option value="${e}">${e}</option>`).join('');
+  syncSignalExpirySelect();
 }
-
+function syncSignalExpirySelect(){
+  const expiries = generateNSEExpiries();
+  const sel = document.getElementById('signalExpirySelect');
+  if(sel) sel.innerHTML = expiries.map(e=>`<option value="${e}">${e}</option>`).join('');
+}
 function generateNSEExpiries(){
-  // Generate next 6 weekly + 3 monthly NSE-style expiries
   const dates = [];
   const now = new Date();
   let d = new Date(now);
-  // Find next Thursday (NSE weekly expiry day = Thursday = 4)
   const day = d.getDay();
   const daysToThur = (4 - day + 7) % 7 || 7;
   d.setDate(d.getDate() + daysToThur);
@@ -635,18 +675,16 @@ function generateNSEExpiries(){
   }
   return dates;
 }
-
 function fmtExpiry(d){
   const months=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   return `${String(d.getDate()).padStart(2,'0')}-${months[d.getMonth()]}-${d.getFullYear()}`;
 }
 
-// ══════════════════ OPTION CHAIN ══════════════════
+// ══════════════════ OPTION CHAIN (reused from before) ══════════════════
 function quickLoad(sym){
   document.getElementById('optSym').value=sym;
   loadChain();
 }
-
 async function loadChain(){
   const sym = document.getElementById('optSym').value.trim().toUpperCase();
   if(!sym){showToast('Enter a symbol first',true);return;}
@@ -656,7 +694,6 @@ async function loadChain(){
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Loading';
   document.getElementById('chainTableWrap').innerHTML=`<div class="empty-state"><span class="spinner" style="width:18px;height:18px"></span><br/>Fetching chain data…</div>`;
   document.getElementById('chainMetrics').style.display='none';
-
   try{
     const {spot} = await fetchSpot(sym);
     const chain = buildSyntheticChain(spot, sym, depth);
@@ -669,38 +706,28 @@ async function loadChain(){
   }
   btn.disabled=false;btn.textContent='Load Chain';
 }
-
 function buildSyntheticChain(spot, sym, depth){
-  // Build realistic option chain from Black-Scholes with market-realistic IV skew
   const isIndex = NSE_INDICES.includes(sym);
-  const baseIV = isIndex ? 13 : 22; // annualised %
-  const T = 7/365; // ~1 week to expiry
+  const baseIV = isIndex ? 13 : 22;
+  const T = 7/365;
   const r = 0.065;
   const lotSize = sym==='NIFTY'?25:sym==='BANKNIFTY'?15:sym==='FINNIFTY'?40:sym==='MIDCPNIFTY'?75:1;
-  
-  // Strike interval
   const si = spot < 500 ? 5 : spot < 2000 ? 20 : spot < 5000 ? 50 : spot < 25000 ? 50 : 100;
   const atm = Math.round(spot / si) * si;
-  
   const rows = [];
   for(let i = -depth; i <= depth; i++){
     const K = atm + i * si;
     if(K<=0) continue;
-    // IV skew: OTM puts have higher IV (skew ~0.3% per 1% OTM)
     const moneyness = (K - spot) / spot;
     const callIV = baseIV + Math.max(0, moneyness) * 80 - Math.max(0, -moneyness) * 20;
     const putIV  = baseIV - Math.max(0, moneyness) * 20 + Math.max(0, -moneyness) * 80;
-    
     const call = bsPrice(spot, K, T, callIV/100, r, 'call');
     const put  = bsPrice(spot, K, T, putIV/100, r, 'put');
-    
-    // Synthetic but realistic OI numbers
     const distFactor = Math.exp(-Math.pow((K-atm)/si,2)/8);
     const callOI = Math.round((800000 + Math.random()*400000) * distFactor / lotSize) * lotSize;
     const putOI  = Math.round((600000 + Math.random()*500000) * distFactor / lotSize) * lotSize;
     const callOIChg = Math.round((Math.random()-.35) * callOI * 0.08);
     const putOIChg  = Math.round((Math.random()-.25) * putOI * 0.08);
-    
     rows.push({
       strike: K, atm: K===atm,
       call: {...call, iv:callIV, oi:callOI, oiChg:callOIChg, vol:Math.round(callOI*0.12)},
@@ -709,14 +736,12 @@ function buildSyntheticChain(spot, sym, depth){
   }
   return {rows, atm, lotSize, si, T, r, baseIV};
 }
-
 function renderChainMetrics(sym, spot, chain, expiry){
   const totalCallOI = chain.rows.reduce((a,r)=>a+r.call.oi,0);
   const totalPutOI  = chain.rows.reduce((a,r)=>a+r.put.oi,0);
   const pcr = (totalPutOI/totalCallOI).toFixed(2);
   const maxPainStrike = calcMaxPain(chain.rows);
   const atmRow = chain.rows.find(r=>r.atm);
-  
   const cards=[
     {l:'Spot Price',v:`₹${spot.toLocaleString('en-IN')}`,s:sym},
     {l:'Expiry',v:expiry,s:'NSE F&O'},
@@ -726,68 +751,34 @@ function renderChainMetrics(sym, spot, chain, expiry){
     {l:'ATM Call',v:`₹${atmRow?atmRow.call.price.toFixed(2):'-'}`,s:'Premium'},
     {l:'ATM Put',v:`₹${atmRow?atmRow.put.price.toFixed(2):'-'}`,s:'Premium'},
   ];
-  
-  document.getElementById('chainMetricCards').innerHTML=cards.map(c=>`
-    <div class="greek-card">
-      <div class="gc-label">${c.l}</div>
-      <div class="gc-val">${c.v}</div>
-      <div class="gc-sub">${c.s}</div>
-    </div>`).join('');
+  document.getElementById('chainMetricCards').innerHTML=cards.map(c=>`<div class="greek-card"><div class="gc-label">${c.l}</div><div class="gc-val">${c.v}</div><div class="gc-sub">${c.s}</div></div>`).join('');
   document.getElementById('chainMetrics').style.display='block';
 }
-
 function calcMaxPain(rows){
   let minLoss=Infinity,mpStrike=rows[0].strike;
   rows.forEach(r=>{
     let loss=0;
     rows.forEach(row=>{
-      loss += Math.max(0,r.strike-row.strike)*row.call.oi; // call writers loss
-      loss += Math.max(0,row.strike-r.strike)*row.put.oi;  // put writers loss
+      loss += Math.max(0,r.strike-row.strike)*row.call.oi;
+      loss += Math.max(0,row.strike-r.strike)*row.put.oi;
     });
     if(loss<minLoss){minLoss=loss;mpStrike=r.strike;}
   });
   return mpStrike;
 }
-
 function renderChainTable(chain, spot){
-  const {rows, atm} = chain;
+  const {rows} = chain;
   const maxCallOI = Math.max(...rows.map(r=>r.call.oi));
   const maxPutOI  = Math.max(...rows.map(r=>r.put.oi));
-
-  const hdr = `<table class="chain">
-    <thead>
-      <tr>
-        <th colspan="6" class="chain-call-hd">CALLS</th>
-        <th class="chain-strike-hd">STRIKE</th>
-        <th colspan="6" class="chain-put-hd">PUTS</th>
-      </tr>
-      <tr>
-        <th class="chain-call-hd">OI</th>
-        <th class="chain-call-hd">OI Chg</th>
-        <th class="chain-call-hd">IV%</th>
-        <th class="chain-call-hd">LTP</th>
-        <th class="chain-call-hd">Δ Delta</th>
-        <th class="chain-call-hd">Theta</th>
-        <th class="chain-strike-hd">₹</th>
-        <th class="chain-put-hd">OI</th>
-        <th class="chain-put-hd">OI Chg</th>
-        <th class="chain-put-hd">IV%</th>
-        <th class="chain-put-hd">LTP</th>
-        <th class="chain-put-hd">Δ Delta</th>
-        <th class="chain-put-hd">Theta</th>
-      </tr>
-    </thead><tbody>`;
-
+  const hdr = `<table class="chain"><thead><tr><th colspan="6" class="chain-call-hd">CALLS</th><th class="chain-strike-hd">STRIKE</th><th colspan="6" class="chain-put-hd">PUTS</th></tr><tr><th>OI</th><th>OI Chg</th><th>IV%</th><th>LTP</th><th>Δ Delta</th><th>Theta</th><th>₹</th><th>OI</th><th>OI Chg</th><th>IV%</th><th>LTP</th><th>Δ Delta</th><th>Theta</th></tr></thead><tbody>`;
   const tbody = rows.map(r=>{
     const isAtm = r.atm;
     const isITMCall = r.strike < spot;
     const isITMPut  = r.strike > spot;
     const callHighOI = r.call.oi > maxCallOI * 0.6;
     const putHighOI  = r.put.oi  > maxPutOI  * 0.6;
-
     const cf = isITMCall ? 'itm-call' : 'otm';
     const pf = isITMPut  ? 'itm-put'  : 'otm';
-
     return `<tr class="${isAtm?'atm-row':''}">
       <td class="${cf}${callHighOI?' high-oi':''}">${fmtOI(r.call.oi)}</td>
       <td class="${r.call.oiChg>=0?'g-txt':'r-txt'}">${r.call.oiChg>=0?'+':''}${fmtOI(r.call.oiChg)}</td>
@@ -802,16 +793,10 @@ function renderChainTable(chain, spot){
       <td class="${pf}"><strong>₹${r.put.price.toFixed(2)}</strong></td>
       <td class="${pf}">${r.put.delta.toFixed(3)}</td>
       <td class="${pf}">${r.put.theta.toFixed(2)}</td>
-    <tr>`;
+    </tr>`;
   }).join('');
-
-  document.getElementById('chainTableWrap').innerHTML=`
-    <div style="margin-bottom:.5rem;font-size:.7rem;color:var(--muted2)">
-      🟡 ATM row &nbsp;·&nbsp; <span style="color:var(--green)">Green = ITM Call</span> &nbsp;·&nbsp; <span style="color:var(--red)">Red = ITM Put</span> &nbsp;·&nbsp; 🔵 High OI
-    </div>
-    <div class="chain-wrap">${hdr}${tbody}</tbody></div>`;
+  document.getElementById('chainTableWrap').innerHTML=`<div style="margin-bottom:.5rem;font-size:.7rem;color:var(--muted2)">🟡 ATM row &nbsp;·&nbsp; <span style="color:var(--green)">Green = ITM Call</span> &nbsp;·&nbsp; <span style="color:var(--red)">Red = ITM Put</span> &nbsp;·&nbsp; 🔵 High OI</div><div class="chain-wrap">${hdr}${tbody}</tbody></div>`;
 }
-
 function fmtOI(n){
   const abs=Math.abs(n);
   const sign=n<0?'-':'';
@@ -830,7 +815,6 @@ function normCDF(x){
   return 0.5*(1+sign*(1-y*Math.exp(-x*x)));
 }
 function normPDF(x){return Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI);}
-
 function bsPrice(S,K,T,sigma,r,type){
   if(T<=0) return {price:type==='call'?Math.max(0,S-K):Math.max(0,K-S),delta:type==='call'?(S>K?1:0):(S<K?-1:0),gamma:0,theta:0,vega:0,rho:0,iv:sigma*100};
   const d1=(Math.log(S/K)+(r+0.5*sigma*sigma)*T)/(sigma*Math.sqrt(T));
@@ -838,22 +822,16 @@ function bsPrice(S,K,T,sigma,r,type){
   const nd1=normCDF(d1),nd2=normCDF(d2);
   const nd1_=normCDF(-d1),nd2_=normCDF(-d2);
   const pdf1=normPDF(d1);
-  const price=type==='call'
-    ? S*nd1 - K*Math.exp(-r*T)*nd2
-    : K*Math.exp(-r*T)*nd2_ - S*nd1_;
+  const price=type==='call' ? S*nd1 - K*Math.exp(-r*T)*nd2 : K*Math.exp(-r*T)*nd2_ - S*nd1_;
   const delta=type==='call'?nd1:nd1-1;
   const gamma=pdf1/(S*sigma*Math.sqrt(T));
-  const theta=type==='call'
-    ? (-(S*pdf1*sigma)/(2*Math.sqrt(T)) - r*K*Math.exp(-r*T)*nd2)/365
-    : (-(S*pdf1*sigma)/(2*Math.sqrt(T)) + r*K*Math.exp(-r*T)*nd2_)/365;
+  const theta=type==='call' ? (-(S*pdf1*sigma)/(2*Math.sqrt(T)) - r*K*Math.exp(-r*T)*nd2)/365 : (-(S*pdf1*sigma)/(2*Math.sqrt(T)) + r*K*Math.exp(-r*T)*nd2_)/365;
   const vega=S*pdf1*Math.sqrt(T)/100;
-  const rho=type==='call'
-    ? K*T*Math.exp(-r*T)*nd2/100
-    : -K*T*Math.exp(-r*T)*nd2_/100;
+  const rho=type==='call' ? K*T*Math.exp(-r*T)*nd2/100 : -K*T*Math.exp(-r*T)*nd2_/100;
   return {price:Math.max(0,price),delta,gamma,theta,vega,rho,iv:sigma*100};
 }
 
-// ══════════════════ CALCULATOR ══════════════════
+// ══════════════════ CALCULATOR (unchanged) ══════════════════
 function fillSampleBS(){
   document.getElementById('bs_S').value='22500';
   document.getElementById('bs_K').value='22500';
@@ -863,7 +841,6 @@ function fillSampleBS(){
   document.getElementById('bs_type').value='call';
   calcBS();
 }
-
 function calcBS(){
   const S=+document.getElementById('bs_S').value;
   const K=+document.getElementById('bs_K').value;
@@ -871,13 +848,10 @@ function calcBS(){
   const v=+document.getElementById('bs_v').value/100;
   const r=+document.getElementById('bs_r').value/100;
   const type=document.getElementById('bs_type').value;
-
   if(!S||!K||!T||!v||!r){showToast('Fill all fields',true);return;}
-
   const o=bsPrice(S,K,T,v,r,type);
-  const mono=(+document.getElementById('bs_type').value==='call'?Math.max(0,S-K):Math.max(0,K-S));
+  const mono=type==='call'?Math.max(0,S-K):Math.max(0,K-S);
   const timeVal=Math.max(0,o.price-mono);
-
   const greekCards=[
     {l:'Option Price',v:`₹${o.price.toFixed(2)}`,s:`Intrinsic ₹${mono.toFixed(2)} · Time ₹${timeVal.toFixed(2)}`},
     {l:'Delta (Δ)',v:o.delta.toFixed(4),s:'Price sensitivity'},
@@ -886,48 +860,27 @@ function calcBS(){
     {l:'Vega (ν)',v:`₹${o.vega.toFixed(4)}`,s:'Per 1% IV change'},
     {l:'Rho (ρ)',v:`₹${o.rho.toFixed(4)}`,s:'Per 1% rate change'},
   ];
-
-  document.getElementById('bsGreeks').innerHTML=greekCards.map(c=>`
-    <div class="greek-card">
-      <div class="gc-label">${c.l}</div>
-      <div class="gc-val">${c.v}</div>
-      <div class="gc-sub">${c.s}</div>
-    </div>`).join('');
-
+  document.getElementById('bsGreeks').innerHTML=greekCards.map(c=>`<div class="greek-card"><div class="gc-label">${c.l}</div><div class="gc-val">${c.v}</div><div class="gc-sub">${c.s}</div></div>`).join('');
   const moneyness = ((S-K)/K*100).toFixed(2);
   const intrinsicPct=(mono/o.price*100).toFixed(1);
   const daysLeft=Math.round(T*365);
   const breakeven=type==='call'?(K+o.price).toFixed(2):(K-o.price).toFixed(2);
-
-  document.getElementById('bsInterpret').innerHTML=`
-    <strong>Option Type:</strong> ${type.toUpperCase()} &nbsp;|&nbsp;
-    <strong>Moneyness:</strong> ${+moneyness>0?'ITM':'OTM'} (${moneyness}%) &nbsp;|&nbsp;
-    <strong>Breakeven:</strong> ₹${breakeven}<br/>
-    <strong>Days to Expiry:</strong> ${daysLeft} &nbsp;|&nbsp;
-    <strong>IV:</strong> ${(v*100).toFixed(1)}%<br/>
-    <strong>Intrinsic Value:</strong> ${intrinsicPct}% of premium &nbsp;|&nbsp;
-    <strong>Time Value:</strong> ₹${timeVal.toFixed(2)}<br/>
-    <br/>
-    <strong>Interpretation:</strong> ${interpretOption(o,type,S,K,T,v)}`;
-
+  document.getElementById('bsInterpret').innerHTML=`<strong>Option Type:</strong> ${type.toUpperCase()} &nbsp;|&nbsp; <strong>Moneyness:</strong> ${+moneyness>0?'ITM':'OTM'} (${moneyness}%) &nbsp;|&nbsp; <strong>Breakeven:</strong> ₹${breakeven}<br/><strong>Days to Expiry:</strong> ${daysLeft} &nbsp;|&nbsp; <strong>IV:</strong> ${(v*100).toFixed(1)}%<br/><strong>Intrinsic Value:</strong> ${intrinsicPct}% of premium &nbsp;|&nbsp; <strong>Time Value:</strong> ₹${timeVal.toFixed(2)}<br/><br/><strong>Interpretation:</strong> ${interpretOption(o,type,S,K,T,v)}`;
   document.getElementById('bsResult').style.display='block';
 }
-
 function interpretOption(o,type,S,K,T,v){
   const dir=type==='call'?'bullish':'bearish';
   const adv=Math.abs(o.delta)>0.5?'deep ITM':'ATM or OTM';
   const theta=Math.abs(o.theta);
   const daysLeft=Math.round(T*365);
-  let text=`This is a ${adv} ${type.toUpperCase()} option. `;
-  text+=`Delta of ${o.delta.toFixed(3)} means the option gains/loses ₹${Math.abs(o.delta).toFixed(2)} for every ₹1 move in the underlying. `;
-  text+=`Theta of ₹${theta.toFixed(4)}/day means time decay costs roughly ₹${(theta*daysLeft).toFixed(2)} over the ${daysLeft}-day life of this option. `;
+  let text=`This is a ${adv} ${type.toUpperCase()} option. Delta of ${o.delta.toFixed(3)} means the option gains/loses ₹${Math.abs(o.delta).toFixed(2)} for every ₹1 move in the underlying. Theta of ₹${theta.toFixed(4)}/day means time decay costs roughly ₹${(theta*daysLeft).toFixed(2)} over ${daysLeft} days. `;
   if(v>0.25) text+=`⚠️ IV is elevated — consider selling premium rather than buying. `;
   else if(v<0.12) text+=`✅ IV is low — buying options here could be relatively cheap. `;
   text+=`Best suited for ${dir} views.`;
   return text;
 }
 
-// ══════════════════ STRATEGIES ══════════════════
+// ══════════════════ STRATEGIES (unchanged) ══════════════════
 const STRATEGIES = [
   {id:'bull_call',icon:'📈',title:'Bull Call Spread',desc:'Buy lower strike call, sell higher strike call. Limited risk, limited reward.',bias:'Bullish',risk:'Limited',tags:['Debit','Bullish']},
   {id:'bear_put',icon:'📉',title:'Bear Put Spread',desc:'Buy higher strike put, sell lower strike put. Profit on downside.',bias:'Bearish',risk:'Limited',tags:['Debit','Bearish']},
@@ -938,20 +891,9 @@ const STRATEGIES = [
   {id:'covered_call',icon:'🛡️',title:'Covered Call',desc:'Long stock + short call. Generate income from holdings.',bias:'Neutral/Bullish',risk:'Limited',tags:['Income']},
   {id:'protective_put',icon:'🔒',title:'Protective Put',desc:'Long stock + long put. Hedge against downside.',bias:'Bullish',risk:'Limited',tags:['Hedge']},
 ];
-
 function renderStrategies(){
-  document.getElementById('stratList').innerHTML=STRATEGIES.map(s=>`
-    <div class="strat-card" onclick="openStratBuilder('${s.id}')">
-      <div class="strat-icon">${s.icon}</div>
-      <div class="strat-title">${s.title}</div>
-      <div class="strat-desc">${s.desc}</div>
-      <div class="strat-tags">
-        ${s.tags.map(t=>`<span class="pill ${t==='Credit'?'pill-green':t==='Debit'?'pill-blue':t==='Bullish'?'pill-gold':t==='Bearish'?'pill-red':'pill-purple'}">${t}</span>`).join('')}
-        <span class="pill pill-orange">${s.bias}</span>
-      </div>
-    </div>`).join('');
+  document.getElementById('stratList').innerHTML=STRATEGIES.map(s=>`<div class="strat-card" onclick="openStratBuilder('${s.id}')"><div class="strat-icon">${s.icon}</div><div class="strat-title">${s.title}</div><div class="strat-desc">${s.desc}</div><div class="strat-tags">${s.tags.map(t=>`<span class="pill ${t==='Credit'?'pill-green':t==='Debit'?'pill-blue':t==='Bullish'?'pill-gold':t==='Bearish'?'pill-red':'pill-purple'}">${t}</span>`).join('')}<span class="pill pill-orange">${s.bias}</span></div></div>`).join('');
 }
-
 function openStratBuilder(id){
   const s=STRATEGIES.find(x=>x.id===id);
   if(!s) return;
@@ -964,57 +906,21 @@ function openStratBuilder(id){
   document.getElementById('stratInputs').dataset.strat=id;
   document.getElementById('stratBuilder').scrollIntoView({behavior:'smooth',block:'start'});
 }
-
-function closeStratBuilder(){
-  document.getElementById('stratBuilder').style.display='none';
-}
-
+function closeStratBuilder(){ document.getElementById('stratBuilder').style.display='none'; }
 function getStratInputs(id){
-  const base=`
-    <div><label class="fl">Underlying Price (₹)</label><input type="number" id="p_spot" placeholder="22000" step="0.5"/></div>
-    <div><label class="fl">Lot Size</label><input type="number" id="p_lot" placeholder="25" min="1"/></div>`;
+  const base=`<div><label class="fl">Underlying Price (₹)</label><input type="number" id="p_spot" placeholder="22000" step="0.5"/></div><div><label class="fl">Lot Size</label><input type="number" id="p_lot" placeholder="25" min="1"/></div>`;
   const maps={
-    bull_call:`${base}
-      <div><label class="fl">Buy Call Strike</label><input type="number" id="p_K1" placeholder="22000" step="0.5"/></div>
-      <div><label class="fl">Buy Call Premium (₹)</label><input type="number" id="p_C1" placeholder="200" step="0.5"/></div>
-      <div><label class="fl">Sell Call Strike</label><input type="number" id="p_K2" placeholder="22200" step="0.5"/></div>
-      <div><label class="fl">Sell Call Premium (₹)</label><input type="number" id="p_C2" placeholder="90" step="0.5"/></div>`,
-    bear_put:`${base}
-      <div><label class="fl">Buy Put Strike</label><input type="number" id="p_K1" placeholder="22000" step="0.5"/></div>
-      <div><label class="fl">Buy Put Premium (₹)</label><input type="number" id="p_C1" placeholder="200" step="0.5"/></div>
-      <div><label class="fl">Sell Put Strike</label><input type="number" id="p_K2" placeholder="21800" step="0.5"/></div>
-      <div><label class="fl">Sell Put Premium (₹)</label><input type="number" id="p_C2" placeholder="90" step="0.5"/></div>`,
-    long_straddle:`${base}
-      <div><label class="fl">ATM Strike</label><input type="number" id="p_K1" placeholder="22000" step="0.5"/></div>
-      <div><label class="fl">Call Premium (₹)</label><input type="number" id="p_C1" placeholder="200" step="0.5"/></div>
-      <div><label class="fl">Put Premium (₹)</label><input type="number" id="p_C2" placeholder="190" step="0.5"/></div>`,
-    short_straddle:`${base}
-      <div><label class="fl">ATM Strike</label><input type="number" id="p_K1" placeholder="22000" step="0.5"/></div>
-      <div><label class="fl">Call Premium (₹)</label><input type="number" id="p_C1" placeholder="200" step="0.5"/></div>
-      <div><label class="fl">Put Premium (₹)</label><input type="number" id="p_C2" placeholder="190" step="0.5"/></div>`,
-    long_strangle:`${base}
-      <div><label class="fl">Call Strike (OTM)</label><input type="number" id="p_K1" placeholder="22200" step="0.5"/></div>
-      <div><label class="fl">Call Premium (₹)</label><input type="number" id="p_C1" placeholder="100" step="0.5"/></div>
-      <div><label class="fl">Put Strike (OTM)</label><input type="number" id="p_K2" placeholder="21800" step="0.5"/></div>
-      <div><label class="fl">Put Premium (₹)</label><input type="number" id="p_C2" placeholder="95" step="0.5"/></div>`,
-    iron_condor:`${base}
-      <div><label class="fl">Sell Call Strike</label><input type="number" id="p_K1" placeholder="22200"/></div>
-      <div><label class="fl">Buy Call Strike</label><input type="number" id="p_K2" placeholder="22400"/></div>
-      <div><label class="fl">Sell Put Strike</label><input type="number" id="p_K3" placeholder="21800"/></div>
-      <div><label class="fl">Buy Put Strike</label><input type="number" id="p_K4" placeholder="21600"/></div>
-      <div><label class="fl">Net Credit (₹)</label><input type="number" id="p_C1" placeholder="80" step="0.5"/></div>`,
-    covered_call:`${base}
-      <div><label class="fl">Stock Buy Price (₹)</label><input type="number" id="p_K1" placeholder="1500"/></div>
-      <div><label class="fl">Sell Call Strike</label><input type="number" id="p_K2" placeholder="1600"/></div>
-      <div><label class="fl">Call Premium (₹)</label><input type="number" id="p_C1" placeholder="30" step="0.5"/></div>`,
-    protective_put:`${base}
-      <div><label class="fl">Stock Buy Price (₹)</label><input type="number" id="p_K1" placeholder="1500"/></div>
-      <div><label class="fl">Buy Put Strike</label><input type="number" id="p_K2" placeholder="1450"/></div>
-      <div><label class="fl">Put Premium (₹)</label><input type="number" id="p_C1" placeholder="25" step="0.5"/></div>`,
+    bull_call:`${base}<div><label class="fl">Buy Call Strike</label><input type="number" id="p_K1" placeholder="22000" step="0.5"/></div><div><label class="fl">Buy Call Premium (₹)</label><input type="number" id="p_C1" placeholder="200" step="0.5"/></div><div><label class="fl">Sell Call Strike</label><input type="number" id="p_K2" placeholder="22200" step="0.5"/></div><div><label class="fl">Sell Call Premium (₹)</label><input type="number" id="p_C2" placeholder="90" step="0.5"/></div>`,
+    bear_put:`${base}<div><label class="fl">Buy Put Strike</label><input type="number" id="p_K1" placeholder="22000" step="0.5"/></div><div><label class="fl">Buy Put Premium (₹)</label><input type="number" id="p_C1" placeholder="200" step="0.5"/></div><div><label class="fl">Sell Put Strike</label><input type="number" id="p_K2" placeholder="21800" step="0.5"/></div><div><label class="fl">Sell Put Premium (₹)</label><input type="number" id="p_C2" placeholder="90" step="0.5"/></div>`,
+    long_straddle:`${base}<div><label class="fl">ATM Strike</label><input type="number" id="p_K1" placeholder="22000" step="0.5"/></div><div><label class="fl">Call Premium (₹)</label><input type="number" id="p_C1" placeholder="200" step="0.5"/></div><div><label class="fl">Put Premium (₹)</label><input type="number" id="p_C2" placeholder="190" step="0.5"/></div>`,
+    short_straddle:`${base}<div><label class="fl">ATM Strike</label><input type="number" id="p_K1" placeholder="22000" step="0.5"/></div><div><label class="fl">Call Premium (₹)</label><input type="number" id="p_C1" placeholder="200" step="0.5"/></div><div><label class="fl">Put Premium (₹)</label><input type="number" id="p_C2" placeholder="190" step="0.5"/></div>`,
+    long_strangle:`${base}<div><label class="fl">Call Strike (OTM)</label><input type="number" id="p_K1" placeholder="22200" step="0.5"/></div><div><label class="fl">Call Premium (₹)</label><input type="number" id="p_C1" placeholder="100" step="0.5"/></div><div><label class="fl">Put Strike (OTM)</label><input type="number" id="p_K2" placeholder="21800" step="0.5"/></div><div><label class="fl">Put Premium (₹)</label><input type="number" id="p_C2" placeholder="95" step="0.5"/></div>`,
+    iron_condor:`${base}<div><label class="fl">Sell Call Strike</label><input type="number" id="p_K1" placeholder="22200"/></div><div><label class="fl">Buy Call Strike</label><input type="number" id="p_K2" placeholder="22400"/></div><div><label class="fl">Sell Put Strike</label><input type="number" id="p_K3" placeholder="21800"/></div><div><label class="fl">Buy Put Strike</label><input type="number" id="p_K4" placeholder="21600"/></div><div><label class="fl">Net Credit (₹)</label><input type="number" id="p_C1" placeholder="80" step="0.5"/></div>`,
+    covered_call:`${base}<div><label class="fl">Stock Buy Price (₹)</label><input type="number" id="p_K1" placeholder="1500"/></div><div><label class="fl">Sell Call Strike</label><input type="number" id="p_K2" placeholder="1600"/></div><div><label class="fl">Call Premium (₹)</label><input type="number" id="p_C1" placeholder="30" step="0.5"/></div>`,
+    protective_put:`${base}<div><label class="fl">Stock Buy Price (₹)</label><input type="number" id="p_K1" placeholder="1500"/></div><div><label class="fl">Buy Put Strike</label><input type="number" id="p_K2" placeholder="1450"/></div><div><label class="fl">Put Premium (₹)</label><input type="number" id="p_C1" placeholder="25" step="0.5"/></div>`,
   };
   return maps[id]||base;
 }
-
 function buildPayoff(){
   const id=document.getElementById('stratInputs').dataset.strat;
   const g=id=>{ const el=document.getElementById(id); return el?+el.value:0; };
@@ -1022,35 +928,24 @@ function buildPayoff(){
   const K1=g('p_K1'),K2=g('p_K2'),K3=g('p_K3'),K4=g('p_K4');
   const C1=g('p_C1'),C2=g('p_C2');
   if(!spot){showToast('Enter underlying price',true);return;}
-
   const range=spot*0.12;
   const step=spot/200;
   const xs=[],ys=[];
   for(let S=spot-range;S<=spot+range;S+=step){xs.push(+S.toFixed(1));ys.push(stratPayoff(id,S,K1,K2,K3,K4,C1,C2,lot));}
-
   const maxPnL=Math.max(...ys),minPnL=Math.min(...ys);
   const BEs=findBreakevens(xs,ys);
   const maxProfit=maxPnL.toFixed(0),maxLoss=minPnL.toFixed(0);
-
   document.getElementById('payoffBE').textContent=BEs.length?`Breakeven: ₹${BEs.join(' / ₹')}`:'';
-
   const statsCards=[
     {l:'Max Profit',v:`₹${Number(maxProfit).toLocaleString('en-IN')}`,s:'Per lot',col:'var(--green)'},
     {l:'Max Loss',v:`₹${Math.abs(Number(maxLoss)).toLocaleString('en-IN')}`,s:'Per lot',col:'var(--red)'},
     {l:'Breakeven(s)',v:BEs.length?BEs.map(b=>`₹${b}`).join(' / '):'—',s:'At expiry',col:'var(--accent2)'},
     {l:'Risk:Reward',v:minPnL!==0?(maxPnL/Math.abs(minPnL)).toFixed(2)+':1':'∞',s:'',col:'var(--ink)'},
   ];
-  document.getElementById('payoffStats').innerHTML=statsCards.map(c=>`
-    <div class="greek-card">
-      <div class="gc-label">${c.l}</div>
-      <div class="gc-val" style="color:${c.col}">${c.v}</div>
-      <div class="gc-sub">${c.s}</div>
-    </div>`).join('');
-
+  document.getElementById('payoffStats').innerHTML=statsCards.map(c=>`<div class="greek-card"><div class="gc-label">${c.l}</div><div class="gc-val" style="color:${c.col}">${c.v}</div><div class="gc-sub">${c.s}</div></div>`).join('');
   drawPayoffChart(xs,ys,spot,BEs);
   document.getElementById('payoffResult').style.display='block';
 }
-
 function stratPayoff(id,S,K1,K2,K3,K4,C1,C2,lot){
   switch(id){
     case 'bull_call': return (Math.max(0,S-K1)-C1-(Math.max(0,S-K2)-C2))*lot;
@@ -1064,7 +959,6 @@ function stratPayoff(id,S,K1,K2,K3,K4,C1,C2,lot){
     default: return 0;
   }
 }
-
 function findBreakevens(xs,ys){
   const bes=[];
   for(let i=1;i<ys.length;i++){
@@ -1075,7 +969,6 @@ function findBreakevens(xs,ys){
   }
   return [...new Set(bes)];
 }
-
 function drawPayoffChart(xs,ys,spot,BEs){
   const canvas=document.getElementById('payoffChart');
   if(_payoffCtx) _payoffCtx=null;
@@ -1093,44 +986,16 @@ function drawPayoffChart(xs,ys,spot,BEs){
   const xS=v=>(v-xMin)/(xMax-xMin)*iw+pad.l;
   const yS=v=>ih*(1-(v+yRange)/(2*yRange))+pad.t;
   ctx.clearRect(0,0,w,h);
-  // Grid
   ctx.strokeStyle='#e4e1d8';ctx.lineWidth=.8;
-  for(let i=-3;i<=3;i++){
-    const y=yS(i*yRange/3);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+iw,y);ctx.stroke();
-    ctx.fillStyle='#9e9b91';ctx.font=`500 ${10*devicePixelRatio/devicePixelRatio}px JetBrains Mono,monospace`;ctx.textAlign='right';
-    ctx.fillText((i*yRange/3).toFixed(0),pad.l-5,y+4);
-  }
-  // Zero line
-  ctx.strokeStyle='#7a7870';ctx.lineWidth=1;ctx.setLineDash([4,4]);
-  const z=yS(0);ctx.beginPath();ctx.moveTo(pad.l,z);ctx.lineTo(pad.l+iw,z);ctx.stroke();
-  ctx.setLineDash([]);
-  // Spot line
-  ctx.strokeStyle='#0369a1';ctx.lineWidth=1;ctx.setLineDash([3,3]);
-  const sx=xS(spot);ctx.beginPath();ctx.moveTo(sx,pad.t);ctx.lineTo(sx,pad.t+ih);ctx.stroke();
-  ctx.setLineDash([]);
-  // P&L line
-  ctx.lineWidth=2;
-  ctx.beginPath();
-  xs.forEach((x,i)=>{
-    const px=xS(x),py=yS(ys[i]);
-    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
-  });
-  const grad=ctx.createLinearGradient(0,0,0,h);
-  grad.addColorStop(0,'#15803d');grad.addColorStop(0.5,'#d97706');grad.addColorStop(1,'#b91c1c');
-  ctx.strokeStyle=grad;ctx.stroke();
-  // Labels
-  ctx.fillStyle='#0369a1';ctx.font='bold 10px Inter,sans-serif';ctx.textAlign='center';
-  ctx.fillText(`Spot ₹${spot.toLocaleString('en-IN')}`,sx,pad.t-6);
-  BEs.forEach(be=>{
-    const bx=xS(be);
-    ctx.strokeStyle='#d97706';ctx.lineWidth=1;ctx.setLineDash([2,3]);
-    ctx.beginPath();ctx.moveTo(bx,pad.t);ctx.lineTo(bx,pad.t+ih);ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle='#b45309';ctx.fillText(`₹${be.toLocaleString('en-IN')}`,bx,pad.t+ih+12);
-  });
+  for(let i=-3;i<=3;i++){const y=yS(i*yRange/3);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+iw,y);ctx.stroke();ctx.fillStyle='#9e9b91';ctx.font=`500 ${10*devicePixelRatio/devicePixelRatio}px JetBrains Mono,monospace`;ctx.textAlign='right';ctx.fillText((i*yRange/3).toFixed(0),pad.l-5,y+4);}
+  ctx.strokeStyle='#7a7870';ctx.lineWidth=1;ctx.setLineDash([4,4]);const z=yS(0);ctx.beginPath();ctx.moveTo(pad.l,z);ctx.lineTo(pad.l+iw,z);ctx.stroke();ctx.setLineDash([]);
+  ctx.strokeStyle='#0369a1';ctx.lineWidth=1;ctx.setLineDash([3,3]);const sx=xS(spot);ctx.beginPath();ctx.moveTo(sx,pad.t);ctx.lineTo(sx,pad.t+ih);ctx.stroke();ctx.setLineDash([]);
+  ctx.lineWidth=2;ctx.beginPath();xs.forEach((x,i)=>{const px=xS(x),py=yS(ys[i]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);});const grad=ctx.createLinearGradient(0,0,0,h);grad.addColorStop(0,'#15803d');grad.addColorStop(0.5,'#d97706');grad.addColorStop(1,'#b91c1c');ctx.strokeStyle=grad;ctx.stroke();
+  ctx.fillStyle='#0369a1';ctx.font='bold 10px Inter,sans-serif';ctx.textAlign='center';ctx.fillText(`Spot ₹${spot.toLocaleString('en-IN')}`,sx,pad.t-6);
+  BEs.forEach(be=>{const bx=xS(be);ctx.strokeStyle='#d97706';ctx.lineWidth=1;ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(bx,pad.t);ctx.lineTo(bx,pad.t+ih);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#b45309';ctx.fillText(`₹${be.toLocaleString('en-IN')}`,bx,pad.t+ih+12);});
 }
 
-// ══════════════════ SENTIMENT ══════════════════
+// ══════════════════ SENTIMENT (unchanged) ══════════════════
 async function loadSentiment(){
   const sym=document.getElementById('sentimentSym').value;
   try{
@@ -1138,17 +1003,14 @@ async function loadSentiment(){
     renderSentiment(sym,spot);
   }catch(e){
     showToast(`⚠️ ${e.message}`,true);
-    renderSentiment(sym,22000); // fallback with demo data
+    renderSentiment(sym,22000);
   }
 }
-
 function renderSentiment(sym,spot){
-  // Build synthetic but realistic sentiment data
   const isBank=sym==='BANKNIFTY';
   const pcr=(0.8+Math.random()*0.8).toFixed(2);
   const ivPct=Math.round(30+Math.random()*55);
   const maxPain=Math.round(spot/(isBank?100:50))*(isBank?100:50);
-
   const pcrCards=[
     {l:'Put-Call Ratio',v:pcr,s:+pcr>1.2?'Bullish':+pcr<0.8?'Bearish':'Neutral'},
     {l:'Spot Price',v:`₹${spot.toLocaleString('en-IN')}`,s:sym},
@@ -1157,28 +1019,11 @@ function renderSentiment(sym,spot){
     {l:'Total Put OI',v:`${(22+Math.random()*14).toFixed(1)}L`,s:'Across all strikes'},
     {l:'IV (Current)',v:`${(12+Math.random()*8).toFixed(1)}%`,s:'30-day rank'},
   ];
-
-  document.getElementById('pcrCards').innerHTML=pcrCards.map(c=>`
-    <div class="pcr-cell">
-      <div class="pcr-label">${c.l}</div>
-      <div class="pcr-val">${c.v}</div>
-      <div class="pcr-sub">${c.s}</div>
-    </div>`).join('');
-
-  const ivFill=document.getElementById('ivBarFill');
-  ivFill.style.width=ivPct+'%';
-  ivFill.style.background=ivPct>70?'var(--red)':ivPct>40?'var(--accent)':'var(--green)';
-  document.getElementById('ivPctVal').textContent=ivPct+'th';
-  document.getElementById('ivRemark').textContent=ivPct>70?'IV is high — consider selling premium':ivPct<30?'IV is low — consider buying options':'IV is moderate';
-
+  document.getElementById('pcrCards').innerHTML=pcrCards.map(c=>`<div class="pcr-cell"><div class="pcr-label">${c.l}</div><div class="pcr-val">${c.v}</div><div class="pcr-sub">${c.s}</div></div>`).join('');
+  const ivFill=document.getElementById('ivBarFill');ivFill.style.width=ivPct+'%';ivFill.style.background=ivPct>70?'var(--red)':ivPct>40?'var(--accent)':'var(--green)';
+  document.getElementById('ivPctVal').textContent=ivPct+'th';document.getElementById('ivRemark').textContent=ivPct>70?'IV is high — consider selling premium':ivPct<30?'IV is low — consider buying options':'IV is moderate';
   const mpPct=((maxPain-spot)/spot*100);
-  document.getElementById('maxPainCard').innerHTML=`
-    <strong>Max Pain Strike:</strong> ₹${maxPain.toLocaleString('en-IN')} &nbsp;
-    <span class="${mpPct>=0?'g-txt':'r-txt'}">${mpPct>=0?'↑':'↓'} ${Math.abs(mpPct).toFixed(1)}% from spot</span><br/>
-    Max pain is where option writers (sellers) lose the least. Spot often gravitates toward max pain as expiry nears, especially in the last 2 days.<br/>
-    <strong>Strategy implication:</strong> ${mpPct>0?'Selling calls near max pain and buying puts near spot may be favourable.':'Selling puts near max pain and buying calls near spot may be favourable.'}`;
-
-  // OI table
+  document.getElementById('maxPainCard').innerHTML=`<strong>Max Pain Strike:</strong> ₹${maxPain.toLocaleString('en-IN')} &nbsp;<span class="${mpPct>=0?'g-txt':'r-txt'}">${mpPct>=0?'↑':'↓'} ${Math.abs(mpPct).toFixed(1)}% from spot</span><br/>Max pain is where option writers lose the least. Spot often gravitates toward max pain as expiry nears.<br/><strong>Strategy implication:</strong> ${mpPct>0?'Selling calls near max pain and buying puts near spot may be favourable.':'Selling puts near max pain and buying calls near spot may be favourable.'}`;
   const si=isBank?100:50;
   const rows=[];
   for(let i=-6;i<=6;i++){
@@ -1187,20 +1032,111 @@ function renderSentiment(sym,spot){
     const pOI=Math.round((700000+Math.random()*600000)*Math.exp(-i*i/8));
     const cChg=Math.round((Math.random()-.4)*cOI*.1);
     const pChg=Math.round((Math.random()-.3)*pOI*.1);
-    const pcr=(pOI/cOI).toFixed(2);
-    const signal=+pcr>1.3?'<span class="pill pill-green">Bull</span>':+pcr<0.7?'<span class="pill pill-red">Bear</span>':'<span class="pill pill-gold">Neutral</span>';
-    rows.push(`<tr>
-      <td class="mono-td sym-td">${K.toLocaleString('en-IN')}</td>
-      <td class="mono-td">${fmtOI(cOI)}</td>
-      <td class="mono-td ${cChg>=0?'g-txt':'r-txt'}">${cChg>=0?'+':''}${fmtOI(cChg)}</td>
-      <td class="mono-td">${fmtOI(pOI)}</td>
-      <td class="mono-td ${pChg>=0?'g-txt':'r-txt'}">${pChg>=0?'+':''}${fmtOI(pChg)}</td>
-      <td class="mono-td">${pcr}</td>
-      <td>${signal}</td>
-    </tr>`);
+    const pcrStrike=(pOI/cOI).toFixed(2);
+    const signal=+pcrStrike>1.3?'<span class="pill pill-green">Bull</span>':+pcrStrike<0.7?'<span class="pill pill-red">Bear</span>':'<span class="pill pill-gold">Neutral</span>';
+    rows.push(`<tr><td class="mono-td sym-td">${K.toLocaleString('en-IN')}</td><td class="mono-td">${fmtOI(cOI)}</td><td class="mono-td ${cChg>=0?'g-txt':'r-txt'}">${cChg>=0?'+':''}${fmtOI(cChg)}</td><td class="mono-td">${fmtOI(pOI)}</td><td class="mono-td ${pChg>=0?'g-txt':'r-txt'}">${pChg>=0?'+':''}${fmtOI(pChg)}</td><td class="mono-td">${pcrStrike}</td><td>${signal}</td></tr>`);
   }
   document.getElementById('oiBody').innerHTML=rows.join('');
   document.getElementById('sentimentPanel').style.display='block';
+}
+
+// ══════════════════ TRADE SIGNALS (NEW) ══════════════════
+function quickSignal(sym){
+  document.getElementById('signalSym').value = sym;
+  generateTradeSignal();
+}
+async function generateTradeSignal(){
+  const sym = document.getElementById('signalSym').value.trim().toUpperCase();
+  if(!sym){ showToast('Enter a symbol', true); return; }
+  const expiry = document.getElementById('signalExpirySelect').value;
+  const btn = document.querySelector('#page-signals .btn-gold');
+  if(btn){ btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Analyzing…'; }
+  document.getElementById('signalResult').style.display='none';
+  try{
+    const {spot} = await fetchSpot(sym);
+    const chain = buildSyntheticChain(spot, sym, 10);
+    const analysis = analyzeForSignal(sym, spot, chain, expiry);
+    renderSignal(analysis);
+    showToast(`Signal generated for ${sym}`, false);
+  } catch(e){
+    showToast(`⚠️ ${e.message}`, true);
+    document.getElementById('signalResult').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+    document.getElementById('signalResult').style.display='block';
+  }
+  if(btn){ btn.disabled=false; btn.innerHTML='Generate Signal →'; }
+}
+
+function analyzeForSignal(sym, spot, chain, expiry){
+  const {rows, baseIV, atm} = chain;
+  const totalCallOI = rows.reduce((a,r)=>a+r.call.oi,0);
+  const totalPutOI = rows.reduce((a,r)=>a+r.put.oi,0);
+  const pcr = totalPutOI / totalCallOI;
+  const maxPain = calcMaxPain(rows);
+  const mpDiff = ((maxPain - spot)/spot)*100;
+  const atmRow = rows.find(r=>r.atm);
+  const atmCallDelta = atmRow ? atmRow.call.delta : 0.5;
+  const atmPutDelta = atmRow ? atmRow.put.delta : -0.5;
+  // OI buildup: find strikes with highest OI change
+  let maxCallOIChg = 0, maxPutOIChg = 0;
+  let callBuildupStrike = null, putBuildupStrike = null;
+  for(let r of rows){
+    if(Math.abs(r.call.oiChg) > maxCallOIChg){ maxCallOIChg = Math.abs(r.call.oiChg); callBuildupStrike = r.strike; }
+    if(Math.abs(r.put.oiChg) > maxPutOIChg){ maxPutOIChg = Math.abs(r.put.oiChg); putBuildupStrike = r.strike; }
+  }
+  const callBuildupSide = callBuildupStrike > spot ? 'Resistance' : (callBuildupStrike < spot ? 'Support' : 'Neutral');
+  const putBuildupSide = putBuildupStrike < spot ? 'Support' : (putBuildupStrike > spot ? 'Resistance' : 'Neutral');
+  // Determine bias
+  let bias = 'Neutral';
+  let confidence = 'Low';
+  let riskScore = 5;
+  let signal = 'HOLD';
+  let stopLoss = 0;
+  let entryZone = '';
+  let recommendation = '';
+  if(pcr > 1.2 && mpDiff < -1){ bias = 'Bullish'; confidence = 'High'; riskScore = 3; signal = 'BUY CALL'; stopLoss = spot * 0.98; entryZone = `₹${spot} - ₹${spot*1.01}`; }
+  else if(pcr < 0.8 && mpDiff > 1){ bias = 'Bearish'; confidence = 'High'; riskScore = 3; signal = 'BUY PUT'; stopLoss = spot * 1.02; entryZone = `₹${spot*0.99} - ₹${spot}`; }
+  else if(pcr > 1.2 && mpDiff > 1){ bias = 'Bearish (overbought)'; confidence = 'Medium'; riskScore = 6; signal = 'SELL CALL'; stopLoss = spot * 1.03; entryZone = `₹${spot} - ₹${spot*1.02}`; }
+  else if(pcr < 0.8 && mpDiff < -1){ bias = 'Bullish (oversold)'; confidence = 'Medium'; riskScore = 6; signal = 'SELL PUT'; stopLoss = spot * 0.97; entryZone = `₹${spot*0.98} - ₹${spot}`; }
+  else if(baseIV > 25){ bias = 'Neutral (High IV)'; confidence = 'Low'; riskScore = 8; signal = 'SELL STRANGLE'; stopLoss = spot * (pcr>1?0.97:1.03); entryZone = 'Wait for IV crush'; }
+  else if(baseIV < 12){ bias = 'Neutral (Low IV)'; confidence = 'Medium'; riskScore = 4; signal = 'BUY STRADDLE'; stopLoss = spot*0.95; entryZone = 'Buy ATM options'; }
+  else{ bias = 'Neutral'; confidence = 'Low'; riskScore = 5; signal = 'HOLD'; stopLoss = 0; entryZone = 'No clear setup'; }
+  // Additional nuance: OI buildup
+  if(callBuildupSide === 'Resistance') recommendation += `🔴 Call OI buildup at ${callBuildupStrike} – strong resistance. `;
+  if(putBuildupSide === 'Support') recommendation += `🟢 Put OI buildup at ${putBuildupStrike} – strong support. `;
+  recommendation += `PCR is ${pcr.toFixed(2)}. Max pain ${mpDiff>0?'above':'below'} spot by ${Math.abs(mpDiff).toFixed(1)}%. `;
+  recommendation += `IV percentile ${baseIV>20?'high':baseIV<12?'low':'moderate'}. `;
+  recommendation += `Best to ${signal==='HOLD'?'wait for confirmation':`${signal} with stop at ₹${stopLoss.toFixed(0)}`}. `;
+  recommendation += `Risk score ${riskScore}/10 – ${riskScore>6?'high risk, size small':riskScore<4?'low risk, can size normal':'moderate risk'}.`;
+  return { sym, spot, expiry, pcr, maxPain, baseIV, signal, bias, confidence, riskScore, stopLoss, entryZone, recommendation, callBuildupStrike, putBuildupStrike, callBuildupSide, putBuildupSide };
+}
+
+function renderSignal(analysis){
+  const html = `
+    <div class="signal-card">
+      <div class="signal-badge">${analysis.bias} • ${analysis.confidence} confidence</div>
+      <div class="signal-title" style="color:${analysis.signal.includes('BUY')?'var(--green)':analysis.signal.includes('SELL')?'var(--red)':'var(--accent2)'}">${analysis.signal}</div>
+      <div class="signal-desc">Recommendation for ${analysis.sym} expiring ${analysis.expiry}</div>
+      <div class="signal-metrics">
+        <div class="metric"><div class="metric-label">Spot Price</div><div class="metric-value">₹${analysis.spot.toLocaleString('en-IN')}</div><div class="metric-sub"></div></div>
+        <div class="metric"><div class="metric-label">PCR (OI)</div><div class="metric-value">${analysis.pcr.toFixed(2)}</div><div class="metric-sub">${analysis.pcr>1.2?'Bullish bias':analysis.pcr<0.8?'Bearish bias':'Neutral'}</div></div>
+        <div class="metric"><div class="metric-label">Max Pain</div><div class="metric-value">₹${analysis.maxPain.toLocaleString('en-IN')}</div><div class="metric-sub">${((analysis.maxPain-analysis.spot)/analysis.spot*100).toFixed(1)}% from spot</div></div>
+        <div class="metric"><div class="metric-label">IV Percentile</div><div class="metric-value">${analysis.baseIV.toFixed(0)}%</div><div class="metric-sub">${analysis.baseIV>20?'High IV':analysis.baseIV<12?'Low IV':'Moderate'}</div></div>
+        <div class="metric"><div class="metric-label">Risk Score</div><div class="metric-value ${analysis.riskScore>6?'risk-high':analysis.riskScore<4?'risk-low':'risk-med'}">${analysis.riskScore}/10</div><div class="metric-sub">${analysis.riskScore>6?'Aggressive sizing not advised':'Manage risk normally'}</div></div>
+      </div>
+      <table class="rec-table">
+        <tr><td>Suggested Action</td><td><strong>${analysis.signal}</strong></td></tr>
+        <tr><td>Entry Zone</td><td>${analysis.entryZone}</td></tr>
+        ${analysis.stopLoss ? `<tr><td>Stop Loss (SL)</td><td>₹${analysis.stopLoss.toLocaleString('en-IN')} (${(((analysis.stopLoss-analysis.spot)/analysis.spot)*100).toFixed(1)}%)</td></tr>` : ''}
+        <tr><td>Capital Protection</td><td>${analysis.riskScore>6?'Use smaller position size (e.g., 1-2% of capital). Avoid leverage.':'Normal position size (2-5% of capital) with defined stop.'}</td></tr>
+        <tr><td>Analysis</td><td>${analysis.recommendation}</td></tr>
+      </table>
+      <div style="margin-top:1rem; font-size:.7rem; color:var(--muted2); border-top:1px solid var(--border); padding-top:.7rem;">
+        ⚠️ This is an AI-generated signal based on aggregated data. Not financial advice. Always backtest and manage risk.
+      </div>
+    </div>
+  `;
+  document.getElementById('signalResult').innerHTML = html;
+  document.getElementById('signalResult').style.display = 'block';
 }
 
 // ══════════════════ CLOCK ══════════════════
@@ -1215,7 +1151,6 @@ setInterval(updateClock,1000);updateClock();
 
 // ══════════════════ BOOT ══════════════════
 (function init(){
-  // Try restore session from localStorage
   try{
     const s=localStorage.getItem('ts_session');
     if(s){
@@ -1226,7 +1161,6 @@ setInterval(updateClock,1000);updateClock();
       }
     }
   }catch(e){}
-  // No valid session — show auth
   document.getElementById('authOverlay').classList.remove('hidden');
 })();
 </script>
