@@ -27,7 +27,7 @@
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.6}
 
-/* ══════ AUTH OVERLAY (identical to index.html) ══════ */
+/* ══════ AUTH OVERLAY ══════ */
 #authOverlay{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem}
 #authOverlay.hidden{display:none}
 .auth-box{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:400px;box-shadow:var(--shadow-lg)}
@@ -446,7 +446,8 @@ footer{text-align:center;padding:1.75rem 1rem;font-size:.69rem;color:var(--muted
           <div class="tbl-wrap">
             <table class="std">
               <thead><tr><th>Strike</th><th>Call OI</th><th>Call OI Chg</th><th>Put OI</th><th>Put OI Chg</th><th>PCR</th><th>Signal</th></tr></thead>
-              <tbody id="oiBody"><tr><td colspan="7"><div class="empty-state">Load sentiment data above.</div></td></tr></tbody>
+              <tbody id="oiBody"><tr><td colspan="7"><div class="empty-state">Load sentiment data above.</div></td></tr>
+              </tbody>
             </table>
           </div>
         </div>
@@ -565,7 +566,8 @@ function showToast(msg,isErr=false){
   _toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
 }
 
-// ══════════════════ YAHOO PROXY — SPOT PRICE ══════════════════
+// ══════════════════ YAHOO PROXY — SPOT PRICE (FIXED FOR FINNIFTY/MIDCPNIFTY) ══════════════════
+async function fetchSpot(sym){
   const yahooMap = {
     'NIFTY': '%5ENSEI',
     'BANKNIFTY': '%5ENSEBANK',
@@ -577,7 +579,17 @@ function showToast(msg,isErr=false){
   const isIndex = NSE_INDICES.includes(sym.toUpperCase());
   const yf = isIndex ? (yahooMap[sym] || '%5ENSEI') : `${sym}.NS`;
   const r = await fetch(`/api/yahoo?symbol=${yf}`);
-  // ... rest of the function unchanged
+  if(!r.ok) throw new Error(`Could not fetch ${sym}`);
+  const d = await r.json();
+  const res = d.chart?.result?.[0];
+  if(!res) throw new Error('No data for '+sym);
+  const q = res.indicators.quote[0];
+  const last = q.close.filter(Boolean);
+  return {
+    spot: parseFloat(last[last.length-1].toFixed(2)),
+    meta: res.meta,
+    symbol: sym.toUpperCase()
+  };
 }
 
 // ══════════════════ EXPIRY DATES ══════════════════
@@ -769,14 +781,14 @@ function renderChainTable(chain, spot){
       <td class="${pf}"><strong>₹${r.put.price.toFixed(2)}</strong></td>
       <td class="${pf}">${r.put.delta.toFixed(3)}</td>
       <td class="${pf}">${r.put.theta.toFixed(2)}</td>
-    </tr>`;
+    <tr>`;
   }).join('');
 
   document.getElementById('chainTableWrap').innerHTML=`
     <div style="margin-bottom:.5rem;font-size:.7rem;color:var(--muted2)">
       🟡 ATM row &nbsp;·&nbsp; <span style="color:var(--green)">Green = ITM Call</span> &nbsp;·&nbsp; <span style="color:var(--red)">Red = ITM Put</span> &nbsp;·&nbsp; 🔵 High OI
     </div>
-    <div class="chain-wrap">${hdr}${tbody}</tbody></table></div>`;
+    <div class="chain-wrap">${hdr}${tbody}</tbody></div>`;
 }
 
 function fmtOI(n){
