@@ -691,23 +691,25 @@ footer{text-align:center;padding:1.75rem 1rem;font-size:.69rem;color:var(--muted
 // ══════════════════════════════════════════════════════
 // CONFIG — update these for your deployment
 // ══════════════════════════════════════════════════════
-const CONFIG = {
-  NSE_PROXY: 'https://nse-proxy.YOUR-WORKER.workers.dev',
-  SUPABASE_URL: 'https://YOUR-PROJECT.supabase.co',
-  SUPABASE_ANON_KEY: 'YOUR-ANON-KEY',
-  // Your Cloudflare Worker should also forward Yahoo Finance OHLC for the Signal Engine:
-  // GET /yahoo/chart/{ticker}?interval=1d&range=6mo  → proxies https://query1.finance.yahoo.com/v8/finance/chart/{ticker}
-  YAHOO_PROXY: 'https://nse-proxy.YOUR-WORKER.workers.dev/yahoo/chart',
-};
+// No CONFIG, no process.env, no supabase client
 
-const _sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+// Helper to call your Supabase proxy
+async function querySupabase(path, options = {}) {
+  const res = await fetch(`/api/supabase/rest/v1/${path}`, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options
+  });
+  return res.json();
+}
 
-let SESSION = null;
-let _sessionExpiredShown = false;
-const NSE_INDICES = ['NIFTY','BANKNIFTY','FINNIFTY','MIDCPNIFTY','NIFTYIT','SENSEX'];
-let _currentChainData = null;
-let _currentSpot = null;
-let _seCharts = {};
+// Example usage: fetch trade journal
+const data = await querySupabase(`trade_journal?select=*&user_id=eq.${userId}&order=created_at.desc&limit=100`);
+
+// For NSE proxy:
+const chain = await fetch('/api/nse/option-chain?symbol=NIFTY').then(r => r.json());
+
+// For Yahoo proxy:
+const chart = await fetch('/api/yahoo/chart/RELIANCE?interval=1d&range=6mo').then(r => r.json());
 
 // ══════════════════════════════════════════════════════
 // AUTH
