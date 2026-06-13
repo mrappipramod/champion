@@ -1,6 +1,20 @@
 // functions/api/supabase.js
 export async function onRequest(context) {
   const { request, env } = context;
+  
+  // 1️⃣ Handle preflight OPTIONS request
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, apikey, Authorization',
+      }
+    });
+  }
+  
+  // 2️⃣ Proxy logic for all other methods
   const url = new URL(request.url);
   
   // Strip the leading '/api/supabase' to get the actual Supabase REST path
