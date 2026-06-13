@@ -30,6 +30,8 @@
     /* ════════ AUTH OVERLAY ════════ */
     #authOverlay{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem}
     #authOverlay.hidden{display:none}
+    .auth-tab-link{background:none;border:none;font-size:.75rem;color:var(--accent2);cursor:pointer;font-family:var(--sans);text-decoration:underline;padding:0}
+    .auth-tab-link:hover{color:var(--ink)}
     .auth-box{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:400px;box-shadow:var(--shadow-lg)}
     .auth-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem;margin-bottom:1.75rem}
     .auth-candles{display:flex;align-items:flex-end;gap:3px;height:22px}
@@ -312,6 +314,7 @@
     <div class="auth-tab-row">
       <button class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
       <button class="auth-tab" onclick="switchAuthTab('signup')">Create Account</button>
+      <button class="auth-tab" onclick="switchAuthTab('forgot')">Reset</button>
     </div>
     <div id="authMsg" class="auth-msg"></div>
     <div id="loginForm">
@@ -324,8 +327,37 @@
         <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"/>
       </div>
       <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem" id="loginBtn" onclick="doLogin()">Sign In</button>
+      <div style="text-align:center;margin-top:.85rem">
+        <button class="auth-tab-link" onclick="switchAuthTab('forgot')">Forgot password?</button>
+      </div>
     </div>
-    <div id="signupForm" style="display:none">
+    <!-- ── Forgot password form ── -->
+    <div id="forgotForm" style="display:none">
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
+        Enter your email and we'll send a password reset link.
+      </p>
+      <div style="margin-bottom:1.4rem">
+        <label class="fl">Email</label>
+        <input type="email" id="forgotEmail" placeholder="you@example.com" autocomplete="email"/>
+      </div>
+      <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem" id="forgotBtn" onclick="doForgotPassword()">Send Reset Link</button>
+    </div>
+
+    <!-- ── Set new password form (shown after clicking email link) ── -->
+    <div id="resetForm" style="display:none">
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
+        Choose a new password for your account.
+      </p>
+      <div style="margin-bottom:1rem">
+        <label class="fl">New Password</label>
+        <input type="password" id="newPass1" placeholder="Min 6 characters" autocomplete="new-password"/>
+      </div>
+      <div style="margin-bottom:1.4rem">
+        <label class="fl">Confirm Password</label>
+        <input type="password" id="newPass2" placeholder="Repeat password" autocomplete="new-password"/>
+      </div>
+      <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem" id="resetBtn" onclick="doResetPassword()">Set New Password</button>
+    </div>
       <div style="margin-bottom:1rem">
         <label class="fl">Email</label>
         <input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email"/>
@@ -630,9 +662,12 @@ const POPULAR = ["TCS","RELIANCE","HDFCBANK","INFY","ICICIBANK","TATAMOTORS","SB
 
 // ═════════════════════════ AUTH ══════════════════════════
 function switchAuthTab(tab){
-  document.querySelectorAll(".auth-tab").forEach((t,i)=>t.classList.toggle("active",i===(tab==="login"?0:1)));
-  document.getElementById("loginForm").style.display = tab==="login"?"block":"none";
-  document.getElementById("signupForm").style.display= tab==="signup"?"block":"none";
+  const tabs=["login","signup","forgot"];
+  document.querySelectorAll(".auth-tab").forEach((t,i)=>t.classList.toggle("active",tabs[i]===tab));
+  document.getElementById("loginForm").style.display  = tab==="login"  ?"block":"none";
+  document.getElementById("signupForm").style.display = tab==="signup" ?"block":"none";
+  document.getElementById("forgotForm").style.display = tab==="forgot" ?"block":"none";
+  document.getElementById("resetForm").style.display  = "none"; // only shown via hash
   clearAuthMsg();
 }
 function authMsg(m,t){const el=document.getElementById("authMsg");el.textContent=m;el.className="auth-msg "+t;}
@@ -676,7 +711,47 @@ async function doSignup(){
   }catch(e){authMsg("Network error — try again","err");}
   btn.disabled=false;btn.textContent="Create Account";
 }
+async function doForgotPassword(){
+  const email=document.getElementById("forgotEmail").value.trim();
+  if(!email) return authMsg("Please enter your email address","err");
+  const btn=document.getElementById("forgotBtn");
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  try{
+    // redirectTo must be whitelisted in Supabase → Authentication → URL Configuration → Redirect URLs
+    const redirectTo=window.location.origin+window.location.pathname;
+    const d=await callAuth({action:"forgot_password",email,redirectTo});
+    // Supabase returns {} on success for the recover endpoint
+    if(d.error){authMsg(d.error_description||d.error||"Could not send reset email","err");}
+    else{authMsg("✓ Reset link sent — check your inbox (and spam folder)","ok");}
+  }catch(e){authMsg("Network error — try again","err");}
+  btn.disabled=false;btn.textContent="Send Reset Link";
+}
 
+// Stores the recovery token extracted from the URL hash
+let _recoveryToken=null;
+
+async function doResetPassword(){
+  const p1=document.getElementById("newPass1").value;
+  const p2=document.getElementById("newPass2").value;
+  if(!p1||p1.length<6) return authMsg("Password must be at least 6 characters","err");
+  if(p1!==p2) return authMsg("Passwords do not match","err");
+  if(!_recoveryToken) return authMsg("Invalid or expired reset link — request a new one","err");
+  const btn=document.getElementById("resetBtn");
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  try{
+    const d=await callAuth({action:"reset_password",access_token:_recoveryToken,new_password:p1});
+    if(d.id||d.email){
+      authMsg("✓ Password updated successfully! You can now sign in.","ok");
+      // Clean up the hash and switch to login
+      history.replaceState(null,"",window.location.pathname);
+      _recoveryToken=null;
+      setTimeout(()=>{switchAuthTab("login");clearAuthMsg();},2500);
+    }else{
+      authMsg(d.error_description||d.msg||"Could not update password — link may have expired","err");
+    }
+  }catch(e){authMsg("Network error — try again","err");}
+  btn.disabled=false;btn.textContent="Set New Password";
+}
 async function doLogout(){
   try{ if(SESSION) await callAuth({action:"logout"}); }catch(e){}
   SESSION=null;localStorage.removeItem("ts_session");
@@ -1436,6 +1511,22 @@ function updateMkt(){
   // Restore session (will be validated by first API call — 401 forces re-login)
   const saved=localStorage.getItem("ts_session");
   if(saved){try{SESSION=JSON.parse(saved);}catch(e){}}
+  // Handle password-recovery link (Supabase appends #access_token=...&type=recovery)
+  (function handleRecoveryHash(){
+    const hash=window.location.hash.slice(1);
+    if(!hash) return;
+    const params=Object.fromEntries(hash.split("&").map(p=>p.split("=")));
+    if(params.type==="recovery"&&params.access_token){
+      _recoveryToken=decodeURIComponent(params.access_token);
+      // Show the set-new-password panel
+      document.getElementById("loginForm").style.display="none";
+      document.getElementById("signupForm").style.display="none";
+      document.getElementById("forgotForm").style.display="none";
+      document.getElementById("resetForm").style.display="block";
+      document.querySelectorAll(".auth-tab").forEach(t=>t.classList.remove("active"));
+      authMsg("Enter your new password below","ok");
+    }
+  })();
   if(SESSION?.access_token)onLogin();
 
   // Quick stock chips
