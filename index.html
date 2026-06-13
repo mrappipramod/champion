@@ -745,7 +745,33 @@ function onLogin(){
   loadResults();
   loadWatchlist();
 }
+async function updatePassword() {
+  const password = document.getElementById("newPassword").value;
 
+  const hash = new URLSearchParams(window.location.hash.substring(1));
+  const access_token = hash.get("access_token");
+
+  const r = await fetch("/api/auth", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${access_token}`
+    },
+    body: JSON.stringify({
+      action: "update_password",
+      password
+    })
+  });
+
+  const data = await r.json();
+
+  if (!data.error) {
+    alert("Password updated successfully!");
+    window.location.href = "/";
+  } else {
+    alert(data.error_description || "Failed to update password");
+  }
+}
 // ═════════════════════════ NAV ═══════════════════════════
 function showPage(name){
   document.querySelectorAll(".page > div[id^='page-']").forEach(p=>p.style.display="none");
