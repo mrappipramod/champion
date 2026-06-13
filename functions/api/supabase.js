@@ -1,10 +1,7 @@
 export async function onRequest(context) {
   const { request, env } = context;
 
-  // Log request method and URL
-  console.log(`[supabase] ${request.method} ${request.url}`);
-
-  // Handle OPTIONS preflight
+  // 1. Handle CORS Preflight
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -16,52 +13,44 @@ export async function onRequest(context) {
     });
   }
 
-  // Check if environment variables are set
-  if (!env.SUPABASE_URL) {
-    console.error('SUPABASE_URL is missing');
-    return new Response(JSON.stringify({ error: 'Server config: SUPABASE_URL missing' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-  if (!env.SUPABASE_ANON_KEY) {
-    console.error('SUPABASE_ANON_KEY is missing');
-    return new Response(JSON.stringify({ error: 'Server config: SUPABASE_ANON_KEY missing' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  // Build target URL
+  // 2. Build target URL
   const url = new URL(request.url);
+  // Ensure the path correctly strips the prefix and maps to the Supabase REST v1 structure
   const path = url.pathname.replace('/api/supabase', '');
   const targetUrl = `${env.SUPABASE_URL}${path}${url.search}`;
-  console.log(`Proxying to: ${targetUrl}`);
 
-  // Forward headers
-  const headers = new Headers(request.headers);
-  headers.set('apikey', env.SUPABASE_ANON_KEY);
-  headers.set('Authorization', `Bearer ${env.SUPABASE_ANON_KEY}`);
-  if (request.method !== 'GET' && request.method !== 'HEAD' && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
+  // 3. Prepare headers (Clean and set required ones)
+  const newHeaders = new Headers(request.headers);
+  newHeaders.set('apikey', env.SUPABASE_ANON_KEY);
+  newHeaders.set('Authorization', `Bearer ${env.SUPABASE_ANON_KEY}`);
+  // Important: Remove host header so it doesn't conflict with target
+  newHeaders.delete('host'); 
+
+  // 4. Handle body correctly
+  // If it's a POST/PUT, we need to pass the body stream. 
+  // For requests with bodies, fetch usually requires the method and the headers.
+  const fetchOptions = {
+    method: request.method,
+    headers: newHeaders,
+  };
+
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    fetchOptions.body = request.body;
+    // Explicitly set duplex for streaming bodies in Cloudflare Workers
+    fetchOptions.duplex = 'half';
   }
 
   try {
-    const proxyRequest = new Request(targetUrl, {
-      method: request.method,
-      headers: headers,
-      body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined,
-    });
-    const response = await fetch(proxyRequest);
-    console.log(`Upstream status: ${response.status}`);
+    const response = await fetch(targetUrl, fetchOptions);
+    
+    // Return the response directly
     return new Response(response.body, {
       status: response.status,
       statusText: response.statusText,
       headers: response.headers,
     });
   } catch (err) {
-    console.error('Fetch error:', err);
-    return new Response(JSON.stringify({ error: 'Fetch failed', details: err.message }), {
+    return new Response(JSON.stringify({ error: 'Proxy failed', details: err.message }), {
       status: 502,
       headers: { 'Content-Type': 'application/json' },
     });
