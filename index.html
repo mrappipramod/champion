@@ -647,11 +647,19 @@ const POPULAR = ["TCS","RELIANCE","HDFCBANK","INFY","ICICIBANK","TATAMOTORS","SB
 
 // ═════════════════════════ AUTH ══════════════════════════
 function switchAuthTab(tab){
-  document.querySelectorAll(".auth-tab").forEach((t,i)=>t.classList.toggle("active",i===(tab==="login"?0:1)));
-  document.getElementById("loginForm").style.display = tab==="login"?"block":"none";
-  document.getElementById("signupForm").style.display= tab==="signup"?"block":"none";
+  // Update the top tabs: index 0 is login, index 1 is signup. If 'forgot', neither is active.
+  document.querySelectorAll(".auth-tab").forEach((t,i) => {
+    t.classList.toggle("active", (tab === "login" && i === 0) || (tab === "signup" && i === 1));
+  });
+  
+  // Toggle visibility of the three forms
+  document.getElementById("loginForm").style.display = tab === "login" ? "block" : "none";
+  document.getElementById("signupForm").style.display = tab === "signup" ? "block" : "none";
+  document.getElementById("forgotForm").style.display = tab === "forgot" ? "block" : "none";
+  
   clearAuthMsg();
 }
+
 function authMsg(m,t){const el=document.getElementById("authMsg");el.textContent=m;el.className="auth-msg "+t;}
 function clearAuthMsg(){document.getElementById("authMsg").className="auth-msg";}
 
@@ -692,6 +700,24 @@ async function doSignup(){
     else authMsg(d.msg||d.error_description||"Signup failed","err");
   }catch(e){authMsg("Network error — try again","err");}
   btn.disabled=false;btn.textContent="Create Account";
+}
+
+// NEW: doForgot function utilizing your existing callAuth and authMsg helpers
+async function doForgot(){
+  const email=document.getElementById("forgotEmail").value.trim();
+  if(!email) return authMsg("Please enter your email","err");
+  const btn=document.getElementById("forgotBtn");
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  try{
+    const d=await callAuth({action:"forgot",email});
+    if(d.error || d.error_description || d.msg){
+      authMsg(d.error?.message||d.error_description||d.msg||"Failed to send reset link","err");
+    } else {
+      authMsg("Reset link sent! Please check your inbox.","ok");
+      document.getElementById("forgotEmail").value = "";
+    }
+  }catch(e){authMsg("Network error — try again","err");}
+  btn.disabled=false;btn.textContent="Send Reset Link";
 }
 
 async function doLogout(){
