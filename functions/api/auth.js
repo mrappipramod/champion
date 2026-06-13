@@ -27,6 +27,7 @@ export async function onRequestPost({ request, env }) {
     headers["Authorization"] = token;
     body = JSON.stringify({});
   } else if (action === "forgot") {
+    // NEW: Handle forgot password requests
     endpoint = `${base}/auth/v1/recover`;
     body = JSON.stringify({ email });
   } else {
@@ -35,8 +36,8 @@ export async function onRequestPost({ request, env }) {
 
   const r = await fetch(endpoint, { method: "POST", headers, body });
   
-  // Supabase occasionally returns an empty response for logout/recover, 
-  // so we catch the parsing error to avoid crashing the worker.
+  // Supabase occasionally returns an empty response for logout or password recovery, 
+  // so we catch the JSON parsing error to avoid crashing the function.
   let data;
   try {
     data = await r.json();
