@@ -4,7 +4,6 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
   <title>Trade Screener</title>
-  <a href="/options.html" class="btn btn-ghost btn-sm">💹Options Trading</a>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
   <style>
@@ -69,7 +68,6 @@
     .nav-item .ni{font-size:.95rem}
     .page{flex:1;padding:1.75rem 1.5rem 4rem;max-width:920px;min-width:0}
 
-    /* Bottom nav (mobile only) */
     .bottom-nav{display:none}
 
     /* ════════ COMMON ════════ */
@@ -144,7 +142,6 @@
     td{padding:.55rem .7rem;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--muted);white-space:nowrap}
     tr:last-child td{border-bottom:none}
     tr:hover td{background:var(--bg2)}
-    /* Sticky symbol column */
     .tbl-wrap th:first-child,.tbl-wrap td:first-child{position:sticky;left:0;z-index:2;background:var(--surface)}
     .tbl-wrap th:first-child{background:var(--card);z-index:3}
     .tbl-wrap tr:hover td:first-child{background:var(--bg2)}
@@ -154,7 +151,6 @@
     .r-txt{color:var(--red);font-weight:600}
     .act-cell{display:flex;gap:4px}
 
-    /* Filter bar */
     .filter-bar{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.9rem;padding:.7rem .85rem;background:var(--card);border:1.5px solid var(--border);border-radius:10px}
     .filter-bar select,.filter-bar input[type=text]{background:var(--surface);border:1.5px solid var(--border);color:var(--ink);font-family:var(--sans);font-size:.76rem;padding:.35rem .6rem;border-radius:7px;outline:none;cursor:pointer;flex:1;min-width:105px;max-width:160px}
     .filter-bar input[type=text]{font-family:var(--mono);cursor:text}
@@ -226,7 +222,6 @@
     .wl-actions{display:flex;gap:.35rem;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:.6rem;align-items:center}
     .wl-refresh-badge{font-size:.58rem;color:var(--muted2);margin-left:auto}
 
-    /* Watchlist modal */
     #wlModal{display:none;position:fixed;inset:0;background:rgba(26,26,46,.45);z-index:300;align-items:center;justify-content:center;padding:1rem}
     #wlModal.on{display:flex}
     .wl-modal-box{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:1.5rem;width:100%;max-width:460px;box-shadow:var(--shadow-lg);max-height:90vh;overflow-y:auto}
@@ -237,7 +232,6 @@
     .wl-modal-field label{font-size:.65rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
     .wl-modal-hint{font-size:.7rem;color:var(--muted2);margin-bottom:.85rem;line-height:1.5}
 
-    /* ════════ TELEGRAM BANNER + TOAST ════════ */
     #tgBanner{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:2px solid var(--border);padding:.85rem 1.25rem;z-index:200;box-shadow:0 -4px 20px rgba(26,26,46,.1)}
     #tgBanner.on{display:flex;align-items:center;justify-content:space-between;gap:.85rem;flex-wrap:wrap}
     .tg-text{font-size:.81rem}
@@ -249,7 +243,6 @@
 
     footer{text-align:center;padding:1.75rem 1rem;font-size:.69rem;color:var(--muted2);border-top:1px solid var(--border);line-height:1.8}
 
-    /* ════════ MOBILE ════════ */
     @media(max-width:700px){
       nav.side-nav{display:none}
       header{padding:0 .9rem;height:52px}
@@ -259,36 +252,25 @@
       .header-right .btn{padding:.3rem .65rem;font-size:.66rem}
       .page{padding:1.2rem .9rem calc(5.2rem + env(safe-area-inset-bottom))}
       .app-body{min-height:calc(100vh - 52px)}
-
-      /* Bottom navigation */
       .bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:150;padding:.3rem .2rem calc(.3rem + env(safe-area-inset-bottom))}
       .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:.28rem .15rem;background:none;border:none;font-family:var(--sans);font-size:.56rem;font-weight:600;color:var(--muted);cursor:pointer;border-radius:8px}
       .bn-item.active{color:var(--accent2);background:var(--blue-bg)}
       .bn-item .bi{font-size:1.12rem;line-height:1.25}
-
-      /* Tables — compact + smooth scroll */
       th,td{padding:.45rem .55rem;font-size:.68rem}
       .sym-td{font-size:.75rem}
       .mono-td{font-size:.67rem}
       .filter-bar{padding:.55rem .65rem;gap:.4rem}
       .filter-bar select,.filter-bar input[type=text]{min-width:46%;max-width:none;font-size:.72rem}
-
-      /* Screener grid → single column */
       .sc-grid{grid-template-columns:1fr 1fr}
       .grid2{grid-template-columns:1fr}
       .wl-grid{grid-template-columns:1fr}
       .wl-modal-grid{grid-template-columns:1fr 1fr}
-
-      /* Result panel stacking */
       .rp-sym{font-size:1.35rem}
       .rp-cmp{font-size:.74rem}
-      .price-grid{grid-template-columns:repeat(2,1fr) repeat(2,1fr);grid-template-columns:repeat(auto-fill,minmax(90px,1fr))}
+      .price-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr))}
       .fund-grid{grid-template-columns:repeat(2,1fr)}
-
-      /* Telegram banner above bottom nav */
       #tgBanner{bottom:calc(52px + env(safe-area-inset-bottom));padding:.7rem .9rem}
       #toast{bottom:calc(64px + env(safe-area-inset-bottom))}
-
       .card{padding:1.1rem}
       .btn-gold,.btn-blue{padding:.55rem 1rem;font-size:.78rem}
     }
@@ -303,6 +285,7 @@
 <!-- ════════════════ AUTH OVERLAY ════════════════ -->
 <div id="authOverlay">
   <div class="auth-box">
+
     <div class="auth-logo">
       <div class="auth-candles">
         <div class="candle c-bull"><div class="candle-wick"></div><div class="candle-body"></div><div class="candle-wick candle-wick-b"></div></div>
@@ -311,11 +294,16 @@
       </div>
       Trade Screener
     </div>
+
+    <!-- Tab row — only Sign In / Create Account; Reset is revealed programmatically -->
     <div class="auth-tab-row" id="authTabRow">
       <button class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
       <button class="auth-tab" onclick="switchAuthTab('signup')">Create Account</button>
     </div>
+
     <div id="authMsg" class="auth-msg"></div>
+
+    <!-- ── Sign In form ── -->
     <div id="loginForm">
       <div style="margin-bottom:1rem">
         <label class="fl">Email</label>
@@ -330,6 +318,8 @@
         <button class="auth-tab-link" onclick="switchAuthTab('forgot')">Forgot password?</button>
       </div>
     </div>
+
+    <!-- ── Create Account form ── -->
     <div id="signupForm" style="display:none">
       <div style="margin-bottom:1rem">
         <label class="fl">Email</label>
@@ -341,9 +331,8 @@
       </div>
       <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem" id="signupBtn" onclick="doSignup()">Create Account</button>
     </div>
-  </div>
-</div>
-<!-- ── Forgot password: email-only form ── -->
+
+    <!-- ── Forgot Password form (email only — no password fields here) ── -->
     <div id="forgotForm" style="display:none">
       <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
         Enter your email and we'll send a one-time reset link. The link expires in 1 hour.
@@ -352,17 +341,15 @@
         <label class="fl">Email</label>
         <input type="email" id="forgotEmail" placeholder="you@example.com" autocomplete="email"/>
       </div>
-      <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem"
-              id="forgotBtn" onclick="doForgotPassword()">Send Reset Link</button>
+      <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem" id="forgotBtn" onclick="doForgotPassword()">Send Reset Link</button>
       <div style="text-align:center;margin-top:.85rem">
         <button class="auth-tab-link" onclick="switchAuthTab('login')">← Back to Sign In</button>
       </div>
     </div>
 
-    <!-- ── Set new password: ONLY reachable via emailed link ── -->
-    <!-- This panel is hidden by default and shown only when a valid
-         type=recovery token is detected in the URL hash on page load.
-         There is no button, tab, or link that opens it directly. -->
+    <!-- ── Set New Password form ──
+         ONLY shown when a valid type=recovery token is in the URL hash.
+         No tab, button, or link can open this directly. ── -->
     <div id="resetForm" style="display:none">
       <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
         Choose a strong new password for your account.
@@ -375,9 +362,12 @@
         <label class="fl">Confirm Password</label>
         <input type="password" id="newPass2" placeholder="Repeat password" autocomplete="new-password"/>
       </div>
-      <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem"
-              id="resetBtn" onclick="doResetPassword()">Set New Password</button>
+      <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem" id="resetBtn" onclick="doResetPassword()">Set New Password</button>
     </div>
+
+  </div><!-- /.auth-box -->
+</div><!-- /#authOverlay -->
+
 <!-- ════════════════ APP SHELL ════════════════ -->
 <div id="appShell">
   <header>
@@ -397,7 +387,6 @@
   </header>
 
   <div class="app-body">
-    <!-- Desktop sidebar -->
     <nav class="side-nav">
       <div class="nav-section">Screens</div>
       <button class="nav-item active" onclick="showPage('screeners')" data-page="screeners"><span class="ni">🔍</span>Screeners</button>
@@ -492,7 +481,6 @@
           </div>
           <div class="quick-row" id="quickRow"><span style="font-size:.68rem;color:var(--muted2)">Quick:</span></div>
         </div>
-
         <div id="resultPanel">
           <div class="rp-header">
             <div>
@@ -606,7 +594,6 @@
     </div><!-- /page -->
   </div><!-- /app-body -->
 
-  <!-- Mobile bottom navigation -->
   <nav class="bottom-nav">
     <button class="bn-item active" onclick="showPage('screeners')" data-page="screeners"><span class="bi">🔍</span>Screeners</button>
     <button class="bn-item" onclick="showPage('single')" data-page="single"><span class="bi">📊</span>Analyse</button>
@@ -618,7 +605,6 @@
   <footer>Trade Screener · trade.iamnewuser.com · Supabase + Cloudflare + GitHub Actions<br/>Not financial advice. Always do your own research.</footer>
 </div><!-- /appShell -->
 
-<!-- ── Telegram confirm banner ── -->
 <div id="tgBanner">
   <div class="tg-text"><strong>Also send to Telegram?</strong><br/><span id="tgDesc">Results ready — forward to your groups?</span></div>
   <div class="btn-row" style="margin-top:0">
@@ -627,7 +613,6 @@
   </div>
 </div>
 
-<!-- ── Add/Edit Watchlist Modal ── -->
 <div id="wlModal">
   <div class="wl-modal-box">
     <div class="wl-modal-title">
@@ -665,23 +650,29 @@ let AI_RUNNING = false;
 let WL_ITEMS = [];
 let ALL_RESULTS_CACHE = [];
 let _sessionExpiredShown = false;
+let _recoveryToken = null; // set ONLY by handleRecoveryHash()
 const POPULAR = ["TCS","RELIANCE","HDFCBANK","INFY","ICICIBANK","TATAMOTORS","SBIN","BAJFINANCE","TITAN","MARUTI","SUNPHARMA","AXISBANK","LT","ITC","WIPRO"];
 
 // ═════════════════════════ AUTH ══════════════════════════
 function switchAuthTab(tab){
-  // resetForm is intentionally excluded — only accessible via recovery hash
-  const tabs=["login","signup","forgot"];
+  // 'reset' is intentionally not in this list — it cannot be opened via any tab
+  const tabs = ["login","signup","forgot"];
   document.querySelectorAll("#authTabRow .auth-tab")
-    .forEach((t,i)=>t.classList.toggle("active",tabs[i]===tab));
-  document.getElementById("loginForm").style.display  = tab==="login"  ?"block":"none";
-  document.getElementById("signupForm").style.display = tab==="signup" ?"block":"none";
-  document.getElementById("forgotForm").style.display = tab==="forgot" ?"block":"none";
+    .forEach((t,i) => t.classList.toggle("active", tabs[i] === tab));
+  document.getElementById("loginForm").style.display  = tab==="login"  ? "block" : "none";
+  document.getElementById("signupForm").style.display = tab==="signup" ? "block" : "none";
+  document.getElementById("forgotForm").style.display = tab==="forgot" ? "block" : "none";
   document.getElementById("resetForm").style.display  = "none"; // never via tab
   clearAuthMsg();
-  if(tab==="forgot") setTimeout(()=>document.getElementById("forgotEmail")?.focus(),60);
+  if(tab==="forgot") setTimeout(()=>document.getElementById("forgotEmail")?.focus(), 60);
 }
-function authMsg(m,t){const el=document.getElementById("authMsg");el.textContent=m;el.className="auth-msg "+t;}
-function clearAuthMsg(){document.getElementById("authMsg").className="auth-msg";}
+
+function authMsg(m,t){
+  const el=document.getElementById("authMsg");
+  el.textContent=m;
+  el.className="auth-msg "+t;
+}
+function clearAuthMsg(){ document.getElementById("authMsg").className="auth-msg"; }
 
 async function callAuth(body){
   const r=await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
@@ -693,7 +684,7 @@ async function doLogin(){
   const pass =document.getElementById("loginPass").value;
   if(!email||!pass) return authMsg("Email and password required","err");
   const btn=document.getElementById("loginBtn");
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
   try{
     const d=await callAuth({action:"login",email,password:pass});
     if(d.access_token){
@@ -704,8 +695,8 @@ async function doLogin(){
     }else{
       authMsg(d.error_description||d.msg||"Login failed — check your credentials","err");
     }
-  }catch(e){authMsg("Network error — try again","err");}
-  btn.disabled=false;btn.textContent="Sign In";
+  }catch(e){ authMsg("Network error — try again","err"); }
+  btn.disabled=false; btn.textContent="Sign In";
 }
 
 async function doSignup(){
@@ -713,39 +704,34 @@ async function doSignup(){
   const pass =document.getElementById("signupPass").value;
   if(!email||!pass) return authMsg("Email and password required","err");
   const btn=document.getElementById("signupBtn");
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
   try{
     const d=await callAuth({action:"signup",email,password:pass});
     if(d.id||d.user?.id) authMsg("Account created! Check your email to confirm, then sign in.","ok");
     else authMsg(d.msg||d.error_description||"Signup failed","err");
-  }catch(e){authMsg("Network error — try again","err");}
-  btn.disabled=false;btn.textContent="Create Account";
+  }catch(e){ authMsg("Network error — try again","err"); }
+  btn.disabled=false; btn.textContent="Create Account";
 }
 
 async function doForgotPassword(){
   const email=document.getElementById("forgotEmail").value.trim();
   if(!email) return authMsg("Please enter your email address","err");
   const btn=document.getElementById("forgotBtn");
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
   try{
     const redirectTo=window.location.origin+window.location.pathname;
     const d=await callAuth({action:"forgot_password",email,redirectTo});
     if(d.error){
       authMsg(d.error_description||d.error||"Could not send reset email — try again","err");
-    } else {
+    }else{
       authMsg("✓ Reset link sent — check your inbox (and spam folder). Link expires in 1 hour.","ok");
       document.getElementById("forgotEmail").value="";
     }
   }catch(e){ authMsg("Network error — try again","err"); }
-  btn.disabled=false;btn.textContent="Send Reset Link";
+  btn.disabled=false; btn.textContent="Send Reset Link";
 }
 
-// Stores the one-time recovery token extracted from the URL hash.
-// Set only by handleRecoveryHash() below — never set by any user action.
-let _recoveryToken=null;
-
 async function doResetPassword(){
-  // Double-check: token must exist (i.e. user arrived via the emailed link)
   if(!_recoveryToken){
     authMsg("No valid reset token — please use the link from your email","err");
     return;
@@ -755,43 +741,38 @@ async function doResetPassword(){
   if(!p1||p1.length<6) return authMsg("Password must be at least 6 characters","err");
   if(p1!==p2) return authMsg("Passwords do not match","err");
   const btn=document.getElementById("resetBtn");
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
   try{
     const d=await callAuth({action:"reset_password",access_token:_recoveryToken,new_password:p1});
     if(d.id||d.email){
-      // Invalidate token immediately so it can't be reused in this session
-      _recoveryToken=null;
-      // Remove hash from URL so a refresh doesn't re-trigger the flow
-      history.replaceState(null,"",window.location.pathname);
-      authMsg("✓ Password updated! Signing you in…","ok");
-      // Auto sign-in with the new password is not possible here (we don't store it).
-      // Redirect to login after a short delay.
+      _recoveryToken=null; // invalidate immediately
+      history.replaceState(null,"",window.location.pathname); // strip hash
+      authMsg("✓ Password updated! You can now sign in.","ok");
       document.getElementById("resetForm").style.display="none";
       setTimeout(()=>{ switchAuthTab("login"); clearAuthMsg(); },2200);
-    } else {
+    }else{
       authMsg(d.error_description||d.msg||"Link expired or already used — request a new one","err");
       _recoveryToken=null;
     }
   }catch(e){ authMsg("Network error — try again","err"); }
-  btn.disabled=false;btn.textContent="Set New Password";
+  btn.disabled=false; btn.textContent="Set New Password";
 }
 
 async function doLogout(){
   try{ if(SESSION) await callAuth({action:"logout"}); }catch(e){}
-  SESSION=null;localStorage.removeItem("ts_session");
+  SESSION=null; localStorage.removeItem("ts_session");
   document.getElementById("authOverlay").classList.remove("hidden");
   document.getElementById("appShell").classList.remove("visible");
 }
 
-// Called when any API returns 401 — deleted user / expired session
 function handleSessionExpired(){
   if(_sessionExpiredShown) return;
   _sessionExpiredShown=true;
-  SESSION=null;localStorage.removeItem("ts_session");
+  SESSION=null; localStorage.removeItem("ts_session");
   document.getElementById("appShell").classList.remove("visible");
   document.getElementById("authOverlay").classList.remove("hidden");
   switchAuthTab("login");
-  authMsg("Your session is no longer valid — the account may have been removed or the session expired. Please sign in again.","err");
+  authMsg("Your session is no longer valid — please sign in again.","err");
 }
 
 function onLogin(){
@@ -813,12 +794,12 @@ function showPage(name){
 }
 
 // ═════════════════════════ API ═══════════════════════════
-function authHeaders(){return{"Content-Type":"application/json","Authorization":`Bearer ${SESSION?.access_token}`};}
+function authHeaders(){ return{"Content-Type":"application/json","Authorization":`Bearer ${SESSION?.access_token}`}; }
 
 async function apiFetch(path,opts={}){
   opts.headers={...authHeaders(),...(opts.headers||{})};
   const r=await fetch(path,opts);
-  if(r.status===401){handleSessionExpired();throw new Error("Session expired");}
+  if(r.status===401){ handleSessionExpired(); throw new Error("Session expired"); }
   return r.json();
 }
 
@@ -827,14 +808,14 @@ async function triggerScreener(btn){
   if(!SESSION) return;
   const card=btn.closest(".sc-card");
   const {cap,trade,score,label}=card.dataset;
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
   card.classList.add("loading");
   setScStatus("info",`Triggering ${label}…`);
   try{
     const d=await apiFetch("/api/trigger",{method:"POST",body:JSON.stringify({type:"screener",cap,trade,min_score:score})});
-    btn.disabled=false;card.classList.remove("loading");
+    btn.disabled=false; card.classList.remove("loading");
     if(d.ok){
-      btn.textContent="✓ Queued";card.classList.add("done");
+      btn.textContent="✓ Queued"; card.classList.add("done");
       setScStatus("ok",`✓ ${label} running on GitHub Actions (~2 min). Auto-refreshing results…`);
       setTimeout(()=>{btn.textContent="▶ Run";card.classList.remove("done");},12000);
       pollForResults();
@@ -843,20 +824,20 @@ async function triggerScreener(btn){
       setScStatus("err",`✗ ${d.error||"Unknown error"}`);
     }
   }catch(e){
-    btn.disabled=false;btn.textContent="▶ Retry";card.classList.remove("loading");
+    btn.disabled=false; btn.textContent="▶ Retry"; card.classList.remove("loading");
     if(e.message!=="Session expired") setScStatus("err",`✗ ${e.message}`);
   }
 }
 
 let _pollTimer=null;
 function pollForResults(){
-  let n=0;const MAX=9;
+  let n=0; const MAX=9;
   clearInterval(_pollTimer);
   _pollTimer=setInterval(async()=>{
     n++;
-    try{await loadResults();}catch(e){}
+    try{ await loadResults(); }catch(e){}
     setScStatus("ok",`Checking for new results… (${n}/${MAX})`);
-    if(n>=MAX){clearInterval(_pollTimer);setScStatus("ok","Done — table shows the latest results.");}
+    if(n>=MAX){ clearInterval(_pollTimer); setScStatus("ok","Done — table shows the latest results."); }
   },20000);
 }
 
@@ -866,7 +847,7 @@ function setScStatus(type,msg){
   el.textContent=msg;
 }
 
-// ═════════════════ STOCK DATA (via /api/yahoo proxy) ═════
+// ═════════════════ STOCK DATA ════════════════════════════
 async function fetchQuote(symbol){
   const r=await fetch(`/api/yahoo?symbol=${encodeURIComponent(symbol+".NS")}`);
   if(!r.ok) throw new Error(`Could not fetch ${symbol} — check the NSE symbol`);
@@ -900,7 +881,7 @@ async function fetchFund(symbol){
       divYield:sd.dividendYield?.raw?(sd.dividendYield.raw*100).toFixed(2):null,
       marketCap:ks.enterpriseValue?.raw,
     };
-  }catch(e){return{};}
+  }catch(e){ return{}; }
 }
 
 // ═════════════════ TECHNICAL ANALYSIS ════════════════════
@@ -986,7 +967,7 @@ async function runSingle(){
   const sym=document.getElementById("stockSym").value.trim().toUpperCase();
   if(!sym) return document.getElementById("stockSym").focus();
   const btn=document.getElementById("analyseBtn");
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
   try{
     const[sd,fund]=await Promise.all([fetchQuote(sym),fetchFund(sym)]);
     const tech=techAnalysis(sd.bars);
@@ -997,8 +978,8 @@ async function runSingle(){
     LAST_RESULT={type:"single",symbol:sym,tech,fund,composite,grade:g,fScore:fS};
     renderSingle(sym,tech,fund,composite,g);
     showTgBanner(`${sym} analysis ready — send to Telegram?`);
-  }catch(e){showToast(`⚠️ ${e.message}`,true);}
-  btn.disabled=false;btn.textContent="Analyse →";
+  }catch(e){ showToast(`⚠️ ${e.message}`,true); }
+  btn.disabled=false; btn.textContent="Analyse →";
 }
 
 function renderSingle(sym,tech,fund,composite,g){
@@ -1007,7 +988,7 @@ function renderSingle(sym,tech,fund,composite,g){
   document.getElementById("rpCmp").innerHTML=`₹${tech.close} · ATR ₹${tech.atr} · ${tech.trend}<br/>Support ₹${tech.support} · Resistance ₹${tech.resistance}`;
   const circ=2*Math.PI*27;
   const rf=document.getElementById("ringFill");
-  rf.style.strokeDashoffset=circ*(1-composite/100);rf.style.stroke=gradeColor(g);
+  rf.style.strokeDashoffset=circ*(1-composite/100); rf.style.stroke=gradeColor(g);
   document.getElementById("ringN").textContent=composite;
   document.getElementById("ringN").style.color=gradeColor(g);
   const gp=document.getElementById("gradePill");
@@ -1045,7 +1026,6 @@ function renderSingle(sym,tech,fund,composite,g){
   if(+(fund.revGrowth||0)<0)flags.push("🔴 Revenue declining YoY");
   if(+(fund.epsGrowth||0)<0)flags.push("🔴 Earnings declining YoY");
   document.getElementById("flagList").innerHTML=flags.map(f=>`<div class="flag-item">${f}</div>`).join("")||`<div class="flag-item">✅ No major warnings</div>`;
-  // Reset AI tab
   document.getElementById("aiBox").textContent="Open this tab to generate a narrative AI report…";
   document.getElementById("resultPanel").scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -1068,7 +1048,7 @@ function switchToAITab(){
   generateAI();
 }
 
-// ═════════════════ AI ANALYSIS (streaming) ═══════════════
+// ═════════════════ AI ANALYSIS ═══════════════════════════
 async function generateAI(){
   if(AI_RUNNING||!LAST_RESULT) return;
   const key=localStorage.getItem("ant_key")||"";
@@ -1077,46 +1057,21 @@ async function generateAI(){
   AI_RUNNING=true;
   box.innerHTML='<span class="cur"></span>';
   const r=LAST_RESULT,t=r.tech,f=r.fund;
-  const prompt=`You are a seasoned Indian equity analyst. Analyse ${r.symbol}:
-
-TECHNICAL: ₹${t.close}, Trend ${t.trend}, RSI ${t.rsiVal} (${t.rsiSig}), MACD ${t.macdCross}, Volume ${t.volSig} ×${t.volRatio}, EMA aligned ${t.emaAlign}, Above 200EMA ${t.above200}, Support ₹${t.support}, Resistance ₹${t.resistance}, Tech score ${t.score}/100
-
-FUNDAMENTALS: PE ${f.pe||"N/A"}, ROE ${f.roe||"N/A"}%, Margin ${f.margin||"N/A"}%, Rev growth ${f.revGrowth||"N/A"}%, D/E ${f.de||"N/A"}, Composite ${r.composite}/100, Grade ${r.grade}
-
-SWING: Entry ₹${t.swing.entry}, T1 ₹${t.swing.target1}, T2 ₹${t.swing.target2}, SL ₹${t.swing.stopLoss}
-LONG TERM: T1 ₹${t.longterm.target1} (+15%), T2 ₹${t.longterm.target2} (+30%)
-
-Provide: 1. Verdict (buy/hold/avoid) 2. Technical outlook 3. Fundamental quality 4. Key risks 5. Recommendation with conviction level. Under 350 words, direct and actionable for Indian retail investors.`;
+  const prompt=`You are a seasoned Indian equity analyst. Analyse ${r.symbol}:\n\nTECHNICAL: ₹${t.close}, Trend ${t.trend}, RSI ${t.rsiVal} (${t.rsiSig}), MACD ${t.macdCross}, Volume ${t.volSig} ×${t.volRatio}, EMA aligned ${t.emaAlign}, Above 200EMA ${t.above200}, Support ₹${t.support}, Resistance ₹${t.resistance}, Tech score ${t.score}/100\n\nFUNDAMENTALS: PE ${f.pe||"N/A"}, ROE ${f.roe||"N/A"}%, Margin ${f.margin||"N/A"}%, Rev growth ${f.revGrowth||"N/A"}%, D/E ${f.de||"N/A"}, Composite ${r.composite}/100, Grade ${r.grade}\n\nSWING: Entry ₹${t.swing.entry}, T1 ₹${t.swing.target1}, T2 ₹${t.swing.target2}, SL ₹${t.swing.stopLoss}\nLONG TERM: T1 ₹${t.longterm.target1} (+15%), T2 ₹${t.longterm.target2} (+30%)\n\nProvide: 1. Verdict (buy/hold/avoid) 2. Technical outlook 3. Fundamental quality 4. Key risks 5. Recommendation with conviction level. Under 350 words, direct and actionable for Indian retail investors.`;
   try{
     const resp=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        "x-api-key":key,
-        "anthropic-version":"2023-06-01",
-        "anthropic-dangerous-direct-browser-access":"true"
-      },
+      headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1024,stream:true,messages:[{role:"user",content:prompt}]})
     });
-    if(!resp.ok){
-      const err=await resp.json().catch(()=>({}));
-      box.textContent=`API error: ${err.error?.message||resp.status}`;
-      AI_RUNNING=false;return;
-    }
+    if(!resp.ok){const err=await resp.json().catch(()=>({}));box.textContent=`API error: ${err.error?.message||resp.status}`;AI_RUNNING=false;return;}
     const reader=resp.body.getReader(),dec=new TextDecoder();let text="";
     while(true){
       const{value,done}=await reader.read();if(done)break;
       const lines=dec.decode(value).split("\n").filter(l=>l.startsWith("data: "));
       for(const line of lines){
         const d=line.slice(6);if(d==="[DONE]")continue;
-        try{
-          const p=JSON.parse(d);
-          if(p.type==="content_block_delta"&&p.delta?.text){
-            text+=p.delta.text;
-            box.innerHTML=text.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>").replace(/\n/g,"<br/>")+'<span class="cur"></span>';
-            box.scrollTop=box.scrollHeight;
-          }
-        }catch(e){}
+        try{const p=JSON.parse(d);if(p.type==="content_block_delta"&&p.delta?.text){text+=p.delta.text;box.innerHTML=text.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>").replace(/\n/g,"<br/>")+'<span class="cur"></span>';box.scrollTop=box.scrollHeight;}}catch(e){}
       }
     }
     box.innerHTML=text.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>").replace(/\n/g,"<br/>");
@@ -1240,13 +1195,13 @@ function openWlModal(sym=""){
   document.getElementById("wlModal").classList.add("on");
   if(!sym)setTimeout(()=>document.getElementById("wlm-sym").focus(),60);
 }
-function closeWlModal(){document.getElementById("wlModal").classList.remove("on");}
+function closeWlModal(){ document.getElementById("wlModal").classList.remove("on"); }
 
 async function saveWlModal(){
   const sym=document.getElementById("wlm-sym").value.trim().toUpperCase();
   if(!sym){document.getElementById("wlm-sym").focus();return;}
   const btn=document.getElementById("wlm-save");
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
   await addToWatchlist(sym,{
     notes:document.getElementById("wlm-notes").value.trim(),
     buy_price:parseFloat(document.getElementById("wlm-buy").value)||null,
@@ -1255,7 +1210,7 @@ async function saveWlModal(){
     target_price:parseFloat(document.getElementById("wlm-target").value)||null,
     stop_loss:parseFloat(document.getElementById("wlm-sl").value)||null,
   });
-  btn.disabled=false;btn.textContent="Save to Watchlist";
+  btn.disabled=false; btn.textContent="Save to Watchlist";
   closeWlModal();
 }
 
@@ -1307,9 +1262,7 @@ function wlCardHTML(w){
   }
   const gColor=gradeColor(w.grade);
   const tColor=w.trend==="UPTREND"?"var(--green)":w.trend==="DOWNTREND"?"var(--red)":"var(--muted)";
-  const refreshed=w.last_refreshed
-    ?`Updated ${new Date(w.last_refreshed).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}`
-    :"Not refreshed yet";
+  const refreshed=w.last_refreshed?`Updated ${new Date(w.last_refreshed).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}`:"Not refreshed yet";
   const safe=(sym||"").replace(/[^A-Z0-9.\-]/gi,"");
   return`<div class="wl-card" id="wlc-${safe}">
     <div class="wl-card-top">
@@ -1358,10 +1311,7 @@ async function refreshWlCard(sym){
     if(!tech)throw new Error("Not enough data");
     const composite=Math.round(tech.score*.6+fundScore(fund)*.4);
     const g=gradeOf(composite);
-    await apiFetch("/api/watchlist",{method:"POST",body:JSON.stringify({
-      action:"refresh_price",symbol:sym,
-      last_price:tech.close,tech_score:composite,grade:g,trend:tech.trend,rsi:tech.rsiVal,
-    })});
+    await apiFetch("/api/watchlist",{method:"POST",body:JSON.stringify({action:"refresh_price",symbol:sym,last_price:tech.close,tech_score:composite,grade:g,trend:tech.trend,rsi:tech.rsiVal})});
     const idx=WL_ITEMS.findIndex(w=>w.symbol===sym);
     if(idx>=0){
       WL_ITEMS[idx]={...WL_ITEMS[idx],last_price:tech.close,last_refreshed:new Date().toISOString(),tech_score:composite,grade:g,trend:tech.trend,rsi:tech.rsiVal};
@@ -1369,11 +1319,7 @@ async function refreshWlCard(sym){
       if(el)el.outerHTML=wlCardHTML(WL_ITEMS[idx]);
     }
   }catch(e){
-    if(card){
-      card.classList.remove("loading");
-      const p=document.getElementById(`wlp-${sym}`);
-      if(p)p.innerHTML='<span style="color:var(--red);font-size:.68rem">⚠️ Failed</span>';
-    }
+    if(card){card.classList.remove("loading");const p=document.getElementById(`wlp-${sym}`);if(p)p.innerHTML='<span style="color:var(--red);font-size:.68rem">⚠️ Failed</span>';}
   }
 }
 
@@ -1401,9 +1347,7 @@ async function addToWatchlist(sym,opts={}){
       WL_ITEMS.unshift({symbol:sym,added_at:new Date().toISOString(),...opts});
       renderWatchlist(WL_ITEMS);
       setTimeout(()=>refreshWlCard(sym),300);
-    }else{
-      showToast(`⚠️ Could not save: ${d?.error||"unknown error"}`,true);
-    }
+    }else{showToast(`⚠️ Could not save: ${d?.error||"unknown error"}`,true);}
   }catch(e){if(e.message!=="Session expired")showToast(`⚠️ ${e.message}`,true);}
 }
 
@@ -1430,7 +1374,7 @@ function editWlItem(sym){
   document.querySelector(".wl-modal-title span").textContent=`✏️ Edit ${sym}`;
   document.getElementById("wlm-save").onclick=async()=>{
     const btn=document.getElementById("wlm-save");
-    btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+    btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
     try{
       await apiFetch("/api/watchlist",{method:"POST",body:JSON.stringify({
         action:"update",symbol:sym,
@@ -1444,7 +1388,7 @@ function editWlItem(sym){
       showToast(`${sym} updated`);
       await loadWatchlist();
     }catch(e){if(e.message!=="Session expired")showToast("Update failed",true);}
-    btn.disabled=false;btn.textContent="Save to Watchlist";
+    btn.disabled=false; btn.textContent="Save to Watchlist";
     btn.onclick=saveWlModal;
     closeWlModal();
   };
@@ -1465,35 +1409,19 @@ async function sendTelegram(){
   const ids=(localStorage.getItem("tg_ids")||"").split(",").map(s=>s.trim()).filter(Boolean);
   if(!tok||!ids.length||!LAST_RESULT)return;
   const btn=document.getElementById("tgSendBtn");
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
   const r=LAST_RESULT,t=r.tech,f=r.fund;
-  const text=`📊 *${r.symbol} Analysis*
-
-💰 CMP: ₹${t.close} | Score: ${r.composite}/100 | Grade: ${r.grade}
-📈 ${t.trend} | RSI: ${t.rsiVal} | Vol: ${t.volSig}
-
-🔄 *Swing*
-Entry ₹${t.swing.entry} → T1 ₹${t.swing.target1} | T2 ₹${t.swing.target2} | SL ₹${t.swing.stopLoss} | R:R 1:${t.swing.rr}
-
-📈 *Long Term*
-Entry ₹${t.longterm.entry} → T1 ₹${t.longterm.target1} (+15%) | T2 ₹${t.longterm.target2} (+30%)
-
-🏢 PE ${f.pe?Number(f.pe).toFixed(1):"N/A"} | ROE ${f.roe||"N/A"}% | Margin ${f.margin||"N/A"}%
-
-_Not financial advice_`;
+  const text=`📊 *${r.symbol} Analysis*\n\n💰 CMP: ₹${t.close} | Score: ${r.composite}/100 | Grade: ${r.grade}\n📈 ${t.trend} | RSI: ${t.rsiVal} | Vol: ${t.volSig}\n\n🔄 *Swing*\nEntry ₹${t.swing.entry} → T1 ₹${t.swing.target1} | T2 ₹${t.swing.target2} | SL ₹${t.swing.stopLoss} | R:R 1:${t.swing.rr}\n\n📈 *Long Term*\nEntry ₹${t.longterm.entry} → T1 ₹${t.longterm.target1} (+15%) | T2 ₹${t.longterm.target2} (+30%)\n\n🏢 PE ${f.pe?Number(f.pe).toFixed(1):"N/A"} | ROE ${f.roe||"N/A"}% | Margin ${f.margin||"N/A"}%\n\n_Not financial advice_`;
   let sent=0;
   for(const id of ids){
     try{
-      const rs=await fetch(`https://api.telegram.org/bot${tok}/sendMessage`,{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({chat_id:id,text,parse_mode:"Markdown"})
-      });
+      const rs=await fetch(`https://api.telegram.org/bot${tok}/sendMessage`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:id,text,parse_mode:"Markdown"})});
       const d=await rs.json();
       if(d.ok)sent++;
     }catch(e){}
   }
   document.getElementById("tgBanner").classList.remove("on");
-  btn.disabled=false;btn.textContent="✓ Send Now";
+  btn.disabled=false; btn.textContent="✓ Send Now";
   showToast(sent>0?`✓ Sent to ${sent} group(s)`:"✗ Send failed — check Telegram settings",sent===0);
 }
 
@@ -1532,18 +1460,18 @@ function updateMkt(){
 
 // ═════════════════ INIT ══════════════════════════════════
 (function init(){
-  // Detect Supabase password-recovery redirect.
+
+  // ── STEP 1: Check for Supabase password-recovery hash ──
   // Supabase appends: #access_token=TOKEN&type=recovery&...
   // This is the ONLY code path that can reveal #resetForm.
   (function handleRecoveryHash(){
     const hash=window.location.hash.slice(1);
     if(!hash) return;
     const params=Object.fromEntries(
-      hash.split("&").map(p=>{ const [k,...v]=p.split("="); return [k,v.join("=")]; })
+      hash.split("&").map(p=>{ const[k,...v]=p.split("="); return[k,v.join("=")]; })
     );
-    if(params.type==="recovery" && params.access_token){
+    if(params.type==="recovery"&&params.access_token){
       _recoveryToken=decodeURIComponent(params.access_token);
-      // Hide all other panels and tabs
       document.getElementById("loginForm").style.display="none";
       document.getElementById("signupForm").style.display="none";
       document.getElementById("forgotForm").style.display="none";
@@ -1553,17 +1481,18 @@ function updateMkt(){
       setTimeout(()=>document.getElementById("newPass1")?.focus(),60);
     }
   })();
-  // Restore session (will be validated by first API call — 401 forces re-login)
+
+  // ── STEP 2: Restore session ──
   const saved=localStorage.getItem("ts_session");
   if(saved){try{SESSION=JSON.parse(saved);}catch(e){}}
-  if(SESSION?.access_token)onLogin();
+  if(SESSION?.access_token) onLogin();
 
   // Quick stock chips
   const wr=document.getElementById("quickRow");
   POPULAR.forEach(sym=>{
     const s=document.createElement("span");
-    s.className="qs";s.textContent=sym;
-    s.onclick=()=>{document.getElementById("stockSym").value=sym;runSingle();};
+    s.className="qs"; s.textContent=sym;
+    s.onclick=()=>{ document.getElementById("stockSym").value=sym; runSingle(); };
     wr.appendChild(s);
   });
 
@@ -1571,6 +1500,8 @@ function updateMkt(){
   document.getElementById("stockSym")?.addEventListener("keydown",e=>{if(e.key==="Enter")runSingle();});
   document.getElementById("loginPass")?.addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();});
   document.getElementById("signupPass")?.addEventListener("keydown",e=>{if(e.key==="Enter")doSignup();});
+  document.getElementById("forgotEmail")?.addEventListener("keydown",e=>{if(e.key==="Enter")doForgotPassword();});
+  document.getElementById("newPass2")?.addEventListener("keydown",e=>{if(e.key==="Enter")doResetPassword();});
   document.getElementById("wlm-sym")?.addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("wlm-buy").focus();});
 
   // Result tab switching
