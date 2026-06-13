@@ -309,11 +309,14 @@
       </div>
       Trade Screener
     </div>
+
     <div class="auth-tab-row">
       <button class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
       <button class="auth-tab" onclick="switchAuthTab('signup')">Create Account</button>
     </div>
     <div id="authMsg" class="auth-msg"></div>
+
+    <!-- Login form -->
     <div id="loginForm">
       <div style="margin-bottom:1rem">
         <label class="fl">Email</label>
@@ -324,7 +327,12 @@
         <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"/>
       </div>
       <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem" id="loginBtn" onclick="doLogin()">Sign In</button>
+      <div style="text-align:center;margin-top:0.8rem;">
+        <a href="#" onclick="showForgotForm()" style="font-size:0.85rem;color:var(--text-muted);">Forgot Password?</a>
+      </div>
     </div>
+
+    <!-- Signup form -->
     <div id="signupForm" style="display:none">
       <div style="margin-bottom:1rem">
         <label class="fl">Email</label>
@@ -335,6 +343,18 @@
         <input type="password" id="signupPass" placeholder="Min 6 characters" autocomplete="new-password"/>
       </div>
       <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem" id="signupBtn" onclick="doSignup()">Create Account</button>
+    </div>
+
+    <!-- Forgot Password form (initially hidden) -->
+    <div id="forgotForm" style="display:none">
+      <div style="margin-bottom:1.4rem">
+        <label class="fl">Email</label>
+        <input type="email" id="forgotEmail" placeholder="you@example.com" autocomplete="email"/>
+      </div>
+      <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem" onclick="doForgotPassword()">Send Reset Link</button>
+      <div style="text-align:center;margin-top:0.8rem;">
+        <a href="#" onclick="switchAuthTab('login')" style="font-size:0.85rem;color:var(--text-muted);">← Back to Sign In</a>
+      </div>
     </div>
   </div>
 </div>
