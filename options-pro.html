@@ -159,7 +159,7 @@ table.chain tr:hover td{background:var(--bg2)}
 .datasource-badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:.6rem;padding:2px 8px;border-radius:4px;font-weight:600}
 .ds-live{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bdr)}
 .ds-sim{background:var(--gold-bg);color:#b45309;border:1px solid var(--gold-bdr)}
-/* ─── SIGNAL ENGINE SPECIFIC ─── */
+/* ─── SIGNAL ENGINE ─── */
 .se-layout{display:grid;grid-template-columns:260px 1fr;gap:1.25rem;align-items:start}
 .se-sidebar{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:1.2rem;box-shadow:var(--shadow)}
 .se-sidebar-section{font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);margin:1.1rem 0 .5rem;padding-bottom:.25rem;border-bottom:1px solid var(--border)}
@@ -167,7 +167,6 @@ table.chain tr:hover td{background:var(--bg2)}
 .se-slider-row{margin-bottom:.75rem}
 .se-slider-label{display:flex;justify-content:space-between;align-items:center;font-size:.7rem;color:var(--muted);margin-bottom:.3rem}
 .se-slider-label span:last-child{font-family:var(--mono);font-weight:600;color:var(--ink);font-size:.78rem}
-.se-main{}
 .se-signal-box{border-radius:16px;padding:1.5rem;margin-bottom:1.2rem;border:2px solid transparent}
 .se-signal-box.call{background:var(--green-bg);border-color:var(--green-bdr)}
 .se-signal-box.put{background:var(--red-bg);border-color:var(--red-bdr)}
@@ -199,14 +198,6 @@ table.chain tr:hover td{background:var(--bg2)}
 .se-chart-area{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:1.1rem;margin-bottom:1rem;overflow:hidden}
 .se-chart-title{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.65rem}
 canvas.se-chart{width:100%!important;display:block}
-.strat-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.85rem;margin-bottom:1.4rem}
-.strat-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:1.1rem;cursor:pointer;transition:border-color .2s,box-shadow .2s}
-.strat-card:hover{border-color:var(--accent2);box-shadow:var(--shadow)}
-.strat-card.selected{border-color:var(--accent2);background:var(--blue-bg)}
-.strat-icon{font-size:1.3rem;margin-bottom:.4rem}
-.strat-title{font-weight:700;font-size:.85rem;margin-bottom:.15rem}
-.strat-desc{font-size:.7rem;color:var(--muted);line-height:1.5}
-.strat-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:.5rem}
 .pcr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:.6rem;margin-bottom:1rem}
 .pcr-cell{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:.65rem .8rem}
 .pcr-label{font-size:.57rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.2rem}
@@ -408,17 +399,15 @@ footer{text-align:center;padding:1.75rem 1rem;font-size:.69rem;color:var(--muted
         <div id="signalResult" style="display:none"></div>
       </div>
 
-      <!-- ▸ SIGNAL ENGINE (NEW) -->
+      <!-- ▸ SIGNAL ENGINE -->
       <div id="page-engine" style="display:none">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem;margin-bottom:.3rem">
           <div class="section-label">Technical Analysis Engine</div>
           <button class="btn btn-ghost btn-sm" id="seSettingsToggle" onclick="toggleSeSidebar()" style="display:none">⚙ Parameters</button>
         </div>
         <h2>Options Signal Engine</h2>
-        <p class="sub">MA · RSI · ATR · Bollinger Bands · MACD — computes CALL BUY / PUT BUY / HOLD with ATR-based SL/TP and lot sizing. All indicators computed in-browser from live OHLC data.</p>
-
+        <p class="sub">MA · RSI · ATR · Bollinger Bands · MACD — computes CALL BUY / PUT BUY / HOLD with ATR-based SL/TP and lot sizing.</p>
         <div class="se-layout">
-          <!-- SIDEBAR PARAMS -->
           <div class="se-sidebar" id="seSidebar">
             <div class="se-sidebar-section">Index</div>
             <div style="margin-bottom:.85rem">
@@ -437,7 +426,6 @@ footer{text-align:center;padding:1.75rem 1rem;font-size:.69rem;color:var(--muted
                 <option value="1y">1 Year</option>
               </select>
             </div>
-
             <div class="se-sidebar-section">Indicator Parameters</div>
             <div class="se-slider-row">
               <div class="se-slider-label"><span>Fast MA</span><span id="se_ma_fast_v">9</span></div>
@@ -455,7 +443,6 @@ footer{text-align:center;padding:1.75rem 1rem;font-size:.69rem;color:var(--muted
               <div class="se-slider-label"><span>RSI Oversold</span><span id="se_rsi_os_v">45</span></div>
               <input type="range" min="20" max="50" value="45" id="se_rsi_os" oninput="document.getElementById('se_rsi_os_v').textContent=this.value"/>
             </div>
-
             <div class="se-sidebar-section">Risk Management (ATR)</div>
             <div class="se-slider-row">
               <div class="se-slider-label"><span>Stop Loss × ATR</span><span id="se_sl_v">1.5</span></div>
@@ -465,7 +452,6 @@ footer{text-align:center;padding:1.75rem 1rem;font-size:.69rem;color:var(--muted
               <div class="se-slider-label"><span>Target × ATR</span><span id="se_tp_v">2.0</span></div>
               <input type="range" min="1.5" max="5" step="0.1" value="2.0" id="se_tp" oninput="document.getElementById('se_tp_v').textContent=parseFloat(this.value).toFixed(1)"/>
             </div>
-
             <div class="se-sidebar-section">Capital & Position</div>
             <div style="margin-bottom:.85rem">
               <label class="fl">Total Capital (₹)</label>
@@ -480,17 +466,11 @@ footer{text-align:center;padding:1.75rem 1rem;font-size:.69rem;color:var(--muted
               <input type="range" min="0.1" max="1.0" step="0.05" value="0.50" id="se_delta" oninput="document.getElementById('se_delta_v').textContent=parseFloat(this.value).toFixed(2)"/>
             </div>
             <div style="margin-top:1rem">
-              <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="runSignalEngine()">
-                Run Engine →
-              </button>
+              <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="runSignalEngine()">Run Engine →</button>
             </div>
           </div>
-
-          <!-- MAIN OUTPUT -->
           <div class="se-main" id="seMain">
-            <div class="empty-state" id="seEmpty">
-              Configure parameters in the panel and click <strong>Run Engine</strong> to generate a signal.
-            </div>
+            <div class="empty-state" id="seEmpty">Configure parameters in the panel and click <strong>Run Engine</strong> to generate a signal.</div>
             <div id="seResult" style="display:none"></div>
           </div>
         </div>
@@ -627,7 +607,7 @@ footer{text-align:center;padding:1.75rem 1rem;font-size:.69rem;color:var(--muted
       <div><label class="fl">Strategy</label><input type="text" id="tj_strategy" placeholder="Iron Condor"/></div>
       <div><label class="fl">Expiry Date</label><input type="text" id="tj_expiry" placeholder="26-JUN-2025"/></div>
       <div><label class="fl">Status</label>
-        <select class="inp" id="tj_status">
+        <select class="inp" id="tj_status" onchange="toggleClosedFields()">
           <option value="planned">Planned</option>
           <option value="active">Active</option>
           <option value="closed">Closed</option>
@@ -687,147 +667,179 @@ footer{text-align:center;padding:1.75rem 1rem;font-size:.69rem;color:var(--muted
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-
-  async function querySupabase(path, options = {}) {
+// ══════════════════════════════════════════════════════
+// SUPABASE PROXY HELPER — fixed with correct Prefer headers
+// ══════════════════════════════════════════════════════
+async function querySupabase(path, options = {}) {
   const method = options.method || 'GET';
-  const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
-  
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
-  // Add Prefer header for mutations (required by Supabase REST)
-  if (isMutation) {
-    headers['Prefer'] = options.method === 'DELETE' ? 'return=minimal' : 'return=representation';
+
+  // Determine the correct Prefer header for each operation
+  let preferHeader = 'return=representation';
+  if (method === 'PATCH' || method === 'DELETE') {
+    preferHeader = 'return=minimal';
   }
 
-  const res = await fetch(`/api/supabase/rest/v1/${path}`, {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Prefer': preferHeader,
+    ...(options.headers || {}),
+  };
+
+  const fetchOptions = {
     ...options,
     method,
     headers,
-  });
+  };
 
+  const res = await fetch(`/api/supabase/rest/v1/${path}`, fetchOptions);
+
+  // 204 No Content is a success for DELETE/PATCH
+  if (res.status === 204) return null;
+
+  // Any other non-ok status is an error
   if (!res.ok) {
-    const text = await res.text();
-    console.error('Supabase proxy error:', res.status, text.slice(0, 200));
-    throw new Error(`Supabase proxy error ${res.status}: ${text.slice(0, 100)}`);
+    let errText;
+    try { errText = await res.text(); } catch(e) { errText = res.statusText; }
+    throw new Error(`Supabase error ${res.status}: ${errText}`);
   }
-  // DELETE with return=minimal returns empty body – handle gracefully
-  if (method === 'DELETE' && res.headers.get('content-length') === '0') {
-    return { success: true };
-  }
-  return res.json();
+
+  // Parse JSON if there's a body
+  const text = await res.text();
+  if (!text || text.trim() === '') return null;
+  try { return JSON.parse(text); } catch(e) { return null; }
 }
-  
+
+// ══════════════════════════════════════════════════════
+// NSE & YAHOO PROXY HELPERS
+// ══════════════════════════════════════════════════════
+async function nseOptionChain(symbol, expiry = '') {
+  const params = new URLSearchParams({ symbol });
+  if (expiry) params.set('expiry', expiry);
+  const r = await fetch(`/api/nse/option-chain?${params}`);
+  if (!r.ok) throw new Error(`NSE proxy error ${r.status}`);
+  return r.json();
+}
+async function nseExpiryDates(symbol) {
+  const r = await fetch(`/api/nse/expiry-dates?symbol=${symbol}`);
+  if (!r.ok) throw new Error('NSE expiry fetch failed');
+  return r.json();
+}
+async function nseQuote(symbol) {
+  const r = await fetch(`/api/nse/quote?symbol=${symbol}`);
+  if (!r.ok) throw new Error('NSE quote fetch failed');
+  return r.json();
+}
+async function yahooChart(ticker, range) {
+  const r = await fetch(`/api/yahoo/chart/${encodeURIComponent(ticker)}?interval=1d&range=${range}`);
+  if (!r.ok) throw new Error('Yahoo proxy error');
+  return r.json();
+}
+
+// ══════════════════════════════════════════════════════
 // AUTH
 // ══════════════════════════════════════════════════════
 let SESSION = null;
-let _sessionExpiredShown = false;
 
-function switchAuthTab(tab){
-  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',i===(tab==='login'?0:1)));
-  document.getElementById('loginForm').style.display=tab==='login'?'block':'none';
-  document.getElementById('signupForm').style.display=tab==='signup'?'block':'none';
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t, i) => t.classList.toggle('active', i === (tab === 'login' ? 0 : 1)));
+  document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('signupForm').style.display = tab === 'signup' ? 'block' : 'none';
   clearAuthMsg();
 }
-function authMsg(m,t){const el=document.getElementById('authMsg');el.textContent=m;el.className='auth-msg '+t;}
-function clearAuthMsg(){document.getElementById('authMsg').className='auth-msg';}
-async function callAuth(body){
-  const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+function authMsg(m, t) { const el = document.getElementById('authMsg'); el.textContent = m; el.className = 'auth-msg ' + t; }
+function clearAuthMsg() { document.getElementById('authMsg').className = 'auth-msg'; }
+async function callAuth(body) {
+  const r = await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   return r.json();
 }
-async function doLogin(){
-  const email=document.getElementById('loginEmail').value.trim();
-  const pass=document.getElementById('loginPass').value;
-  if(!email||!pass) return authMsg('Email and password required','err');
-  const btn=document.getElementById('loginBtn');
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
-  try{
-    const d=await callAuth({action:'login',email,password:pass});
-    if(d.access_token){SESSION={access_token:d.access_token,user:d.user};localStorage.setItem('ts_session',JSON.stringify(SESSION));onLogin();}
-    else authMsg(d.error_description||d.msg||'Login failed','err');
-  }catch(e){authMsg('Network error — try again','err');}
-  btn.disabled=false;btn.textContent='Sign In';
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if (!email || !pass) return authMsg('Email and password required', 'err');
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const d = await callAuth({ action: 'login', email, password: pass });
+    if (d.access_token) { SESSION = { access_token: d.access_token, user: d.user }; localStorage.setItem('ts_session', JSON.stringify(SESSION)); onLogin(); }
+    else authMsg(d.error_description || d.msg || 'Login failed', 'err');
+  } catch (e) { authMsg('Network error — try again', 'err'); }
+  btn.disabled = false; btn.textContent = 'Sign In';
 }
-async function doSignup(){
-  const email=document.getElementById('signupEmail').value.trim();
-  const pass=document.getElementById('signupPass').value;
-  if(!email||!pass) return authMsg('Email and password required','err');
-  const btn=document.getElementById('signupBtn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
-  try{
-    const d=await callAuth({action:'signup',email,password:pass});
-    if(d.id||d.user?.id) authMsg('Account created! Check your email, then sign in.','ok');
-    else authMsg(d.msg||d.error_description||'Signup failed','err');
-  }catch(e){authMsg('Network error — try again','err');}
-  btn.disabled=false;btn.textContent='Create Account';
+async function doSignup() {
+  const email = document.getElementById('signupEmail').value.trim();
+  const pass = document.getElementById('signupPass').value;
+  if (!email || !pass) return authMsg('Email and password required', 'err');
+  const btn = document.getElementById('signupBtn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const d = await callAuth({ action: 'signup', email, password: pass });
+    if (d.id || d.user?.id) authMsg('Account created! Check your email, then sign in.', 'ok');
+    else authMsg(d.msg || d.error_description || 'Signup failed', 'err');
+  } catch (e) { authMsg('Network error — try again', 'err'); }
+  btn.disabled = false; btn.textContent = 'Create Account';
 }
-async function doLogout(){
-  try{if(SESSION) await callAuth({action:'logout'});}catch(e){}
-  SESSION=null;localStorage.removeItem('ts_session');
+async function doLogout() {
+  try { if (SESSION) await callAuth({ action: 'logout' }); } catch (e) {}
+  SESSION = null; localStorage.removeItem('ts_session');
   document.getElementById('authOverlay').classList.remove('hidden');
   document.getElementById('appShell').classList.remove('visible');
 }
-function onLogin(){
+function onLogin() {
   document.getElementById('authOverlay').classList.add('hidden');
   document.getElementById('appShell').classList.add('visible');
-  document.getElementById('userEmail').textContent=SESSION.user?.email||'';
-  loadJournal();showPage('chain');
+  document.getElementById('userEmail').textContent = SESSION.user?.email || '';
+  loadJournal(); showPage('chain');
 }
 
 // ══════════════════════════════════════════════════════
 // NAV
 // ══════════════════════════════════════════════════════
-function showPage(name){
-  document.querySelectorAll('.page > div[id^="page-"]').forEach(p=>p.style.display='none');
-  document.getElementById('page-'+name).style.display='block';
-  document.querySelectorAll('[data-page]').forEach(n=>n.classList.toggle('active',n.dataset.page===name));
-  if(name==='journal') loadJournal();
-  if(name==='engine'){document.getElementById('seSettingsToggle').style.display='block';}
-  else{document.getElementById('seSettingsToggle').style.display='none';}
-  window.scrollTo({top:0});
+function showPage(name) {
+  document.querySelectorAll('.page > div[id^="page-"]').forEach(p => p.style.display = 'none');
+  document.getElementById('page-' + name).style.display = 'block';
+  document.querySelectorAll('[data-page]').forEach(n => n.classList.toggle('active', n.dataset.page === name));
+  if (name === 'journal') loadJournal();
+  document.getElementById('seSettingsToggle').style.display = name === 'engine' ? 'block' : 'none';
+  window.scrollTo({ top: 0 });
 }
-function toggleSeSidebar(){
-  const s=document.getElementById('seSidebar');
-  s.classList.toggle('mobile-open');
-}
+function toggleSeSidebar() { document.getElementById('seSidebar').classList.toggle('mobile-open'); }
 
 // ══════════════════════════════════════════════════════
 // TOAST
 // ══════════════════════════════════════════════════════
 let _toastTimer;
-function showToast(msg,type=''){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.className='toast'+(type?' '+type:'');
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast' + (type ? ' ' + type : '');
   clearTimeout(_toastTimer);
-  requestAnimationFrame(()=>t.classList.add('show'));
-  _toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
+  requestAnimationFrame(() => t.classList.add('show'));
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
 }
 
 // ══════════════════════════════════════════════════════
 // EXPIRY HELPERS
 // ══════════════════════════════════════════════════════
-async function loadExpiriesForSym(sym,selectId){
-  const sel=document.getElementById(selectId);
-  if(!sel) return;
-  sel.innerHTML='<option value="">Loading…</option>';
-  try{
-    const data=await nseExpiryDates(sym);
-    const dates=data.expiryDates||[];
-    if(dates.length){sel.innerHTML=dates.map(d=>`<option value="${d}">${d}</option>`).join('');return dates[0];}
-  }catch(e){console.warn('NSE expiry fallback:',e.message);}
-  const dates=generateNSEExpiries();
-  sel.innerHTML=dates.map(d=>`<option value="${d}">${d}</option>`).join('');
+async function loadExpiriesForSym(sym, selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Loading…</option>';
+  try {
+    const data = await nseExpiryDates(sym);
+    const dates = data.expiryDates || [];
+    if (dates.length) { sel.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join(''); return dates[0]; }
+  } catch (e) { console.warn('NSE expiry fallback:', e.message); }
+  const dates = generateNSEExpiries();
+  sel.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('');
   return dates[0];
 }
-function generateNSEExpiries(){
-  const dates=[];let d=new Date();
-  const daysToThur=(4-d.getDay()+7)%7||7;
-  d.setDate(d.getDate()+daysToThur);
-  for(let i=0;i<10;i++){dates.push(fmtExpiry(new Date(d)));d.setDate(d.getDate()+7);}
+function generateNSEExpiries() {
+  const dates = []; let d = new Date();
+  const daysToThur = (4 - d.getDay() + 7) % 7 || 7;
+  d.setDate(d.getDate() + daysToThur);
+  for (let i = 0; i < 10; i++) { dates.push(fmtExpiry(new Date(d))); d.setDate(d.getDate() + 7); }
   return dates;
 }
-function fmtExpiry(d){
-  const m=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+function fmtExpiry(d) {
+  const m = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   return `${String(d.getDate()).padStart(2,'0')}-${m[d.getMonth()]}-${d.getFullYear()}`;
 }
 
@@ -839,413 +851,564 @@ let _currentChainData = null;
 let _currentSpot = null;
 let _seCharts = {};
 
-function quickLoad(sym){document.getElementById('optSym').value=sym;loadChain();}
-async function loadChain(){
-  const sym=document.getElementById('optSym').value.trim().toUpperCase();
-  if(!sym){showToast('Enter a symbol first','err');return;}
-  const depth=parseInt(document.getElementById('strikeDepth').value)||10;
-  const btn=document.getElementById('chainBtn');
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Loading';
-  document.getElementById('chainTableWrap').innerHTML=`<div class="empty-state"><span class="spinner" style="width:18px;height:18px"></span><br/>Fetching live NSE data…</div>`;
-  document.getElementById('chainMetrics').style.display='none';
-  const expiry=await loadExpiriesForSym(sym,'expirySelect');
-  const selectedExpiry=document.getElementById('expirySelect').value||expiry||'';
-  try{
-    const chainData=await nseOptionChain(sym,selectedExpiry);
-    _currentChainData=chainData;_currentSpot=chainData.underlyingValue;
-    const badge=document.getElementById('chainDataBadge');
-    badge.innerHTML=`<span class="datasource-badge ds-live">● LIVE NSE</span> <span style="font-size:.65rem;color:var(--muted2);margin-left:4px">${new Date().toLocaleTimeString('en-IN')}</span>`;
-    badge.style.display='flex';
-    renderChainFromNSE(chainData,depth,selectedExpiry);
-    showToast(`✓ ${sym} live chain loaded`,'ok');
-  }catch(e){
-    showToast(`⚠️ ${e.message} — showing simulated data`,'err');
-    const spot=await fallbackSpot(sym);
-    const chain=buildSyntheticChain(spot,sym,depth);
-    renderChainMetrics(sym,spot,chain,selectedExpiry,false);
-    renderChainTable(chain,spot);
-    const badge=document.getElementById('chainDataBadge');
-    badge.innerHTML=`<span class="datasource-badge ds-sim">⚠ SIMULATED</span>`;
-    badge.style.display='flex';
+function quickLoad(sym) { document.getElementById('optSym').value = sym; loadChain(); }
+
+async function loadChain() {
+  const sym = document.getElementById('optSym').value.trim().toUpperCase();
+  if (!sym) { showToast('Enter a symbol first', 'err'); return; }
+  const depth = parseInt(document.getElementById('strikeDepth').value) || 10;
+  const btn = document.getElementById('chainBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Loading';
+  document.getElementById('chainTableWrap').innerHTML = `<div class="empty-state"><span class="spinner" style="width:18px;height:18px"></span><br/>Fetching live NSE data…</div>`;
+  document.getElementById('chainMetrics').style.display = 'none';
+  const expiry = await loadExpiriesForSym(sym, 'expirySelect');
+  const selectedExpiry = document.getElementById('expirySelect').value || expiry || '';
+  try {
+    const chainData = await nseOptionChain(sym, selectedExpiry);
+    _currentChainData = chainData; _currentSpot = chainData.underlyingValue;
+    const badge = document.getElementById('chainDataBadge');
+    badge.innerHTML = `<span class="datasource-badge ds-live">● LIVE NSE</span> <span style="font-size:.65rem;color:var(--muted2);margin-left:4px">${new Date().toLocaleTimeString('en-IN')}</span>`;
+    badge.style.display = 'flex';
+    renderChainFromNSE(chainData, depth, selectedExpiry);
+    showToast(`✓ ${sym} live chain loaded`, 'ok');
+  } catch (e) {
+    showToast(`⚠️ ${e.message} — showing simulated data`, 'err');
+    const spot = await fallbackSpot(sym);
+    const chain = buildSyntheticChain(spot, sym, depth);
+    renderChainMetrics(sym, spot, chain, selectedExpiry, false);
+    renderChainTable(chain, spot);
+    const badge = document.getElementById('chainDataBadge');
+    badge.innerHTML = `<span class="datasource-badge ds-sim">⚠ SIMULATED</span>`;
+    badge.style.display = 'flex';
   }
-  btn.disabled=false;btn.textContent='Load Chain';
+  btn.disabled = false; btn.textContent = 'Load Chain';
 }
-async function fallbackSpot(sym){
-  const idx={NIFTY:22500,BANKNIFTY:48200,FINNIFTY:20000,MIDCPNIFTY:10500,NIFTYIT:35000,SENSEX:74000};
-  if(NSE_INDICES.includes(sym)) return idx[sym]||22000;
-  try{const q=await nseQuote(sym);if(q.lastPrice) return q.lastPrice;}catch(e){}
+
+async function fallbackSpot(sym) {
+  const idx = { NIFTY: 22500, BANKNIFTY: 48200, FINNIFTY: 20000, MIDCPNIFTY: 10500, NIFTYIT: 35000, SENSEX: 74000 };
+  if (NSE_INDICES.includes(sym)) return idx[sym] || 22000;
+  try { const q = await nseQuote(sym); if (q.lastPrice) return q.lastPrice; } catch (e) {}
   throw new Error(`Could not fetch spot for ${sym}`);
 }
-function renderChainFromNSE(chainData,depth,expiry){
-  const{chain:rows,underlyingValue:spot}=chainData;
-  if(!rows||!rows.length){document.getElementById('chainTableWrap').innerHTML=`<div class="empty-state">No chain data returned.</div>`;return;}
-  const expiryRows=rows.filter(r=>(!r.call?.expiryDate&&!r.put?.expiryDate)||r.call?.expiryDate===expiry||r.put?.expiryDate===expiry);
-  const finalRows=expiryRows.length?expiryRows:rows;
-  const atm=finalRows.reduce((best,r)=>Math.abs(r.strike-spot)<Math.abs(best-spot)?r.strike:best,finalRows[0].strike);
-  const si=finalRows.length>1?Math.abs(finalRows[1].strike-finalRows[0].strike):50;
-  let displayed=depth>0?finalRows.filter(r=>Math.abs(r.strike-atm)<=depth*si):finalRows;
-  const totalCallOI=displayed.reduce((a,r)=>a+(r.call?.openInterest||0),0);
-  const totalPutOI=displayed.reduce((a,r)=>a+(r.put?.openInterest||0),0);
-  const pcr=totalCallOI?(totalPutOI/totalCallOI).toFixed(2):'—';
-  const maxPain=calcMaxPainFromNSE(displayed);
-  const atmRow=displayed.find(r=>r.strike===atm);
-  const atmCallIV=atmRow?.call?.impliedVolatility||0;
-  const atmPutIV=atmRow?.put?.impliedVolatility||0;
-  const cards=[
-    {l:'Spot Price',v:`₹${spot.toLocaleString('en-IN')}`,s:chainData.symbol},
-    {l:'Expiry',v:expiry,s:'NSE F&O'},
-    {l:'PCR (OI)',v:pcr,s:+pcr>1.2?'Bullish':+pcr<0.8?'Bearish':'Neutral'},
-    {l:'Max Pain',v:`₹${maxPain.toLocaleString('en-IN')}`,s:`${((maxPain-spot)/spot*100).toFixed(1)}% from spot`},
-    {l:'ATM Call IV',v:`${atmCallIV.toFixed(1)}%`,s:'Implied Volatility'},
-    {l:'ATM Put IV',v:`${atmPutIV.toFixed(1)}%`,s:'Implied Volatility'},
-    {l:'Total Call OI',v:fmtOI(totalCallOI),s:'Contracts'},
-    {l:'Total Put OI',v:fmtOI(totalPutOI),s:'Contracts'},
+
+function renderChainFromNSE(chainData, depth, expiry) {
+  const { chain: rows, underlyingValue: spot } = chainData;
+  if (!rows || !rows.length) { document.getElementById('chainTableWrap').innerHTML = `<div class="empty-state">No chain data returned.</div>`; return; }
+  const expiryRows = rows.filter(r => (!r.call?.expiryDate && !r.put?.expiryDate) || r.call?.expiryDate === expiry || r.put?.expiryDate === expiry);
+  const finalRows = expiryRows.length ? expiryRows : rows;
+  const atm = finalRows.reduce((best, r) => Math.abs(r.strike - spot) < Math.abs(best - spot) ? r.strike : best, finalRows[0].strike);
+  const si = finalRows.length > 1 ? Math.abs(finalRows[1].strike - finalRows[0].strike) : 50;
+  let displayed = depth > 0 ? finalRows.filter(r => Math.abs(r.strike - atm) <= depth * si) : finalRows;
+  const totalCallOI = displayed.reduce((a, r) => a + (r.call?.openInterest || 0), 0);
+  const totalPutOI = displayed.reduce((a, r) => a + (r.put?.openInterest || 0), 0);
+  const pcr = totalCallOI ? (totalPutOI / totalCallOI).toFixed(2) : '—';
+  const maxPain = calcMaxPainFromNSE(displayed);
+  const atmRow = displayed.find(r => r.strike === atm);
+  const atmCallIV = atmRow?.call?.impliedVolatility || 0;
+  const atmPutIV = atmRow?.put?.impliedVolatility || 0;
+  const cards = [
+    { l: 'Spot Price', v: `₹${spot.toLocaleString('en-IN')}`, s: chainData.symbol },
+    { l: 'Expiry', v: expiry, s: 'NSE F&O' },
+    { l: 'PCR (OI)', v: pcr, s: +pcr > 1.2 ? 'Bullish' : +pcr < 0.8 ? 'Bearish' : 'Neutral' },
+    { l: 'Max Pain', v: `₹${maxPain.toLocaleString('en-IN')}`, s: `${((maxPain - spot) / spot * 100).toFixed(1)}% from spot` },
+    { l: 'ATM Call IV', v: `${atmCallIV.toFixed(1)}%`, s: 'Implied Volatility' },
+    { l: 'ATM Put IV', v: `${atmPutIV.toFixed(1)}%`, s: 'Implied Volatility' },
+    { l: 'Total Call OI', v: fmtOI(totalCallOI), s: 'Contracts' },
+    { l: 'Total Put OI', v: fmtOI(totalPutOI), s: 'Contracts' },
   ];
-  document.getElementById('chainMetricCards').innerHTML=cards.map(c=>`<div class="greek-card"><div class="gc-label">${c.l}</div><div class="gc-val">${c.v}</div><div class="gc-sub">${c.s}</div></div>`).join('');
-  document.getElementById('chainMetrics').style.display='block';
-  const maxCallOI=Math.max(...displayed.map(r=>r.call?.openInterest||0));
-  const maxPutOI=Math.max(...displayed.map(r=>r.put?.openInterest||0));
-  const hdr=`<table class="chain"><thead><tr><th colspan="6" class="chain-call-hd">CALLS</th><th class="chain-strike-hd">STRIKE</th><th colspan="6" class="chain-put-hd">PUTS</th></tr>
+  document.getElementById('chainMetricCards').innerHTML = cards.map(c => `<div class="greek-card"><div class="gc-label">${c.l}</div><div class="gc-val">${c.v}</div><div class="gc-sub">${c.s}</div></div>`).join('');
+  document.getElementById('chainMetrics').style.display = 'block';
+  const maxCallOI = Math.max(...displayed.map(r => r.call?.openInterest || 0));
+  const maxPutOI = Math.max(...displayed.map(r => r.put?.openInterest || 0));
+  const hdr = `<table class="chain"><thead><tr><th colspan="6" class="chain-call-hd">CALLS</th><th class="chain-strike-hd">STRIKE</th><th colspan="6" class="chain-put-hd">PUTS</th></tr>
   <tr><th>OI</th><th>OI Chg</th><th>IV%</th><th>LTP</th><th>Vol</th><th>Bid/Ask</th><th>₹</th><th>OI</th><th>OI Chg</th><th>IV%</th><th>LTP</th><th>Vol</th><th>Bid/Ask</th></tr></thead><tbody>`;
-  const tbody=displayed.map(r=>{
-    const isAtm=r.strike===atm;const isITMCall=r.strike<spot;const isITMPut=r.strike>spot;
-    const callHighOI=(r.call?.openInterest||0)>maxCallOI*0.6;const putHighOI=(r.put?.openInterest||0)>maxPutOI*0.6;
-    const cf=isITMCall?'itm-call':'otm';const pf=isITMPut?'itm-put':'otm';
-    const c=r.call||{};const p=r.put||{};
-    return `<tr class="${isAtm?'atm-row':''}">
-      <td class="${cf}${callHighOI?' high-oi':''}">${fmtOI(c.openInterest||0)}</td>
-      <td class="${(c.changeinOpenInterest||0)>=0?'g-txt':'r-txt'}">${(c.changeinOpenInterest||0)>=0?'+':''}${fmtOI(c.changeinOpenInterest||0)}</td>
-      <td class="${cf}">${(c.impliedVolatility||0).toFixed(1)}%</td>
-      <td class="${cf}"><strong>₹${(c.lastPrice||0).toFixed(2)}</strong></td>
-      <td class="${cf}">${fmtOI(c.totalTradedVolume||0)}</td>
-      <td class="${cf}" style="font-size:.64rem">${(c.bidprice||0).toFixed(0)}/${(c.askPrice||0).toFixed(0)}</td>
+  const tbody = displayed.map(r => {
+    const isAtm = r.strike === atm; const isITMCall = r.strike < spot; const isITMPut = r.strike > spot;
+    const callHighOI = (r.call?.openInterest || 0) > maxCallOI * 0.6; const putHighOI = (r.put?.openInterest || 0) > maxPutOI * 0.6;
+    const cf = isITMCall ? 'itm-call' : 'otm'; const pf = isITMPut ? 'itm-put' : 'otm';
+    const c = r.call || {}; const p = r.put || {};
+    return `<tr class="${isAtm ? 'atm-row' : ''}">
+      <td class="${cf}${callHighOI ? ' high-oi' : ''}">${fmtOI(c.openInterest || 0)}</td>
+      <td class="${(c.changeinOpenInterest || 0) >= 0 ? 'g-txt' : 'r-txt'}">${(c.changeinOpenInterest || 0) >= 0 ? '+' : ''}${fmtOI(c.changeinOpenInterest || 0)}</td>
+      <td class="${cf}">${(c.impliedVolatility || 0).toFixed(1)}%</td>
+      <td class="${cf}"><strong>₹${(c.lastPrice || 0).toFixed(2)}</strong></td>
+      <td class="${cf}">${fmtOI(c.totalTradedVolume || 0)}</td>
+      <td class="${cf}" style="font-size:.64rem">${(c.bidprice || 0).toFixed(0)}/${(c.askPrice || 0).toFixed(0)}</td>
       <td class="strike-td">${r.strike.toLocaleString('en-IN')}</td>
-      <td class="${pf}${putHighOI?' high-oi':''}">${fmtOI(p.openInterest||0)}</td>
-      <td class="${(p.changeinOpenInterest||0)>=0?'g-txt':'r-txt'}">${(p.changeinOpenInterest||0)>=0?'+':''}${fmtOI(p.changeinOpenInterest||0)}</td>
-      <td class="${pf}">${(p.impliedVolatility||0).toFixed(1)}%</td>
-      <td class="${pf}"><strong>₹${(p.lastPrice||0).toFixed(2)}</strong></td>
-      <td class="${pf}">${fmtOI(p.totalTradedVolume||0)}</td>
-      <td class="${pf}" style="font-size:.64rem">${(p.bidprice||0).toFixed(0)}/${(p.askPrice||0).toFixed(0)}</td>
+      <td class="${pf}${putHighOI ? ' high-oi' : ''}">${fmtOI(p.openInterest || 0)}</td>
+      <td class="${(p.changeinOpenInterest || 0) >= 0 ? 'g-txt' : 'r-txt'}">${(p.changeinOpenInterest || 0) >= 0 ? '+' : ''}${fmtOI(p.changeinOpenInterest || 0)}</td>
+      <td class="${pf}">${(p.impliedVolatility || 0).toFixed(1)}%</td>
+      <td class="${pf}"><strong>₹${(p.lastPrice || 0).toFixed(2)}</strong></td>
+      <td class="${pf}">${fmtOI(p.totalTradedVolume || 0)}</td>
+      <td class="${pf}" style="font-size:.64rem">${(p.bidprice || 0).toFixed(0)}/${(p.askPrice || 0).toFixed(0)}</td>
      </tr>`;
   }).join('');
-  document.getElementById('chainTableWrap').innerHTML=`<div style="margin-bottom:.5rem;font-size:.7rem;color:var(--muted2)">🟡 ATM &nbsp;· <span style="color:var(--green)">Green = ITM Call</span> &nbsp;· <span style="color:var(--red)">Red = ITM Put</span> &nbsp;· 🔵 High OI</div><div class="chain-wrap">${hdr}${tbody}</tbody></table></div>`;
+  document.getElementById('chainTableWrap').innerHTML = `<div style="margin-bottom:.5rem;font-size:.7rem;color:var(--muted2)">🟡 ATM &nbsp;· <span style="color:var(--green)">Green = ITM Call</span> &nbsp;· <span style="color:var(--red)">Red = ITM Put</span> &nbsp;· 🔵 High OI</div><div class="chain-wrap">${hdr}${tbody}</tbody></table></div>`;
 }
-function calcMaxPainFromNSE(rows){
-  let minLoss=Infinity,mpStrike=rows[0]?.strike||0;
-  rows.forEach(r=>{
-    let loss=0;
-    rows.forEach(row=>{loss+=Math.max(0,r.strike-row.strike)*(row.call?.openInterest||0);loss+=Math.max(0,row.strike-r.strike)*(row.put?.openInterest||0);});
-    if(loss<minLoss){minLoss=loss;mpStrike=r.strike;}
+
+function calcMaxPainFromNSE(rows) {
+  let minLoss = Infinity, mpStrike = rows[0]?.strike || 0;
+  rows.forEach(r => {
+    let loss = 0;
+    rows.forEach(row => { loss += Math.max(0, r.strike - row.strike) * (row.call?.openInterest || 0); loss += Math.max(0, row.strike - r.strike) * (row.put?.openInterest || 0); });
+    if (loss < minLoss) { minLoss = loss; mpStrike = r.strike; }
   });
   return mpStrike;
 }
-function fmtOI(n){const abs=Math.abs(n),sign=n<0?'-':'';if(abs>=1e7) return sign+(abs/1e7).toFixed(1)+'Cr';if(abs>=1e5) return sign+(abs/1e5).toFixed(1)+'L';if(abs>=1000) return sign+(abs/1000).toFixed(1)+'K';return sign+abs;}
+function fmtOI(n) { const abs = Math.abs(n), sign = n < 0 ? '-' : ''; if (abs >= 1e7) return sign + (abs / 1e7).toFixed(1) + 'Cr'; if (abs >= 1e5) return sign + (abs / 1e5).toFixed(1) + 'L'; if (abs >= 1000) return sign + (abs / 1000).toFixed(1) + 'K'; return sign + abs; }
 
 // ══════════════════════════════════════════════════════
 // SYNTHETIC CHAIN (fallback)
 // ══════════════════════════════════════════════════════
-function buildSyntheticChain(spot,sym,depth){
-  const isIndex=NSE_INDICES.includes(sym);const baseIV=isIndex?13:22;
-  const T=7/365,r=0.065;
-  const lotSize=sym==='NIFTY'?25:sym==='BANKNIFTY'?15:sym==='FINNIFTY'?40:sym==='MIDCPNIFTY'?75:1;
-  const si=spot<500?5:spot<2000?20:spot<5000?50:100;
-  const atm=Math.round(spot/si)*si;const rows=[];
-  for(let i=-depth;i<=depth;i++){
-    const K=atm+i*si;if(K<=0) continue;
-    const moneyness=(K-spot)/spot;
-    const callIV=baseIV+Math.max(0,moneyness)*80-Math.max(0,-moneyness)*20;
-    const putIV=baseIV-Math.max(0,moneyness)*20+Math.max(0,-moneyness)*80;
-    const callBS=bsPrice(spot,K,T,callIV/100,r,'call');
-    const putBS=bsPrice(spot,K,T,putIV/100,r,'put');
-    const df=Math.exp(-Math.pow((K-atm)/si,2)/8);
-    const cOI=Math.round((800000+Math.random()*400000)*df/lotSize)*lotSize;
-    const pOI=Math.round((600000+Math.random()*500000)*df/lotSize)*lotSize;
-    rows.push({strike:K,atm:K===atm,call:{openInterest:cOI,changeinOpenInterest:Math.round((Math.random()-.35)*cOI*.08),impliedVolatility:callIV,lastPrice:callBS.price,totalTradedVolume:Math.round(cOI*.12),bidprice:callBS.price*.97,askPrice:callBS.price*1.03},put:{openInterest:pOI,changeinOpenInterest:Math.round((Math.random()-.25)*pOI*.08),impliedVolatility:putIV,lastPrice:putBS.price,totalTradedVolume:Math.round(pOI*.10),bidprice:putBS.price*.97,askPrice:putBS.price*1.03}});
+function buildSyntheticChain(spot, sym, depth) {
+  const isIndex = NSE_INDICES.includes(sym); const baseIV = isIndex ? 13 : 22;
+  const T = 7 / 365, r = 0.065;
+  const lotSize = sym === 'NIFTY' ? 25 : sym === 'BANKNIFTY' ? 15 : sym === 'FINNIFTY' ? 40 : sym === 'MIDCPNIFTY' ? 75 : 1;
+  const si = spot < 500 ? 5 : spot < 2000 ? 20 : spot < 5000 ? 50 : 100;
+  const atm = Math.round(spot / si) * si; const rows = [];
+  for (let i = -depth; i <= depth; i++) {
+    const K = atm + i * si; if (K <= 0) continue;
+    const moneyness = (K - spot) / spot;
+    const callIV = baseIV + Math.max(0, moneyness) * 80 - Math.max(0, -moneyness) * 20;
+    const putIV = baseIV - Math.max(0, moneyness) * 20 + Math.max(0, -moneyness) * 80;
+    const callBS = bsPrice(spot, K, T, callIV / 100, r, 'call');
+    const putBS = bsPrice(spot, K, T, putIV / 100, r, 'put');
+    const df = Math.exp(-Math.pow((K - atm) / si, 2) / 8);
+    const cOI = Math.round((800000 + Math.random() * 400000) * df / lotSize) * lotSize;
+    const pOI = Math.round((600000 + Math.random() * 500000) * df / lotSize) * lotSize;
+    rows.push({ strike: K, atm: K === atm, call: { openInterest: cOI, changeinOpenInterest: Math.round((Math.random() - .35) * cOI * .08), impliedVolatility: callIV, lastPrice: callBS.price, totalTradedVolume: Math.round(cOI * .12), bidprice: callBS.price * .97, askPrice: callBS.price * 1.03 }, put: { openInterest: pOI, changeinOpenInterest: Math.round((Math.random() - .25) * pOI * .08), impliedVolatility: putIV, lastPrice: putBS.price, totalTradedVolume: Math.round(pOI * .10), bidprice: putBS.price * .97, askPrice: putBS.price * 1.03 } });
   }
-  return{chain:rows,atm,lotSize,si,T,r,baseIV,underlyingValue:spot,symbol:sym};
+  return { chain: rows, atm, lotSize, si, T, r, baseIV, underlyingValue: spot, symbol: sym };
 }
-function renderChainMetrics(sym,spot,chain,expiry,live){
-  const rows=chain.chain||chain.rows||[];
-  const totalCallOI=rows.reduce((a,r)=>a+(r.call?.openInterest||0),0);
-  const totalPutOI=rows.reduce((a,r)=>a+(r.put?.openInterest||0),0);
-  const pcr=(totalPutOI/totalCallOI).toFixed(2);
-  const maxPain=calcMaxPainFromNSE(rows);
-  const cards=[{l:'Spot Price',v:`₹${spot.toLocaleString('en-IN')}`,s:sym},{l:'Expiry',v:expiry,s:'NSE F&O'},{l:'PCR (OI)',v:pcr,s:+pcr>1.2?'Bullish':+pcr<0.8?'Bearish':'Neutral'},{l:'Max Pain',v:`₹${maxPain.toLocaleString('en-IN')}`,s:`${((maxPain-spot)/spot*100).toFixed(1)}% from spot`},{l:'ATM IV',v:`${(chain.baseIV||0).toFixed(1)}%`,s:'Implied Volatility'}];
-  document.getElementById('chainMetricCards').innerHTML=cards.map(c=>`<div class="greek-card"><div class="gc-label">${c.l}</div><div class="gc-val">${c.v}</div><div class="gc-sub">${c.s}</div></div>`).join('');
-  document.getElementById('chainMetrics').style.display='block';
+function renderChainMetrics(sym, spot, chain, expiry, live) {
+  const rows = chain.chain || chain.rows || [];
+  const totalCallOI = rows.reduce((a, r) => a + (r.call?.openInterest || 0), 0);
+  const totalPutOI = rows.reduce((a, r) => a + (r.put?.openInterest || 0), 0);
+  const pcr = (totalPutOI / totalCallOI).toFixed(2);
+  const maxPain = calcMaxPainFromNSE(rows);
+  const cards = [{ l: 'Spot Price', v: `₹${spot.toLocaleString('en-IN')}`, s: sym }, { l: 'Expiry', v: expiry, s: 'NSE F&O' }, { l: 'PCR (OI)', v: pcr, s: +pcr > 1.2 ? 'Bullish' : +pcr < 0.8 ? 'Bearish' : 'Neutral' }, { l: 'Max Pain', v: `₹${maxPain.toLocaleString('en-IN')}`, s: `${((maxPain - spot) / spot * 100).toFixed(1)}% from spot` }, { l: 'ATM IV', v: `${(chain.baseIV || 0).toFixed(1)}%`, s: 'Implied Volatility' }];
+  document.getElementById('chainMetricCards').innerHTML = cards.map(c => `<div class="greek-card"><div class="gc-label">${c.l}</div><div class="gc-val">${c.v}</div><div class="gc-sub">${c.s}</div></div>`).join('');
+  document.getElementById('chainMetrics').style.display = 'block';
 }
-function renderChainTable(chain,spot){renderChainFromNSE({chain:chain.chain||chain.rows,underlyingValue:spot,symbol:chain.symbol},20,'');}
+function renderChainTable(chain, spot) { renderChainFromNSE({ chain: chain.chain || chain.rows, underlyingValue: spot, symbol: chain.symbol }, 20, ''); }
 
 // ══════════════════════════════════════════════════════
 // BLACK-SCHOLES
 // ══════════════════════════════════════════════════════
-function normCDF(x){const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;const sign=x<0?-1:1;x=Math.abs(x)/Math.sqrt(2);const t=1/(1+p*x);const y=(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t;return 0.5*(1+sign*(1-y*Math.exp(-x*x)));}
-function normPDF(x){return Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI);}
-function bsPrice(S,K,T,sigma,r,type){
-  if(T<=0) return{price:type==='call'?Math.max(0,S-K):Math.max(0,K-S),delta:type==='call'?(S>K?1:0):(S<K?-1:0),gamma:0,theta:0,vega:0,rho:0};
-  const d1=(Math.log(S/K)+(r+0.5*sigma*sigma)*T)/(sigma*Math.sqrt(T));
-  const d2=d1-sigma*Math.sqrt(T);
+function normCDF(x) { const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911; const sign=x<0?-1:1; x=Math.abs(x)/Math.sqrt(2); const t=1/(1+p*x); const y=(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t; return 0.5*(1+sign*(1-y*Math.exp(-x*x))); }
+function normPDF(x) { return Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI); }
+function bsPrice(S, K, T, sigma, r, type) {
+  if (T <= 0) return { price: type==='call'?Math.max(0,S-K):Math.max(0,K-S), delta: type==='call'?(S>K?1:0):(S<K?-1:0), gamma:0, theta:0, vega:0, rho:0 };
+  const d1 = (Math.log(S/K)+(r+0.5*sigma*sigma)*T)/(sigma*Math.sqrt(T));
+  const d2 = d1-sigma*Math.sqrt(T);
   const nd1=normCDF(d1),nd2=normCDF(d2),nd1_=normCDF(-d1),nd2_=normCDF(-d2),pdf1=normPDF(d1);
-  const price=type==='call'?S*nd1-K*Math.exp(-r*T)*nd2:K*Math.exp(-r*T)*nd2_-S*nd1_;
-  const delta=type==='call'?nd1:nd1-1;
-  const gamma=pdf1/(S*sigma*Math.sqrt(T));
-  const theta=type==='call'?(-(S*pdf1*sigma)/(2*Math.sqrt(T))-r*K*Math.exp(-r*T)*nd2)/365:(-(S*pdf1*sigma)/(2*Math.sqrt(T))+r*K*Math.exp(-r*T)*nd2_)/365;
-  const vega=S*pdf1*Math.sqrt(T)/100;
-  const rho=type==='call'?K*T*Math.exp(-r*T)*nd2/100:-K*T*Math.exp(-r*T)*nd2_/100;
-  return{price:Math.max(0,price),delta,gamma,theta,vega,rho};
+  const price = type==='call'?S*nd1-K*Math.exp(-r*T)*nd2:K*Math.exp(-r*T)*nd2_-S*nd1_;
+  const delta = type==='call'?nd1:nd1-1;
+  const gamma = pdf1/(S*sigma*Math.sqrt(T));
+  const theta = type==='call'?(-(S*pdf1*sigma)/(2*Math.sqrt(T))-r*K*Math.exp(-r*T)*nd2)/365:(-(S*pdf1*sigma)/(2*Math.sqrt(T))+r*K*Math.exp(-r*T)*nd2_)/365;
+  const vega = S*pdf1*Math.sqrt(T)/100;
+  const rho = type==='call'?K*T*Math.exp(-r*T)*nd2/100:-K*T*Math.exp(-r*T)*nd2_/100;
+  return { price:Math.max(0,price), delta, gamma, theta, vega, rho };
 }
 
 // ══════════════════════════════════════════════════════
-// TRADE SIGNALS (NSE strategy recommendation)
+// TRADE SIGNALS
 // ══════════════════════════════════════════════════════
-function quickSignal(sym){document.getElementById('signalSym').value=sym;generateTradeSignal();}
-async function generateTradeSignal(){
-  const sym=document.getElementById('signalSym').value.trim().toUpperCase();
-  if(!sym){showToast('Enter a symbol','err');return;}
-  const btn=document.getElementById('signalBtn');
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Analyzing…';
-  document.getElementById('signalResult').style.display='none';
-  const expiry=await loadExpiriesForSym(sym,'signalExpirySelect');
-  const selectedExpiry=document.getElementById('signalExpirySelect').value||expiry||'';
-  const daysToExp=estimateDaysToExpiry(selectedExpiry);
-  let spot,chainData,isLive=true;
-  try{chainData=await nseOptionChain(sym,selectedExpiry);spot=chainData.underlyingValue;_currentChainData=chainData;_currentSpot=spot;}
-  catch(e){isLive=false;showToast(`Using simulated data — ${e.message}`,'err');spot=await fallbackSpot(sym).catch(()=>22000);chainData=buildSyntheticChain(spot,sym,20);chainData.underlyingValue=spot;chainData.chain=chainData.chain||chainData.rows;}
-  try{
-    const rows=chainData.chain||[];
-    const totalCallOI=rows.reduce((a,r)=>a+(r.call?.openInterest||0),0);
-    const totalPutOI=rows.reduce((a,r)=>a+(r.put?.openInterest||0),0);
-    const pcr=totalCallOI?totalPutOI/totalCallOI:1.0;
-    const maxPain=calcMaxPainFromNSE(rows);
-    const atm=rows.reduce((best,r)=>Math.abs(r.strike-spot)<Math.abs(best-spot)?r.strike:best,rows[0]?.strike||spot);
-    const atmRow=rows.find(r=>r.strike===atm)||{};
-    const atmCallIV=atmRow.call?.impliedVolatility||15;const atmPutIV=atmRow.put?.impliedVolatility||15;
-    const baseIV=(atmCallIV+atmPutIV)/2;
-    const si=rows.length>1?Math.abs(rows[1].strike-rows[0].strike):50;
-    const lotSize=sym==='NIFTY'?25:sym==='BANKNIFTY'?15:sym==='FINNIFTY'?40:sym==='MIDCPNIFTY'?75:1;
-    const priceOpt=(strike,type)=>{
-      const row=rows.find(r=>r.strike===strike);
-      if(row&&type==='call'&&row.call?.lastPrice>0) return row.call.lastPrice;
-      if(row&&type==='put'&&row.put?.lastPrice>0) return row.put.lastPrice;
-      const moneyness=(strike-spot)/spot;const iv=type==='call'?baseIV+Math.max(0,moneyness)*80-Math.max(0,-moneyness)*20:baseIV-Math.max(0,moneyness)*20+Math.max(0,-moneyness)*80;
-      return bsPrice(spot,strike,daysToExp/365,iv/100,0.065,type).price;
+function quickSignal(sym) { document.getElementById('signalSym').value = sym; generateTradeSignal(); }
+
+async function generateTradeSignal() {
+  const sym = document.getElementById('signalSym').value.trim().toUpperCase();
+  if (!sym) { showToast('Enter a symbol', 'err'); return; }
+  const btn = document.getElementById('signalBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Analyzing…';
+  document.getElementById('signalResult').style.display = 'none';
+  const expiry = await loadExpiriesForSym(sym, 'signalExpirySelect');
+  const selectedExpiry = document.getElementById('signalExpirySelect').value || expiry || '';
+  const daysToExp = estimateDaysToExpiry(selectedExpiry);
+  let spot, chainData, isLive = true;
+  try {
+    chainData = await nseOptionChain(sym, selectedExpiry);
+    spot = chainData.underlyingValue; _currentChainData = chainData; _currentSpot = spot;
+  } catch (e) {
+    isLive = false; showToast(`Using simulated data — ${e.message}`, 'err');
+    spot = await fallbackSpot(sym).catch(() => 22000);
+    chainData = buildSyntheticChain(spot, sym, 20);
+    chainData.underlyingValue = spot; chainData.chain = chainData.chain || chainData.rows;
+  }
+  try {
+    const rows = chainData.chain || [];
+    const totalCallOI = rows.reduce((a, r) => a + (r.call?.openInterest || 0), 0);
+    const totalPutOI = rows.reduce((a, r) => a + (r.put?.openInterest || 0), 0);
+    const pcr = totalCallOI ? totalPutOI / totalCallOI : 1.0;
+    const maxPain = calcMaxPainFromNSE(rows);
+    const atm = rows.reduce((best, r) => Math.abs(r.strike - spot) < Math.abs(best - spot) ? r.strike : best, rows[0]?.strike || spot);
+    const atmRow = rows.find(r => r.strike === atm) || {};
+    const atmCallIV = atmRow.call?.impliedVolatility || 15; const atmPutIV = atmRow.put?.impliedVolatility || 15;
+    const baseIV = (atmCallIV + atmPutIV) / 2;
+    const si = rows.length > 1 ? Math.abs(rows[1].strike - rows[0].strike) : 50;
+    const lotSize = sym==='NIFTY'?25:sym==='BANKNIFTY'?15:sym==='FINNIFTY'?40:sym==='MIDCPNIFTY'?75:1;
+    const priceOpt = (strike, type) => {
+      const row = rows.find(r => r.strike === strike);
+      if (row && type==='call' && row.call?.lastPrice > 0) return row.call.lastPrice;
+      if (row && type==='put' && row.put?.lastPrice > 0) return row.put.lastPrice;
+      const moneyness = (strike - spot) / spot;
+      const iv = type==='call' ? baseIV+Math.max(0,moneyness)*80-Math.max(0,-moneyness)*20 : baseIV-Math.max(0,moneyness)*20+Math.max(0,-moneyness)*80;
+      return bsPrice(spot, strike, daysToExp/365, iv/100, 0.065, type).price;
     };
-    const strategy=recommendStrategy({sym,spot,rows,pcr,maxPain,atm,baseIV,si,lotSize,T:daysToExp/365,rfr:0.065,daysToExp,priceOpt});
-    strategy.isLive=isLive;
-    const recId=await saveRecommendation({sym,spot,expiry:selectedExpiry,pcr,baseIV,maxPain,totalCallOI,totalPutOI,strategy,lotSize});
-    renderStrategy(strategy,sym,spot,selectedExpiry,recId,isLive);
-    showToast('Strategy saved to journal','ok');
-  }catch(e){showToast(`Error: ${e.message}`,'err');document.getElementById('signalResult').innerHTML=`<div class="empty-state">⚠️ ${e.message}</div>`;document.getElementById('signalResult').style.display='block';}
-  btn.disabled=false;btn.textContent='Generate Signal →';
+    const strategy = recommendStrategy({ sym, spot, rows, pcr, maxPain, atm, baseIV, si, lotSize, T: daysToExp/365, rfr: 0.065, daysToExp, priceOpt });
+    strategy.isLive = isLive;
+    const recId = await saveRecommendation({ sym, spot, expiry: selectedExpiry, pcr, baseIV, maxPain, totalCallOI, totalPutOI, strategy, lotSize });
+    renderStrategy(strategy, sym, spot, selectedExpiry, recId, isLive);
+    showToast('Strategy saved to journal', 'ok');
+  } catch (e) {
+    showToast(`Error: ${e.message}`, 'err');
+    document.getElementById('signalResult').innerHTML = `<div class="empty-state">⚠️ ${e.message}</div>`;
+    document.getElementById('signalResult').style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Generate Signal →';
 }
-function estimateDaysToExpiry(s){if(!s) return 7;const p=s.split('-');const m={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};const ed=new Date(parseInt(p[2]||2025),m[p[1]]||0,parseInt(p[0]||1));return Math.max(1,Math.ceil((ed-new Date())/(1000*60*60*24)));}
-function recommendStrategy({sym,spot,rows,pcr,maxPain,atm,baseIV,si,lotSize,T,rfr,daysToExp,priceOpt}){
-  const mpDiffPct=((maxPain-spot)/spot)*100;
-  let maxCallOIStrike=null,maxCallOIVal=0,maxPutOIStrike=null,maxPutOIVal=0;
-  for(const r of rows){const cOI=r.call?.openInterest||0,pOI=r.put?.openInterest||0;if(cOI>maxCallOIVal){maxCallOIVal=cOI;maxCallOIStrike=r.strike;}if(pOI>maxPutOIVal){maxPutOIVal=pOI;maxPutOIStrike=r.strike;}}
-  if(baseIV>25&&pcr>=0.8&&pcr<=1.2&&Math.abs(mpDiffPct)<1.5) return buildIronCondor({spot,atm,si,lotSize,priceOpt,baseIV,pcr,T,daysToExp});
-  else if(baseIV<14&&(pcr>1.3||pcr<0.7)) return buildStrangle({spot,atm,si,lotSize,priceOpt,baseIV,pcr,daysToExp});
-  else if(pcr>1.15) return buildBullCallSpread({spot,atm,si,lotSize,priceOpt,baseIV,pcr,T,daysToExp});
-  else if(pcr<0.85) return buildBearPutSpread({spot,atm,si,lotSize,priceOpt,baseIV,pcr,T,daysToExp});
-  else if(daysToExp<=3) return buildShortStraddle({spot,atm,si,lotSize,priceOpt,baseIV,pcr});
-  else return buildIronCondor({spot,atm,si,lotSize,priceOpt,baseIV,pcr,T,daysToExp});
+
+function estimateDaysToExpiry(s) { if (!s) return 7; const p = s.split('-'); const m = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11}; const ed = new Date(parseInt(p[2]||2025), m[p[1]]||0, parseInt(p[0]||1)); return Math.max(1, Math.ceil((ed - new Date()) / (1000*60*60*24))); }
+
+function recommendStrategy({ sym, spot, rows, pcr, maxPain, atm, baseIV, si, lotSize, T, rfr, daysToExp, priceOpt }) {
+  const mpDiffPct = ((maxPain - spot) / spot) * 100;
+  if (baseIV > 25 && pcr >= 0.8 && pcr <= 1.2 && Math.abs(mpDiffPct) < 1.5) return buildIronCondor({ spot, atm, si, lotSize, priceOpt, baseIV, pcr, T, daysToExp });
+  else if (baseIV < 14 && (pcr > 1.3 || pcr < 0.7)) return buildStrangle({ spot, atm, si, lotSize, priceOpt, baseIV, pcr, daysToExp });
+  else if (pcr > 1.15) return buildBullCallSpread({ spot, atm, si, lotSize, priceOpt, baseIV, pcr, T, daysToExp });
+  else if (pcr < 0.85) return buildBearPutSpread({ spot, atm, si, lotSize, priceOpt, baseIV, pcr, T, daysToExp });
+  else if (daysToExp <= 3) return buildShortStraddle({ spot, atm, si, lotSize, priceOpt, baseIV, pcr });
+  else return buildIronCondor({ spot, atm, si, lotSize, priceOpt, baseIV, pcr, T, daysToExp });
 }
-function buildIronCondor({spot,atm,si,lotSize,priceOpt,baseIV,pcr,T,daysToExp}){const w=Math.max(si,Math.floor(spot*.015/si)*si||si);const sP=atm-w,lP=sP-w,sC=atm+w,lC=sC+w;const pSP=priceOpt(sP,'put'),pLP=priceOpt(lP,'put'),pSC=priceOpt(sC,'call'),pLC=priceOpt(lC,'call');const credit=pSP-pLP+pSC-pLC;const maxProfit=credit*lotSize,maxLoss=(w-credit)*lotSize;return{name:'Iron Condor',type:'Credit / Neutral',bias:'Neutral',legs:[{action:'SELL',type:'PUT',strike:sP,premium:pSP},{action:'BUY',type:'PUT',strike:lP,premium:pLP},{action:'SELL',type:'CALL',strike:sC,premium:pSC},{action:'BUY',type:'CALL',strike:lC,premium:pLC}],netCredit:credit,maxProfit,maxLoss,breakevens:[sP-credit,sC+credit],probability:((normCDF((sC-spot)/(spot*baseIV/100*Math.sqrt(T)))-normCDF((sP-spot)/(spot*baseIV/100*Math.sqrt(T))))*100).toFixed(0)+'%',capitalRequired:maxLoss,lotSize,rationale:`IV is elevated (${baseIV.toFixed(0)}%) — premium selling is optimal. PCR ${pcr.toFixed(2)} and Max Pain near ATM suggest a rangebound ${daysToExp}-day expiry.`};}
-function buildStrangle({spot,atm,si,lotSize,priceOpt,baseIV,pcr,daysToExp}){const cStrike=atm+si,pStrike=atm-si;const cPrem=priceOpt(cStrike,'call'),pPrem=priceOpt(pStrike,'put');const debit=(cPrem+pPrem),maxLoss=debit*lotSize;return{name:pcr>1.3?'Bullish Strangle':'Bearish Strangle',type:'Debit / Directional Volatility',bias:pcr>1.3?'Bullish':'Bearish',legs:[{action:'BUY',type:'CALL',strike:cStrike,premium:cPrem},{action:'BUY',type:'PUT',strike:pStrike,premium:pPrem}],netDebit:debit,maxProfit:'Unlimited',maxLoss,breakevens:[pStrike-debit,cStrike+debit],probability:'~35–45%',capitalRequired:maxLoss,lotSize,rationale:`IV is low (${baseIV.toFixed(0)}%) — buying options is relatively cheap. PCR ${pcr.toFixed(2)} signals ${pcr>1.3?'bullish':'bearish'} sentiment.`};}
-function buildBullCallSpread({spot,atm,si,lotSize,priceOpt,baseIV,pcr,T,daysToExp}){const buyK=atm,sellK=atm+si*2;const bPrem=priceOpt(buyK,'call'),sPrem=priceOpt(sellK,'call');const debit=bPrem-sPrem,maxProfit=(sellK-buyK-debit)*lotSize,maxLoss=debit*lotSize;return{name:'Bull Call Spread',type:'Debit / Directional',bias:'Bullish',legs:[{action:'BUY',type:'CALL',strike:buyK,premium:bPrem},{action:'SELL',type:'CALL',strike:sellK,premium:sPrem}],netDebit:debit,maxProfit,maxLoss,breakevens:[buyK+debit],probability:(normCDF((spot-buyK)/(spot*baseIV/100*Math.sqrt(T||.02)))*100).toFixed(0)+'%',capitalRequired:maxLoss,lotSize,rationale:`PCR ${pcr.toFixed(2)} signals bullish put OI accumulation. Defined risk at ₹${debit.toFixed(2)}/share with upside to ₹${maxProfit.toLocaleString('en-IN')}.`};}
-function buildBearPutSpread({spot,atm,si,lotSize,priceOpt,baseIV,pcr,T,daysToExp}){const buyK=atm,sellK=atm-si*2;const bPrem=priceOpt(buyK,'put'),sPrem=priceOpt(sellK,'put');const debit=bPrem-sPrem,maxProfit=(buyK-sellK-debit)*lotSize,maxLoss=debit*lotSize;return{name:'Bear Put Spread',type:'Debit / Directional',bias:'Bearish',legs:[{action:'BUY',type:'PUT',strike:buyK,premium:bPrem},{action:'SELL',type:'PUT',strike:sellK,premium:sPrem}],netDebit:debit,maxProfit,maxLoss,breakevens:[buyK-debit],probability:(normCDF(-(spot-buyK)/(spot*baseIV/100*Math.sqrt(T||.02)))*100).toFixed(0)+'%',capitalRequired:maxLoss,lotSize,rationale:`PCR ${pcr.toFixed(2)} signals bearish call OI pressure. Max reward ₹${maxProfit.toLocaleString('en-IN')}.`};}
-function buildShortStraddle({spot,atm,si,lotSize,priceOpt,baseIV,pcr}){const cPrem=priceOpt(atm,'call'),pPrem=priceOpt(atm,'put');const credit=cPrem+pPrem,maxProfit=credit*lotSize;return{name:'Short Straddle',type:'Credit / Neutral',bias:'Neutral',legs:[{action:'SELL',type:'CALL',strike:atm,premium:cPrem},{action:'SELL',type:'PUT',strike:atm,premium:pPrem}],netCredit:credit,maxProfit,maxLoss:'Unlimited (hedge with OTM options)',breakevens:[atm-credit,atm+credit],probability:'High if range-bound',capitalRequired:'Margin ~₹50,000+ (broker dependent)',lotSize,rationale:`Very short expiry — theta decay is maximum. PCR ${pcr.toFixed(2)} and flat market suggest straddle selling. ⚠️ Set stop-loss.`};}
-function renderStrategy(strategy,sym,spot,expiry,recId,isLive){
-  const legsHtml=`<table class="legs-table"><thead><tr><th>Action</th><th>Type</th><th>Strike</th><th>Premium</th></tr></thead><tbody>${strategy.legs.map(l=>`<tr><td><strong style="color:${l.action==='BUY'?'var(--green)':'var(--red)'}">${l.action}</strong></td><td>${l.type}</td><td>₹${l.strike.toLocaleString('en-IN')}</td><td>₹${typeof l.premium==='number'?l.premium.toFixed(2):l.premium}</td></tr>`).join('')}</tbody></table>`;
-  const liveBadge=isLive?`<span class="datasource-badge ds-live">● LIVE NSE</span>`:`<span class="datasource-badge ds-sim">⚠ SIMULATED</span>`;
-  const html=`<div class="signal-card"><div class="signal-badge">${strategy.type} · ${strategy.probability||'—'} probability</div><div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.5rem"><div><div class="signal-title">${strategy.name}</div><div class="signal-desc" style="margin-bottom:.5rem">${sym} · Expiry ${expiry} · ${liveBadge}</div></div><div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn btn-blue btn-sm" onclick="openAddTradeFromRec('${recId||''}','${sym}','${expiry}','${strategy.name}')">📒 Log to Journal</button></div></div><div class="signal-metrics"><div class="metric"><div class="metric-label">Spot</div><div class="metric-value">₹${spot.toLocaleString('en-IN')}</div></div><div class="metric"><div class="metric-label">Max Profit</div><div class="metric-value" style="color:var(--green)">₹${typeof strategy.maxProfit==='number'?strategy.maxProfit.toLocaleString('en-IN'):strategy.maxProfit}</div></div><div class="metric"><div class="metric-label">Max Loss</div><div class="metric-value" style="color:var(--red)">₹${typeof strategy.maxLoss==='number'?strategy.maxLoss.toLocaleString('en-IN'):strategy.maxLoss}</div></div><div class="metric"><div class="metric-label">Breakeven(s)</div><div class="metric-value">${strategy.breakevens.map(b=>`₹${Math.round(b).toLocaleString('en-IN')}`).join(' / ')}</div></div><div class="metric"><div class="metric-label">Capital Required</div><div class="metric-value">${typeof strategy.capitalRequired==='number'?`₹${strategy.capitalRequired.toLocaleString('en-IN')}`:strategy.capitalRequired}</div></div><div class="metric"><div class="metric-label">Lot Size</div><div class="metric-value">${strategy.lotSize} shares</div></div></div><strong style="font-size:.78rem">Strategy Legs</strong>${legsHtml}<div style="margin-top:.9rem;padding:.85rem 1rem;background:var(--blue-bg);border-radius:12px;font-size:.8rem;line-height:1.75"><strong>🧠 Rationale</strong><br/>${strategy.rationale}</div><table class="rec-table"><tr><td>Profit target</td><td>${strategy.type.includes('Credit')?'Close at 50% of max profit or 10 days before expiry':'Target 25–50% of max profit'}</td></tr><tr><td>Stop-loss trigger</td><td>Spot breaches breakeven by >5%, or IV spikes >30% intraday</td></tr><tr><td>Risk per trade</td><td>Limit to 2% of total trading capital per strategy</td></tr></table><div style="margin-top:.85rem;font-size:.68rem;color:var(--muted2)">⚠️ Auto-generated strategy. Not financial advice. Always do your own research.</div></div>`;
-  document.getElementById('signalResult').innerHTML=html;document.getElementById('signalResult').style.display='block';
+
+function buildIronCondor({ spot, atm, si, lotSize, priceOpt, baseIV, pcr, T, daysToExp }) { const w=Math.max(si,Math.floor(spot*.015/si)*si||si); const sP=atm-w,lP=sP-w,sC=atm+w,lC=sC+w; const pSP=priceOpt(sP,'put'),pLP=priceOpt(lP,'put'),pSC=priceOpt(sC,'call'),pLC=priceOpt(lC,'call'); const credit=pSP-pLP+pSC-pLC; const maxProfit=credit*lotSize,maxLoss=(w-credit)*lotSize; return {name:'Iron Condor',type:'Credit / Neutral',bias:'Neutral',legs:[{action:'SELL',type:'PUT',strike:sP,premium:pSP},{action:'BUY',type:'PUT',strike:lP,premium:pLP},{action:'SELL',type:'CALL',strike:sC,premium:pSC},{action:'BUY',type:'CALL',strike:lC,premium:pLC}],netCredit:credit,maxProfit,maxLoss,breakevens:[sP-credit,sC+credit],probability:((normCDF((sC-spot)/(spot*baseIV/100*Math.sqrt(T)))-normCDF((sP-spot)/(spot*baseIV/100*Math.sqrt(T))))*100).toFixed(0)+'%',capitalRequired:maxLoss,lotSize,rationale:`IV is elevated (${baseIV.toFixed(0)}%) — premium selling is optimal. PCR ${pcr.toFixed(2)} and Max Pain near ATM suggest a rangebound ${daysToExp}-day expiry.`}; }
+function buildStrangle({ spot, atm, si, lotSize, priceOpt, baseIV, pcr, daysToExp }) { const cStrike=atm+si,pStrike=atm-si; const cPrem=priceOpt(cStrike,'call'),pPrem=priceOpt(pStrike,'put'); const debit=(cPrem+pPrem),maxLoss=debit*lotSize; return {name:pcr>1.3?'Bullish Strangle':'Bearish Strangle',type:'Debit / Directional Volatility',bias:pcr>1.3?'Bullish':'Bearish',legs:[{action:'BUY',type:'CALL',strike:cStrike,premium:cPrem},{action:'BUY',type:'PUT',strike:pStrike,premium:pPrem}],netDebit:debit,maxProfit:'Unlimited',maxLoss,breakevens:[pStrike-debit,cStrike+debit],probability:'~35–45%',capitalRequired:maxLoss,lotSize,rationale:`IV is low (${baseIV.toFixed(0)}%) — buying options is relatively cheap. PCR ${pcr.toFixed(2)} signals ${pcr>1.3?'bullish':'bearish'} sentiment.`}; }
+function buildBullCallSpread({ spot, atm, si, lotSize, priceOpt, baseIV, pcr, T, daysToExp }) { const buyK=atm,sellK=atm+si*2; const bPrem=priceOpt(buyK,'call'),sPrem=priceOpt(sellK,'call'); const debit=bPrem-sPrem,maxProfit=(sellK-buyK-debit)*lotSize,maxLoss=debit*lotSize; return {name:'Bull Call Spread',type:'Debit / Directional',bias:'Bullish',legs:[{action:'BUY',type:'CALL',strike:buyK,premium:bPrem},{action:'SELL',type:'CALL',strike:sellK,premium:sPrem}],netDebit:debit,maxProfit,maxLoss,breakevens:[buyK+debit],probability:(normCDF((spot-buyK)/(spot*baseIV/100*Math.sqrt(T||.02)))*100).toFixed(0)+'%',capitalRequired:maxLoss,lotSize,rationale:`PCR ${pcr.toFixed(2)} signals bullish put OI accumulation. Defined risk at ₹${debit.toFixed(2)}/share with upside to ₹${maxProfit.toLocaleString('en-IN')}.`}; }
+function buildBearPutSpread({ spot, atm, si, lotSize, priceOpt, baseIV, pcr, T, daysToExp }) { const buyK=atm,sellK=atm-si*2; const bPrem=priceOpt(buyK,'put'),sPrem=priceOpt(sellK,'put'); const debit=bPrem-sPrem,maxProfit=(buyK-sellK-debit)*lotSize,maxLoss=debit*lotSize; return {name:'Bear Put Spread',type:'Debit / Directional',bias:'Bearish',legs:[{action:'BUY',type:'PUT',strike:buyK,premium:bPrem},{action:'SELL',type:'PUT',strike:sellK,premium:sPrem}],netDebit:debit,maxProfit,maxLoss,breakevens:[buyK-debit],probability:(normCDF(-(spot-buyK)/(spot*baseIV/100*Math.sqrt(T||.02)))*100).toFixed(0)+'%',capitalRequired:maxLoss,lotSize,rationale:`PCR ${pcr.toFixed(2)} signals bearish call OI pressure. Max reward ₹${maxProfit.toLocaleString('en-IN')}.`}; }
+function buildShortStraddle({ spot, atm, si, lotSize, priceOpt, baseIV, pcr }) { const cPrem=priceOpt(atm,'call'),pPrem=priceOpt(atm,'put'); const credit=cPrem+pPrem,maxProfit=credit*lotSize; return {name:'Short Straddle',type:'Credit / Neutral',bias:'Neutral',legs:[{action:'SELL',type:'CALL',strike:atm,premium:cPrem},{action:'SELL',type:'PUT',strike:atm,premium:pPrem}],netCredit:credit,maxProfit,maxLoss:'Unlimited (hedge with OTM options)',breakevens:[atm-credit,atm+credit],probability:'High if range-bound',capitalRequired:'Margin ~₹50,000+ (broker dependent)',lotSize,rationale:`Very short expiry — theta decay is maximum. PCR ${pcr.toFixed(2)} and flat market suggest straddle selling. ⚠️ Set stop-loss.`}; }
+
+function renderStrategy(strategy, sym, spot, expiry, recId, isLive) {
+  const legsHtml = `<table class="legs-table"><thead><tr><th>Action</th><th>Type</th><th>Strike</th><th>Premium</th></tr></thead><tbody>${strategy.legs.map(l => `<tr><td><strong style="color:${l.action==='BUY'?'var(--green)':'var(--red)'}">${l.action}</strong></td><td>${l.type}</td><td>₹${l.strike.toLocaleString('en-IN')}</td><td>₹${typeof l.premium==='number'?l.premium.toFixed(2):l.premium}</td></tr>`).join('')}</tbody></table>`;
+  const liveBadge = isLive ? `<span class="datasource-badge ds-live">● LIVE NSE</span>` : `<span class="datasource-badge ds-sim">⚠ SIMULATED</span>`;
+  const html = `<div class="signal-card"><div class="signal-badge">${strategy.type} · ${strategy.probability||'—'} probability</div><div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.5rem"><div><div class="signal-title">${strategy.name}</div><div class="signal-desc" style="margin-bottom:.5rem">${sym} · Expiry ${expiry} · ${liveBadge}</div></div><div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn btn-blue btn-sm" onclick="openAddTradeFromRec('${recId||''}','${sym}','${expiry}','${strategy.name}')">📒 Log to Journal</button></div></div><div class="signal-metrics"><div class="metric"><div class="metric-label">Spot</div><div class="metric-value">₹${spot.toLocaleString('en-IN')}</div></div><div class="metric"><div class="metric-label">Max Profit</div><div class="metric-value" style="color:var(--green)">₹${typeof strategy.maxProfit==='number'?strategy.maxProfit.toLocaleString('en-IN'):strategy.maxProfit}</div></div><div class="metric"><div class="metric-label">Max Loss</div><div class="metric-value" style="color:var(--red)">₹${typeof strategy.maxLoss==='number'?strategy.maxLoss.toLocaleString('en-IN'):strategy.maxLoss}</div></div><div class="metric"><div class="metric-label">Breakeven(s)</div><div class="metric-value">${strategy.breakevens.map(b=>`₹${Math.round(b).toLocaleString('en-IN')}`).join(' / ')}</div></div><div class="metric"><div class="metric-label">Capital Required</div><div class="metric-value">${typeof strategy.capitalRequired==='number'?`₹${strategy.capitalRequired.toLocaleString('en-IN')}`:strategy.capitalRequired}</div></div><div class="metric"><div class="metric-label">Lot Size</div><div class="metric-value">${strategy.lotSize} shares</div></div></div><strong style="font-size:.78rem">Strategy Legs</strong>${legsHtml}<div style="margin-top:.9rem;padding:.85rem 1rem;background:var(--blue-bg);border-radius:12px;font-size:.8rem;line-height:1.75"><strong>🧠 Rationale</strong><br/>${strategy.rationale}</div><table class="rec-table"><tr><td>Profit target</td><td>${strategy.type.includes('Credit')?'Close at 50% of max profit or 10 days before expiry':'Target 25–50% of max profit'}</td></tr><tr><td>Stop-loss trigger</td><td>Spot breaches breakeven by >5%, or IV spikes >30% intraday</td></tr><tr><td>Risk per trade</td><td>Limit to 2% of total trading capital per strategy</td></tr></table><div style="margin-top:.85rem;font-size:.68rem;color:var(--muted2)">⚠️ Auto-generated strategy. Not financial advice. Always do your own research.</div></div>`;
+  document.getElementById('signalResult').innerHTML = html;
+  document.getElementById('signalResult').style.display = 'block';
 }
-async function saveRecommendation({sym,spot,expiry,pcr,baseIV,maxPain,totalCallOI,totalPutOI,strategy,lotSize}){
-  try{
-    const userId=SESSION?.user?.id;if(!userId) return null;
-    const rec={user_id:userId,symbol:sym,expiry_date:expiry,spot_price:spot,underlying:sym,strategy_name:strategy.name,strategy_type:strategy.type,bias:strategy.bias||null,rationale:strategy.rationale,pcr:parseFloat(pcr)||null,iv_percentile:null,max_pain:maxPain||null,total_call_oi:totalCallOI||null,total_put_oi:totalPutOI||null,net_credit:strategy.netCredit||null,net_debit:strategy.netDebit||null,max_profit:typeof strategy.maxProfit==='number'?strategy.maxProfit:null,max_loss:typeof strategy.maxLoss==='number'?strategy.maxLoss:null,breakevens:strategy.breakevens||[],capital_required:typeof strategy.capitalRequired==='number'?strategy.capitalRequired:null,probability:strategy.probability||null,lot_size:strategy.lotSize||lotSize,legs:strategy.legs,status:'open'};
+
+async function saveRecommendation({ sym, spot, expiry, pcr, baseIV, maxPain, totalCallOI, totalPutOI, strategy, lotSize }) {
+  try {
+    const userId = SESSION?.user?.id; if (!userId) return null;
+    const rec = {
+      user_id: userId, symbol: sym, expiry_date: expiry, spot_price: spot, underlying: sym,
+      strategy_name: strategy.name, strategy_type: strategy.type, bias: strategy.bias || null,
+      rationale: strategy.rationale, pcr: parseFloat(pcr) || null, iv_percentile: null,
+      max_pain: maxPain || null, total_call_oi: totalCallOI || null, total_put_oi: totalPutOI || null,
+      net_credit: strategy.netCredit || null, net_debit: strategy.netDebit || null,
+      max_profit: typeof strategy.maxProfit === 'number' ? strategy.maxProfit : null,
+      max_loss: typeof strategy.maxLoss === 'number' ? strategy.maxLoss : null,
+      breakevens: strategy.breakevens || [], capital_required: typeof strategy.capitalRequired === 'number' ? strategy.capitalRequired : null,
+      probability: strategy.probability || null, lot_size: strategy.lotSize || lotSize,
+      legs: strategy.legs, status: 'open'
+    };
     const result = await querySupabase('strategy_recommendations', {
       method: 'POST',
-      body: JSON.stringify(rec)
+      body: JSON.stringify(rec),
     });
-    // Supabase returns array of inserted records; assume first has id
-    return result?.[0]?.id || null;
-  }catch(e){console.warn('Failed to save recommendation:',e.message);return null;}
+    return Array.isArray(result) ? result[0]?.id : result?.id || null;
+  } catch (e) { console.warn('Failed to save recommendation:', e.message); return null; }
 }
 
 // ══════════════════════════════════════════════════════
 // SENTIMENT
 // ══════════════════════════════════════════════════════
-async function loadSentiment(){
-  const sym=document.getElementById('sentimentSym').value;const expiry=document.getElementById('sentimentExpiry').value;
+async function loadSentiment() {
+  const sym = document.getElementById('sentimentSym').value;
+  const expiry = document.getElementById('sentimentExpiry').value;
   showToast('Loading NSE sentiment data…');
-  try{const chainData=await nseOptionChain(sym,expiry);renderSentimentFromNSE(chainData,sym);showToast(`✓ ${sym} sentiment loaded`,'ok');}
-  catch(e){showToast(`Fallback: ${e.message}`,'err');const spot=await fallbackSpot(sym).catch(()=>22000);renderSentimentFallback(sym,spot);}
+  try {
+    const chainData = await nseOptionChain(sym, expiry);
+    renderSentimentFromNSE(chainData, sym);
+    showToast(`✓ ${sym} sentiment loaded`, 'ok');
+  } catch (e) {
+    showToast(`Fallback: ${e.message}`, 'err');
+    const spot = await fallbackSpot(sym).catch(() => 22000);
+    renderSentimentFallback(sym, spot);
+  }
 }
-function renderSentimentFromNSE(chainData,sym){
-  const rows=chainData.chain||[];const spot=chainData.underlyingValue;
-  const totalCallOI=rows.reduce((a,r)=>a+(r.call?.openInterest||0),0);const totalPutOI=rows.reduce((a,r)=>a+(r.put?.openInterest||0),0);
-  const pcr=(totalPutOI/totalCallOI)||0;const maxPain=calcMaxPainFromNSE(rows);
-  const atm=rows.reduce((b,r)=>Math.abs(r.strike-spot)<Math.abs(b-spot)?r.strike:b,rows[0]?.strike||spot);
-  const atmRow=rows.find(r=>r.strike===atm)||{};const atmIV=((atmRow.call?.impliedVolatility||0)+(atmRow.put?.impliedVolatility||0))/2;
-  document.getElementById('pcrCards').innerHTML=[{l:'Put-Call Ratio',v:pcr.toFixed(2),s:pcr>1.2?'Bullish':pcr<0.8?'Bearish':'Neutral'},{l:'Spot Price',v:`₹${spot.toLocaleString('en-IN')}`,s:sym},{l:'Max Pain',v:`₹${maxPain.toLocaleString('en-IN')}`,s:`${((maxPain-spot)/spot*100).toFixed(1)}% away`},{l:'Total Call OI',v:fmtOI(totalCallOI),s:'All strikes'},{l:'Total Put OI',v:fmtOI(totalPutOI),s:'All strikes'},{l:'ATM IV',v:`${atmIV.toFixed(1)}%`,s:'Call+Put avg'}].map(c=>`<div class="pcr-cell"><div class="pcr-label">${c.l}</div><div class="pcr-val">${c.v}</div><div class="pcr-sub">${c.s}</div></div>`).join('');
-  const ivNorm=Math.min(100,atmIV/40*100);
-  document.getElementById('ivBarFill').style.width=ivNorm+'%';document.getElementById('ivBarFill').style.background=atmIV>25?'var(--red)':atmIV>15?'var(--accent)':'var(--green)';
-  document.getElementById('ivPctVal').textContent=atmIV.toFixed(1)+'%';document.getElementById('ivRemark').textContent=atmIV>25?'IV high — consider selling premium':atmIV<12?'IV low — consider buying options':'IV moderate';
-  const mpPct=((maxPain-spot)/spot*100);
-  document.getElementById('maxPainCard').innerHTML=`<strong>Max Pain Strike:</strong> ₹${maxPain.toLocaleString('en-IN')} &nbsp;<span class="${mpPct>=0?'g-txt':'r-txt'}">${mpPct>=0?'↑':'↓'} ${Math.abs(mpPct).toFixed(1)}% from spot</span><br/>Market tends to gravitate toward max pain near expiry.<br/><strong>Implication:</strong> ${mpPct>0?'Selling calls near max pain may be favourable.':'Selling puts near max pain may be favourable.'}`;
-  document.getElementById('oiBody').innerHTML=rows.slice(0,30).map(r=>{const cOI=r.call?.openInterest||0,pOI=r.put?.openInterest||0,cChg=r.call?.changeinOpenInterest||0,pChg=r.put?.changeinOpenInterest||0,pcrS=cOI>0?(pOI/cOI).toFixed(2):'—';const sig=+pcrS>1.3?'<span class="pill pill-green">Bull</span>':+pcrS<0.7?'<span class="pill pill-red">Bear</span>':'<span class="pill pill-gold">Neutral</span>';return `<tr><td class="mono-td sym-td">${r.strike.toLocaleString('en-IN')}</td><td class="mono-td">${fmtOI(cOI)}</td><td class="mono-td ${cChg>=0?'g-txt':'r-txt'}">${cChg>=0?'+':''}${fmtOI(cChg)}</td><td class="mono-td">${fmtOI(pOI)}</td><td class="mono-td ${pChg>=0?'g-txt':'r-txt'}">${pChg>=0?'+':''}${fmtOI(pChg)}</td><td class="mono-td">${pcrS}</td><td>${sig}</td></tr>`;}).join('')||'<tr><td colspan="7">No data</td></tr>';
-  document.getElementById('sentimentPanel').style.display='block';
+function renderSentimentFromNSE(chainData, sym) {
+  const rows = chainData.chain || []; const spot = chainData.underlyingValue;
+  const totalCallOI = rows.reduce((a, r) => a + (r.call?.openInterest || 0), 0);
+  const totalPutOI = rows.reduce((a, r) => a + (r.put?.openInterest || 0), 0);
+  const pcr = (totalPutOI / totalCallOI) || 0;
+  const maxPain = calcMaxPainFromNSE(rows);
+  const atm = rows.reduce((b, r) => Math.abs(r.strike - spot) < Math.abs(b - spot) ? r.strike : b, rows[0]?.strike || spot);
+  const atmRow = rows.find(r => r.strike === atm) || {};
+  const atmIV = ((atmRow.call?.impliedVolatility || 0) + (atmRow.put?.impliedVolatility || 0)) / 2;
+  document.getElementById('pcrCards').innerHTML = [
+    { l: 'Put-Call Ratio', v: pcr.toFixed(2), s: pcr > 1.2 ? 'Bullish' : pcr < 0.8 ? 'Bearish' : 'Neutral' },
+    { l: 'Spot Price', v: `₹${spot.toLocaleString('en-IN')}`, s: sym },
+    { l: 'Max Pain', v: `₹${maxPain.toLocaleString('en-IN')}`, s: `${((maxPain - spot) / spot * 100).toFixed(1)}% away` },
+    { l: 'Total Call OI', v: fmtOI(totalCallOI), s: 'All strikes' },
+    { l: 'Total Put OI', v: fmtOI(totalPutOI), s: 'All strikes' },
+    { l: 'ATM IV', v: `${atmIV.toFixed(1)}%`, s: 'Call+Put avg' }
+  ].map(c => `<div class="pcr-cell"><div class="pcr-label">${c.l}</div><div class="pcr-val">${c.v}</div><div class="pcr-sub">${c.s}</div></div>`).join('');
+  const ivNorm = Math.min(100, atmIV / 40 * 100);
+  document.getElementById('ivBarFill').style.width = ivNorm + '%';
+  document.getElementById('ivBarFill').style.background = atmIV > 25 ? 'var(--red)' : atmIV > 15 ? 'var(--accent)' : 'var(--green)';
+  document.getElementById('ivPctVal').textContent = atmIV.toFixed(1) + '%';
+  document.getElementById('ivRemark').textContent = atmIV > 25 ? 'IV high — consider selling premium' : atmIV < 12 ? 'IV low — consider buying options' : 'IV moderate';
+  const mpPct = ((maxPain - spot) / spot * 100);
+  document.getElementById('maxPainCard').innerHTML = `<strong>Max Pain Strike:</strong> ₹${maxPain.toLocaleString('en-IN')} &nbsp;<span class="${mpPct>=0?'g-txt':'r-txt'}">${mpPct>=0?'↑':'↓'} ${Math.abs(mpPct).toFixed(1)}% from spot</span><br/>Market tends to gravitate toward max pain near expiry.<br/><strong>Implication:</strong> ${mpPct>0?'Selling calls near max pain may be favourable.':'Selling puts near max pain may be favourable.'}`;
+  document.getElementById('oiBody').innerHTML = rows.slice(0, 30).map(r => {
+    const cOI=r.call?.openInterest||0,pOI=r.put?.openInterest||0,cChg=r.call?.changeinOpenInterest||0,pChg=r.put?.changeinOpenInterest||0,pcrS=cOI>0?(pOI/cOI).toFixed(2):'—';
+    const sig = +pcrS>1.3?'<span class="pill pill-green">Bull</span>':+pcrS<0.7?'<span class="pill pill-red">Bear</span>':'<span class="pill pill-gold">Neutral</span>';
+    return `<tr><td class="mono-td sym-td">${r.strike.toLocaleString('en-IN')}</td><td class="mono-td">${fmtOI(cOI)}</td><td class="mono-td ${cChg>=0?'g-txt':'r-txt'}">${cChg>=0?'+':''}${fmtOI(cChg)}</td><td class="mono-td">${fmtOI(pOI)}</td><td class="mono-td ${pChg>=0?'g-txt':'r-txt'}">${pChg>=0?'+':''}${fmtOI(pChg)}</td><td class="mono-td">${pcrS}</td><td>${sig}</td></tr>`;
+  }).join('') || '<tr><td colspan="7">No data</td></tr>';
+  document.getElementById('sentimentPanel').style.display = 'block';
 }
-function renderSentimentFallback(sym,spot){const chain=buildSyntheticChain(spot,sym,10);renderSentimentFromNSE({chain:chain.chain,underlyingValue:spot},sym);}
+function renderSentimentFallback(sym, spot) { const chain = buildSyntheticChain(spot, sym, 10); renderSentimentFromNSE({ chain: chain.chain, underlyingValue: spot }, sym); }
 
 // ══════════════════════════════════════════════════════
 // CALCULATOR
 // ══════════════════════════════════════════════════════
-function fillSampleBS(){document.getElementById('bs_S').value='22500';document.getElementById('bs_K').value='22500';document.getElementById('bs_T').value='7';document.getElementById('bs_v').value='14';document.getElementById('bs_r').value='6.5';document.getElementById('bs_type').value='call';calcBS();}
-function calcBS(){
-  const S=+document.getElementById('bs_S').value,K=+document.getElementById('bs_K').value,T=+document.getElementById('bs_T').value/365,v=+document.getElementById('bs_v').value/100,r=+document.getElementById('bs_r').value/100,type=document.getElementById('bs_type').value;
-  if(!S||!K||!T||!v||!r){showToast('Fill all fields','err');return;}
-  const o=bsPrice(S,K,T,v,r,type);const mono=type==='call'?Math.max(0,S-K):Math.max(0,K-S);const timeVal=Math.max(0,o.price-mono);
-  document.getElementById('bsGreeks').innerHTML=[{l:'Option Price',v:`₹${o.price.toFixed(2)}`,s:`Intrinsic ₹${mono.toFixed(2)} · Time ₹${timeVal.toFixed(2)}`},{l:'Delta (Δ)',v:o.delta.toFixed(4),s:'Price sensitivity'},{l:'Gamma (Γ)',v:o.gamma.toFixed(5),s:'Delta sensitivity'},{l:'Theta (Θ)',v:`₹${o.theta.toFixed(4)}/day`,s:'Time decay per day'},{l:'Vega (ν)',v:`₹${o.vega.toFixed(4)}`,s:'Per 1% IV change'},{l:'Rho (ρ)',v:`₹${o.rho.toFixed(4)}`,s:'Per 1% rate change'}].map(c=>`<div class="greek-card"><div class="gc-label">${c.l}</div><div class="gc-val">${c.v}</div><div class="gc-sub">${c.s}</div></div>`).join('');
-  const breakeven=type==='call'?(K+o.price).toFixed(2):(K-o.price).toFixed(2);const moneyness=((S-K)/K*100).toFixed(2);
-  document.getElementById('bsInterpret').innerHTML=`<strong>Type:</strong> ${type.toUpperCase()} &nbsp;|&nbsp; <strong>Moneyness:</strong> ${+moneyness>0?'ITM':'OTM'} (${moneyness}%) &nbsp;|&nbsp; <strong>Breakeven:</strong> ₹${breakeven}<br/><strong>IV:</strong> ${(v*100).toFixed(1)}% &nbsp;|&nbsp; <strong>DTE:</strong> ${Math.round(T*365)} days<br/><strong>Intrinsic:</strong> ${(mono/o.price*100).toFixed(1)}% of premium &nbsp;|&nbsp; <strong>Time Value:</strong> ₹${timeVal.toFixed(2)}`;
-  document.getElementById('bsResult').style.display='block';
+function fillSampleBS() { document.getElementById('bs_S').value='22500'; document.getElementById('bs_K').value='22500'; document.getElementById('bs_T').value='7'; document.getElementById('bs_v').value='14'; document.getElementById('bs_r').value='6.5'; document.getElementById('bs_type').value='call'; calcBS(); }
+function calcBS() {
+  const S=+document.getElementById('bs_S').value, K=+document.getElementById('bs_K').value, T=+document.getElementById('bs_T').value/365, v=+document.getElementById('bs_v').value/100, r=+document.getElementById('bs_r').value/100, type=document.getElementById('bs_type').value;
+  if (!S||!K||!T||!v||!r) { showToast('Fill all fields','err'); return; }
+  const o = bsPrice(S, K, T, v, r, type);
+  const mono = type==='call'?Math.max(0,S-K):Math.max(0,K-S);
+  const timeVal = Math.max(0, o.price - mono);
+  document.getElementById('bsGreeks').innerHTML = [
+    {l:'Option Price',v:`₹${o.price.toFixed(2)}`,s:`Intrinsic ₹${mono.toFixed(2)} · Time ₹${timeVal.toFixed(2)}`},
+    {l:'Delta (Δ)',v:o.delta.toFixed(4),s:'Price sensitivity'},
+    {l:'Gamma (Γ)',v:o.gamma.toFixed(5),s:'Delta sensitivity'},
+    {l:'Theta (Θ)',v:`₹${o.theta.toFixed(4)}/day`,s:'Time decay per day'},
+    {l:'Vega (ν)',v:`₹${o.vega.toFixed(4)}`,s:'Per 1% IV change'},
+    {l:'Rho (ρ)',v:`₹${o.rho.toFixed(4)}`,s:'Per 1% rate change'}
+  ].map(c => `<div class="greek-card"><div class="gc-label">${c.l}</div><div class="gc-val">${c.v}</div><div class="gc-sub">${c.s}</div></div>`).join('');
+  const breakeven = type==='call'?(K+o.price).toFixed(2):(K-o.price).toFixed(2);
+  const moneyness = ((S-K)/K*100).toFixed(2);
+  document.getElementById('bsInterpret').innerHTML = `<strong>Type:</strong> ${type.toUpperCase()} &nbsp;|&nbsp; <strong>Moneyness:</strong> ${+moneyness>0?'ITM':'OTM'} (${moneyness}%) &nbsp;|&nbsp; <strong>Breakeven:</strong> ₹${breakeven}<br/><strong>IV:</strong> ${(v*100).toFixed(1)}% &nbsp;|&nbsp; <strong>DTE:</strong> ${Math.round(T*365)} days<br/><strong>Intrinsic:</strong> ${(mono/o.price*100).toFixed(1)}% of premium &nbsp;|&nbsp; <strong>Time Value:</strong> ₹${timeVal.toFixed(2)}`;
+  document.getElementById('bsResult').style.display = 'block';
 }
 
 // ══════════════════════════════════════════════════════
-// JOURNAL (using querySupabase)
+// JOURNAL — fixed with corrected querySupabase calls
 // ══════════════════════════════════════════════════════
-async function loadJournal(){
-  const filter=document.getElementById('journalFilter')?.value||'all';const sort=document.getElementById('journalSort')?.value||'newest';const userId=SESSION?.user?.id;if(!userId) return;
-  try{
+async function loadJournal() {
+  const filter = document.getElementById('journalFilter')?.value || 'all';
+  const sort = document.getElementById('journalSort')?.value || 'newest';
+  const userId = SESSION?.user?.id; if (!userId) return;
+
+  // Load P&L summary
+  try {
     const pnl = await querySupabase(`pnl_summary?select=*&user_id=eq.${userId}`);
-    renderPnLSummary(pnl?.[0]||null);
-  }catch(e){console.warn(e);}
+    renderPnLSummary(Array.isArray(pnl) ? pnl[0] : null);
+  } catch (e) { console.warn('P&L summary error:', e.message); }
+
+  // Build journal query
   let q = `trade_journal?select=*&user_id=eq.${userId}`;
-  if(filter!=='all') q+=`&status=eq.${filter}`;
-  if(sort==='newest') q+=`&order=created_at.desc`;
-  else if(sort==='pnl_desc') q+=`&order=net_pnl.desc.nullsfirst`;
-  else if(sort==='pnl_asc') q+=`&order=net_pnl.asc.nullsfirst`;
-  q+=`&limit=100`;
-  try{
+  if (filter !== 'all') q += `&status=eq.${filter}`;
+  if (sort === 'newest') q += `&order=created_at.desc`;
+  else if (sort === 'pnl_desc') q += `&order=net_pnl.desc.nullsfirst`;
+  else if (sort === 'pnl_asc') q += `&order=net_pnl.asc.nullsfirst`;
+  q += `&limit=100`;
+
+  try {
     const data = await querySupabase(q);
-    renderJournalList(data||[]);
-  }catch(e){document.getElementById('journalList').innerHTML=`<div class="empty-state">⚠️ ${e.message}</div>`;}
+    renderJournalList(data || []);
+  } catch (e) {
+    document.getElementById('journalList').innerHTML = `<div class="empty-state">⚠️ ${e.message}</div>`;
+  }
 }
-function renderPnLSummary(pnl){
-  const cards=pnl?[{l:'Total Trades',v:pnl.total_trades||0,s:''},{l:'Win Rate',v:`${(pnl.win_rate||0).toFixed(1)}%`,s:`${pnl.winning_trades||0}W / ${pnl.losing_trades||0}L`},{l:'Net P&L',v:`₹${(pnl.total_net_pnl||0).toLocaleString('en-IN')}`,s:'After charges',col:pnl.total_net_pnl>=0?'var(--green)':'var(--red)'},{l:'Profit Factor',v:pnl.profit_factor||'—',s:'Avg win / avg loss'},{l:'Best Trade',v:`₹${(pnl.best_trade_pnl||0).toLocaleString('en-IN')}`,s:'',col:'var(--green)'},{l:'Worst Trade',v:`₹${(pnl.worst_trade_pnl||0).toLocaleString('en-IN')}`,s:'',col:'var(--red)'}]:[{l:'P&L Summary',v:'—',s:'Close a trade to see stats'}];
-  document.getElementById('pnlSummaryCards').innerHTML=cards.map(c=>`<div class="greek-card"><div class="gc-label">${c.l}</div><div class="gc-val" ${c.col?`style="color:${c.col}"`:''}>${c.v}</div><div class="gc-sub">${c.s||''}</div></div>`).join('');
+
+function renderPnLSummary(pnl) {
+  const cards = pnl ? [
+    { l: 'Total Trades', v: pnl.total_trades || 0, s: '' },
+    { l: 'Win Rate', v: `${(pnl.win_rate || 0).toFixed(1)}%`, s: `${pnl.winning_trades||0}W / ${pnl.losing_trades||0}L` },
+    { l: 'Net P&L', v: `₹${(pnl.total_net_pnl||0).toLocaleString('en-IN')}`, s: 'After charges', col: pnl.total_net_pnl >= 0 ? 'var(--green)' : 'var(--red)' },
+    { l: 'Profit Factor', v: pnl.profit_factor || '—', s: 'Avg win / avg loss' },
+    { l: 'Best Trade', v: `₹${(pnl.best_trade_pnl||0).toLocaleString('en-IN')}`, s: '', col: 'var(--green)' },
+    { l: 'Worst Trade', v: `₹${(pnl.worst_trade_pnl||0).toLocaleString('en-IN')}`, s: '', col: 'var(--red)' }
+  ] : [{ l: 'P&L Summary', v: '—', s: 'Close a trade to see stats' }];
+  document.getElementById('pnlSummaryCards').innerHTML = cards.map(c => `<div class="greek-card"><div class="gc-label">${c.l}</div><div class="gc-val" ${c.col?`style="color:${c.col}"`:''}">${c.v}</div><div class="gc-sub">${c.s||''}</div></div>`).join('');
 }
-function renderJournalList(entries){
-  if(!entries.length){document.getElementById('journalList').innerHTML=`<div class="empty-state">No trades yet. Generate a signal and click <strong>Log to Journal</strong>, or click <strong>+ Log Trade</strong> above.</div>`;return;}
-  document.getElementById('journalList').innerHTML=entries.map(e=>{const pnlClass=e.net_pnl>0?'g-txt':e.net_pnl<0?'r-txt':'';const legsArr=e.legs||[];const legsSummary=legsArr.slice(0,3).map(l=>`<span class="pill ${l.action==='BUY'?'pill-blue':'pill-red'}">${l.action} ${l.type} ${l.strike}</span>`).join(' '); return `<div class="journal-entry"><div class="je-header"><div><span class="je-sym">${e.symbol}</span><span style="font-family:var(--mono);font-size:.75rem;color:var(--muted2);margin-left:.6rem">${e.strategy_name}</span><span class="pill pill-${e.status==='active'?'blue':e.status==='closed'?'green':e.status==='stopped_out'?'red':'gold'}" style="margin-left:.4rem">${e.status}</span>${e.is_paper_trade?'<span class="pill pill-purple" style="margin-left:.3rem">Paper</span>':''}</div><div style="display:flex;align-items:center;gap:.6rem">${e.net_pnl!=null?`<span class="je-pnl ${pnlClass}">₹${e.net_pnl.toLocaleString('en-IN')}</span>`:''}<div class="je-actions"><button class="btn btn-ghost btn-sm" onclick="openEditTrade('${e.id}')">Edit</button><button class="btn btn-red btn-sm" onclick="deleteTrade('${e.id}')">Del</button></div></div></div><div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.4rem">${legsSummary}</div><div class="je-meta">Expiry: ${e.expiry_date} · Entry: ${e.entry_date||'—'} · Spot: ₹${e.entry_spot||'—'}${e.capital_used?` · Capital: ₹${e.capital_used.toLocaleString('en-IN')}`:''}</div>${e.entry_notes?`<div style="font-size:.73rem;color:var(--muted);margin-top:.3rem">${e.entry_notes}</div>`:''}</div>`;}).join('');
+
+function renderJournalList(entries) {
+  if (!entries.length) { document.getElementById('journalList').innerHTML = `<div class="empty-state">No trades yet. Generate a signal and click <strong>Log to Journal</strong>, or click <strong>+ Log Trade</strong> above.</div>`; return; }
+  document.getElementById('journalList').innerHTML = entries.map(e => {
+    const pnlClass = e.net_pnl > 0 ? 'g-txt' : e.net_pnl < 0 ? 'r-txt' : '';
+    const legsArr = e.legs || [];
+    const legsSummary = legsArr.slice(0, 3).map(l => `<span class="pill ${l.action==='BUY'?'pill-blue':'pill-red'}">${l.action} ${l.type} ${l.strike}</span>`).join(' ');
+    return `<div class="journal-entry"><div class="je-header"><div><span class="je-sym">${e.symbol}</span><span style="font-family:var(--mono);font-size:.75rem;color:var(--muted2);margin-left:.6rem">${e.strategy_name}</span><span class="pill pill-${e.status==='active'?'blue':e.status==='closed'?'green':e.status==='stopped_out'?'red':'gold'}" style="margin-left:.4rem">${e.status}</span>${e.is_paper_trade?'<span class="pill pill-purple" style="margin-left:.3rem">Paper</span>':''}</div><div style="display:flex;align-items:center;gap:.6rem">${e.net_pnl!=null?`<span class="je-pnl ${pnlClass}">₹${e.net_pnl.toLocaleString('en-IN')}</span>`:''}<div><button class="btn btn-ghost btn-sm" onclick="openEditTrade('${e.id}')">Edit</button> <button class="btn btn-red btn-sm" onclick="deleteTrade('${e.id}')">Del</button></div></div></div><div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.4rem">${legsSummary}</div><div class="je-meta">Expiry: ${e.expiry_date} · Entry: ${e.entry_date||'—'} · Spot: ₹${e.entry_spot||'—'}${e.capital_used?` · Capital: ₹${e.capital_used.toLocaleString('en-IN')}`:''}</div>${e.entry_notes?`<div style="font-size:.73rem;color:var(--muted);margin-top:.3rem">${e.entry_notes}</div>`:''}</div>`;
+  }).join('');
 }
-function openAddTradeModal(){
-  document.getElementById('modalTitle').textContent='Log Trade';
-  ['tj_edit_id','tj_rec_id','tj_sym','tj_strategy','tj_expiry','tj_entry_spot','tj_capital','tj_max_loss','tj_entry_notes','tj_lesson','tj_gross_pnl','tj_charges','tj_exit_spot'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('tj_status').value='planned';document.getElementById('tj_entry_date').value=new Date().toISOString().slice(0,10);document.getElementById('tj_paper').checked=false;document.getElementById('tj_quality').value='';
-  toggleClosedFields();document.getElementById('tradeModal').classList.remove('hidden');
+
+function openAddTradeModal() {
+  document.getElementById('modalTitle').textContent = 'Log Trade';
+  ['tj_edit_id','tj_rec_id','tj_sym','tj_strategy','tj_expiry','tj_entry_spot','tj_capital','tj_max_loss','tj_entry_notes','tj_lesson','tj_gross_pnl','tj_charges','tj_exit_spot','tj_exit_date'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('tj_status').value = 'planned';
+  document.getElementById('tj_entry_date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('tj_paper').checked = false;
+  document.getElementById('tj_quality').value = '';
+  toggleClosedFields();
+  document.getElementById('tradeModal').classList.remove('hidden');
 }
-function openAddTradeFromRec(recId,sym,expiry,strategy){
+
+function openAddTradeFromRec(recId, sym, expiry, strategy) {
   openAddTradeModal();
-  document.getElementById('tj_rec_id').value=recId||'';document.getElementById('tj_sym').value=sym;document.getElementById('tj_expiry').value=expiry;document.getElementById('tj_strategy').value=strategy;document.getElementById('tj_status').value='active';
-  if(_currentSpot) document.getElementById('tj_entry_spot').value=_currentSpot;
+  document.getElementById('tj_rec_id').value = recId || '';
+  document.getElementById('tj_sym').value = sym;
+  document.getElementById('tj_expiry').value = expiry;
+  document.getElementById('tj_strategy').value = strategy;
+  document.getElementById('tj_status').value = 'active';
+  if (_currentSpot) document.getElementById('tj_entry_spot').value = _currentSpot;
+  toggleClosedFields();
 }
-async function openEditTrade(id){
-  try{
+
+async function openEditTrade(id) {
+  try {
     const data = await querySupabase(`trade_journal?select=*&id=eq.${id}`);
-    if(!data||!data.length){showToast('Could not load trade','err');return;}
-    const trade=data[0];
-    document.getElementById('modalTitle').textContent='Edit Trade';
-    const fields={tj_edit_id:'id',tj_rec_id:'recommendation_id',tj_sym:'symbol',tj_strategy:'strategy_name',tj_expiry:'expiry_date',tj_entry_date:'entry_date',tj_entry_spot:'entry_spot',tj_capital:'capital_used',tj_max_loss:'max_loss_defined',tj_entry_notes:'entry_notes',tj_lesson:'lesson_learned',tj_gross_pnl:'gross_pnl',tj_charges:'charges',tj_exit_date:'exit_date',tj_exit_spot:'exit_spot'};
-    Object.entries(fields).forEach(([id,key])=>document.getElementById(id).value=trade[key]||'');
-    document.getElementById('tj_status').value=trade.status||'planned';document.getElementById('tj_paper').checked=trade.is_paper_trade||false;document.getElementById('tj_quality').value=trade.setup_quality||'';
-    toggleClosedFields();document.getElementById('tradeModal').classList.remove('hidden');
-  }catch(e){showToast('Error loading trade','err');}
+    if (!data || !data.length) { showToast('Could not load trade', 'err'); return; }
+    const trade = data[0];
+    document.getElementById('modalTitle').textContent = 'Edit Trade';
+    const fields = { tj_edit_id:'id', tj_rec_id:'recommendation_id', tj_sym:'symbol', tj_strategy:'strategy_name', tj_expiry:'expiry_date', tj_entry_date:'entry_date', tj_entry_spot:'entry_spot', tj_capital:'capital_used', tj_max_loss:'max_loss_defined', tj_entry_notes:'entry_notes', tj_lesson:'lesson_learned', tj_gross_pnl:'gross_pnl', tj_charges:'charges', tj_exit_date:'exit_date', tj_exit_spot:'exit_spot' };
+    Object.entries(fields).forEach(([elId, key]) => { const el = document.getElementById(elId); if (el) el.value = trade[key] || ''; });
+    document.getElementById('tj_status').value = trade.status || 'planned';
+    document.getElementById('tj_paper').checked = trade.is_paper_trade || false;
+    document.getElementById('tj_quality').value = trade.setup_quality || '';
+    toggleClosedFields();
+    document.getElementById('tradeModal').classList.remove('hidden');
+  } catch (e) { showToast('Error loading trade', 'err'); }
 }
-function toggleClosedFields(){const s=document.getElementById('tj_status').value;document.getElementById('closedFields').style.display=['closed','expired','stopped_out'].includes(s)?'block':'none';}
-function closeTradeModal(){document.getElementById('tradeModal').classList.add('hidden');}
-async function saveTrade(){
-  const userId=SESSION?.user?.id;if(!userId) return;
-  const btn=document.getElementById('saveTradeBtn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
-  const sym=document.getElementById('tj_sym').value.trim().toUpperCase();const strategy=document.getElementById('tj_strategy').value.trim();
-  if(!sym||!strategy){showToast('Symbol and strategy are required','err');btn.disabled=false;btn.textContent='Save Trade';return;}
-  const grossPnl=parseFloat(document.getElementById('tj_gross_pnl').value)||null;const charges=parseFloat(document.getElementById('tj_charges').value)||0;const netPnl=grossPnl!=null?grossPnl-charges:null;const capital=parseFloat(document.getElementById('tj_capital').value)||null;
-  const payload={user_id:userId,symbol:sym,strategy_name:strategy,expiry_date:document.getElementById('tj_expiry').value,trade_type:'options',status:document.getElementById('tj_status').value,entry_date:document.getElementById('tj_entry_date').value||null,entry_spot:parseFloat(document.getElementById('tj_entry_spot').value)||null,capital_used:capital,max_loss_defined:parseFloat(document.getElementById('tj_max_loss').value)||null,entry_notes:document.getElementById('tj_entry_notes').value||null,lesson_learned:document.getElementById('tj_lesson').value||null,is_paper_trade:document.getElementById('tj_paper').checked,setup_quality:parseInt(document.getElementById('tj_quality').value)||null,gross_pnl:grossPnl,charges:charges||0,net_pnl:netPnl,pnl_pct:netPnl&&capital?parseFloat((netPnl/capital*100).toFixed(2)):null,exit_date:document.getElementById('tj_exit_date').value||null,exit_spot:parseFloat(document.getElementById('tj_exit_spot').value)||null,recommendation_id:document.getElementById('tj_rec_id').value||null,legs:[]};
-  const editId=document.getElementById('tj_edit_id').value;
-  try{
-    if(editId){
-      await querySupabase(`trade_journal?id=eq.${editId}`, {method:'PATCH',body:JSON.stringify(payload)});
-    }else{
-      await querySupabase('trade_journal', {method:'POST',body:JSON.stringify(payload)});
+
+function toggleClosedFields() {
+  const s = document.getElementById('tj_status').value;
+  document.getElementById('closedFields').style.display = ['closed','expired','stopped_out'].includes(s) ? 'block' : 'none';
+}
+function closeTradeModal() { document.getElementById('tradeModal').classList.add('hidden'); }
+
+async function saveTrade() {
+  const userId = SESSION?.user?.id; if (!userId) return;
+  const btn = document.getElementById('saveTradeBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+
+  const sym = document.getElementById('tj_sym').value.trim().toUpperCase();
+  const strategy = document.getElementById('tj_strategy').value.trim();
+  if (!sym || !strategy) { showToast('Symbol and strategy are required', 'err'); btn.disabled = false; btn.textContent = 'Save Trade'; return; }
+
+  const grossPnl = parseFloat(document.getElementById('tj_gross_pnl').value) || null;
+  const charges = parseFloat(document.getElementById('tj_charges').value) || 0;
+  const netPnl = grossPnl != null ? grossPnl - charges : null;
+  const capital = parseFloat(document.getElementById('tj_capital').value) || null;
+  const status = document.getElementById('tj_status').value;
+
+  const payload = {
+    user_id: userId,
+    symbol: sym,
+    strategy_name: strategy,
+    expiry_date: document.getElementById('tj_expiry').value || null,
+    trade_type: 'options',
+    status,
+    entry_date: document.getElementById('tj_entry_date').value || null,
+    entry_spot: parseFloat(document.getElementById('tj_entry_spot').value) || null,
+    capital_used: capital,
+    max_loss_defined: parseFloat(document.getElementById('tj_max_loss').value) || null,
+    entry_notes: document.getElementById('tj_entry_notes').value || null,
+    lesson_learned: document.getElementById('tj_lesson').value || null,
+    is_paper_trade: document.getElementById('tj_paper').checked,
+    setup_quality: parseInt(document.getElementById('tj_quality').value) || null,
+    gross_pnl: grossPnl,
+    charges: charges || 0,
+    net_pnl: netPnl,
+    pnl_pct: netPnl && capital ? parseFloat((netPnl / capital * 100).toFixed(2)) : null,
+    exit_date: document.getElementById('tj_exit_date').value || null,
+    exit_spot: parseFloat(document.getElementById('tj_exit_spot').value) || null,
+    recommendation_id: document.getElementById('tj_rec_id').value || null,
+    legs: [],
+  };
+
+  const editId = document.getElementById('tj_edit_id').value;
+  try {
+    if (editId) {
+      await querySupabase(`trade_journal?id=eq.${editId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+    } else {
+      await querySupabase('trade_journal', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
     }
-    showToast(editId?'Trade updated ✓':'Trade saved ✓','ok');
+    showToast(editId ? 'Trade updated ✓' : 'Trade saved ✓', 'ok');
     closeTradeModal();
-    if(payload.status==='closed'){
-      // Call RPC via proxy: we need to POST to /api/supabase/rpc/refresh_pnl_summary
-      await fetch('/api/supabase/rpc/refresh_pnl_summary', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({p_user_id:userId})});
+    // Refresh P&L summary if trade is closed
+    if (['closed','expired','stopped_out'].includes(status)) {
+      try {
+        await fetch('/api/supabase/rpc/refresh_pnl_summary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_user_id: userId }),
+        });
+      } catch (e) { console.warn('P&L refresh failed:', e.message); }
     }
     loadJournal();
-  }catch(e){showToast(`Save failed: ${e.message}`,'err');}
-  btn.disabled=false;btn.textContent='Save Trade';
+  } catch (e) {
+    showToast(`Save failed: ${e.message}`, 'err');
+  }
+  btn.disabled = false; btn.textContent = 'Save Trade';
 }
-async function deleteTrade(id){
-  if(!confirm('Delete this journal entry?')) return;
-  try{
-    await querySupabase(`trade_journal?id=eq.${id}`, {method:'DELETE'});
-    showToast('Entry deleted');loadJournal();
-  }catch(e){showToast('Delete failed','err');}
+
+async function deleteTrade(id) {
+  if (!confirm('Delete this journal entry?')) return;
+  try {
+    await querySupabase(`trade_journal?id=eq.${id}`, { method: 'DELETE' });
+    showToast('Entry deleted');
+    loadJournal();
+  } catch (e) { showToast('Delete failed', 'err'); }
 }
 
 // ══════════════════════════════════════════════════════
-// SIGNAL ENGINE (Yahoo proxy + synthetic)
+// SIGNAL ENGINE
 // ══════════════════════════════════════════════════════
 const SE_INDEX_MAP = {
-  '^NSEI':   {name:'NIFTY 50',   lot:25},
-  '^NSEBANK':{name:'BANK NIFTY', lot:15},
-  '^BSESN':  {name:'SENSEX',     lot:10},
+  '^NSEI':   { name: 'NIFTY 50',   lot: 25 },
+  '^NSEBANK':{ name: 'BANK NIFTY', lot: 15 },
+  '^BSESN':  { name: 'SENSEX',     lot: 10 },
 };
-const SE_BASE_SPOTS = {
-  '^NSEI': 22500, '^NSEBANK': 48200, '^BSESN': 74000,
-};
+const SE_BASE_SPOTS = { '^NSEI': 22500, '^NSEBANK': 48200, '^BSESN': 74000 };
 
 function generateSyntheticOHLC(ticker, range) {
   const barCounts = { '3mo': 65, '6mo': 130, '1y': 252 };
   const n = barCounts[range] || 130;
   const baseSpot = SE_BASE_SPOTS[ticker] || 22500;
   const annualVol = 0.15, annualDrift = 0.08;
-  const dt = 1/252;
-  const drift = (annualDrift - 0.5*annualVol*annualVol)*dt;
-  const vol = annualVol*Math.sqrt(dt);
+  const dt = 1/252, drift = (annualDrift - 0.5*annualVol*annualVol)*dt, vol = annualVol*Math.sqrt(dt);
   const rows = [];
   let price = baseSpot;
   let seed = ticker.split('').reduce((a,c)=>a+c.charCodeAt(0),0)*137 + Date.now()%10000;
-  function rand() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
-  function randn() { const u1 = rand()||1e-10, u2 = rand(); return Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2); }
+  function rand() { seed = (seed*9301+49297)%233280; return seed/233280; }
+  function randn() { const u1=rand()||1e-10, u2=rand(); return Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2); }
   const dates = [];
   let d = new Date();
-  while (dates.length < n) { d.setDate(d.getDate()-1); const dow = d.getDay(); if (dow !== 0 && dow !== 6) dates.unshift(new Date(d)); }
+  while (dates.length < n) { d.setDate(d.getDate()-1); const dow=d.getDay(); if (dow!==0&&dow!==6) dates.unshift(new Date(d)); }
   for (let i = 0; i < dates.length; i++) {
-    const ret = drift + vol*randn();
-    price = price * Math.exp(ret);
-    const atr = price * 0.008 * (0.7 + rand()*0.6);
-    const open = price * (1 + (rand()-0.5)*0.004);
-    const high = Math.max(open, price) + atr*rand()*0.5;
-    const low  = Math.min(open, price) - atr*rand()*0.5;
+    const ret = drift + vol*randn(); price = price * Math.exp(ret);
+    const atr = price*0.008*(0.7+rand()*0.6);
+    const open = price*(1+(rand()-0.5)*0.004);
+    const high = Math.max(open,price)+atr*rand()*0.5;
+    const low  = Math.min(open,price)-atr*rand()*0.5;
     rows.push({ date: dates[i].toISOString().slice(0,10), open: parseFloat(open.toFixed(2)), high: parseFloat(high.toFixed(2)), low: parseFloat(low.toFixed(2)), close: parseFloat(price.toFixed(2)) });
   }
   return rows;
 }
+
 async function fetchOHLC(ticker, range) {
   try {
     const json = await yahooChart(ticker, range);
     const result = json?.chart?.result?.[0];
     if (result) {
-      const ts = result.timestamp;
-      const q = result.indicators.quote[0];
-      const rows = [];
+      const ts = result.timestamp; const q = result.indicators.quote[0]; const rows = [];
       for (let i = 0; i < ts.length; i++) {
         if (q.close[i]==null||q.high[i]==null||q.low[i]==null) continue;
         rows.push({ date: new Date(ts[i]*1000).toISOString().slice(0,10), open: q.open[i], high: q.high[i], low: q.low[i], close: q.close[i] });
@@ -1255,14 +1418,16 @@ async function fetchOHLC(ticker, range) {
   } catch(e) { /* fall through */ }
   return { rows: generateSyntheticOHLC(ticker, range), simulated: true };
 }
-function calcSMA(arr, period) { return arr.map((_,i)=>{if(i<period-1)return null;return arr.slice(i-period+1,i+1).reduce((a,b)=>a+b,0)/period;}); }
-function calcEMA(arr, span) { const k=2/(span+1); const out=Array(arr.length).fill(null); let start=arr.findIndex(v=>v!=null); if(start<0)return out; out[start]=arr[start]; for(let i=start+1;i<arr.length;i++){if(arr[i]==null){out[i]=out[i-1];continue;}out[i]=arr[i]*k+out[i-1]*(1-k);} return out; }
-function calcRSI(closes, period=14) { const out=Array(closes.length).fill(null); for(let i=period;i<closes.length;i++){let gain=0,loss=0;for(let j=i-period+1;j<=i;j++){const d=closes[j]-closes[j-1];if(d>0)gain+=d;else loss+=Math.abs(d);}const avgG=gain/period, avgL=loss/period;if(avgL===0){out[i]=100;continue;}const rs=avgG/avgL;out[i]=100-(100/(1+rs));} return out; }
-function calcATR(data, period=14) { const tr=data.map((r,i)=>{if(i===0)return r.high-r.low;const prevClose=data[i-1].close;return Math.max(r.high-r.low, Math.abs(r.high-prevClose), Math.abs(r.low-prevClose));}); return calcSMA(tr, period); }
-function calcBB(closes, period=20, mult=2) { const mid=calcSMA(closes,period); const upper=[], lower=[]; for(let i=0;i<closes.length;i++){if(mid[i]==null){upper.push(null);lower.push(null);continue;}const slice=closes.slice(i-period+1,i+1);const mean=mid[i];const std=Math.sqrt(slice.reduce((a,v)=>a+(v-mean)**2,0)/period);upper.push(mean+mult*std);lower.push(mean-mult*std);} return {mid,upper,lower}; }
-function calcMACD(closes, fast=12, slow=26, signal=9) { const emaFast=calcEMA(closes,fast); const emaSlow=calcEMA(closes,slow); const macd=emaFast.map((v,i)=>v!=null&&emaSlow[i]!=null?v-emaSlow[i]:null); const sig=calcEMA(macd.map(v=>v??0),signal); return {macd,signal:sig}; }
+
+function calcSMA(arr, period) { return arr.map((_,i)=>{ if(i<period-1) return null; return arr.slice(i-period+1,i+1).reduce((a,b)=>a+b,0)/period; }); }
+function calcEMA(arr, span) { const k=2/(span+1); const out=Array(arr.length).fill(null); let start=arr.findIndex(v=>v!=null); if(start<0) return out; out[start]=arr[start]; for(let i=start+1;i<arr.length;i++){if(arr[i]==null){out[i]=out[i-1];continue;}out[i]=arr[i]*k+out[i-1]*(1-k);} return out; }
+function calcRSI(closes, period=14) { const out=Array(closes.length).fill(null); for(let i=period;i<closes.length;i++){let gain=0,loss=0;for(let j=i-period+1;j<=i;j++){const d=closes[j]-closes[j-1];if(d>0)gain+=d;else loss+=Math.abs(d);}const avgG=gain/period,avgL=loss/period;if(avgL===0){out[i]=100;continue;}out[i]=100-(100/(1+avgG/avgL));} return out; }
+function calcATR(data, period=14) { const tr=data.map((r,i)=>{ if(i===0) return r.high-r.low; const pc=data[i-1].close; return Math.max(r.high-r.low,Math.abs(r.high-pc),Math.abs(r.low-pc)); }); return calcSMA(tr,period); }
+function calcBB(closes, period=20, mult=2) { const mid=calcSMA(closes,period); const upper=[],lower=[]; for(let i=0;i<closes.length;i++){if(mid[i]==null){upper.push(null);lower.push(null);continue;}const slice=closes.slice(i-period+1,i+1);const mean=mid[i];const std=Math.sqrt(slice.reduce((a,v)=>a+(v-mean)**2,0)/period);upper.push(mean+mult*std);lower.push(mean-mult*std);} return {mid,upper,lower}; }
+function calcMACD(closes, fast=12, slow=26, signal=9) { const emaFast=calcEMA(closes,fast);const emaSlow=calcEMA(closes,slow);const macd=emaFast.map((v,i)=>v!=null&&emaSlow[i]!=null?v-emaSlow[i]:null);const sig=calcEMA(macd.map(v=>v??0),signal);return{macd,signal:sig}; }
+
 function computeSignal(data, params) {
-  const closes = data.map(r=>r.close);
+  const closes = data.map(r => r.close);
   const maFast = calcSMA(closes, params.maFast);
   const maSlow = calcSMA(closes, params.maSlow);
   const rsi = calcRSI(closes, 14);
@@ -1270,14 +1435,8 @@ function computeSignal(data, params) {
   const bb = calcBB(closes, 20, 2);
   const macdData = calcMACD(closes, 12, 26, 9);
   const n = closes.length-1;
-  const price = closes[n];
-  const maf = maFast[n], mas = maSlow[n];
-  const rsiVal = rsi[n];
-  const atrVal = atr[n];
-  const bbU = bb.upper[n], bbL = bb.lower[n];
-  const macdVal = macdData.macd[n], macdSig = macdData.signal[n];
-  let signal='HOLD', explanation='Indicators are conflicting or insufficient data. Avoid entries.';
-  let entry=null, sl=null, tp=null;
+  const price=closes[n],maf=maFast[n],mas=maSlow[n],rsiVal=rsi[n],atrVal=atr[n],bbU=bb.upper[n],bbL=bb.lower[n],macdVal=macdData.macd[n],macdSig=macdData.signal[n];
+  let signal='HOLD', explanation='Indicators are conflicting or insufficient data. Avoid entries.', entry=null, sl=null, tp=null;
   if (price>maf && maf>mas && rsiVal>params.rsiOB) {
     if (macdVal>macdSig) { signal='CALL BUY 📈'; explanation='Strong bullish momentum. Price is above both MAs and MACD confirms upside crossover.'; entry=price; sl=price-(params.slMult*atrVal); tp=price+(params.tpMult*atrVal); }
     else { signal='POTENTIAL CALL ⏳'; explanation='Trend is bullish (price above MAs, RSI elevated) but MACD momentum crossover not confirmed yet. Wait.'; }
@@ -1287,87 +1446,96 @@ function computeSignal(data, params) {
   }
   return { signal, explanation, entry, sl, tp, price, maf, mas, rsiVal, atrVal, bbU, bbL, macdVal, macdSig, closes, maFast, maSlow, rsi, bb, macdData, dates: data.map(r=>r.date) };
 }
-function calcLotSize(entry, sl, capital, riskPct, delta, lotSize) { if (!entry||!sl||!lotSize) return {lots:0,cashRisk:0,maxAllowed:0,riskPts:0}; const riskPts = Math.abs(entry-sl); const optionRiskPts = riskPts * delta; const cashRiskPerLot = optionRiskPts * lotSize; const maxAllowed = capital * (riskPct/100); const lots = cashRiskPerLot>0 ? Math.floor(maxAllowed/cashRiskPerLot) : 0; return {lots, cashRisk: cashRiskPerLot, maxAllowed, riskPts}; }
+
+function calcLotSize(entry, sl, capital, riskPct, delta, lotSize) {
+  if (!entry||!sl||!lotSize) return {lots:0,cashRisk:0,maxAllowed:0,riskPts:0};
+  const riskPts=Math.abs(entry-sl); const optionRiskPts=riskPts*delta; const cashRiskPerLot=optionRiskPts*lotSize;
+  const maxAllowed=capital*(riskPct/100); const lots=cashRiskPerLot>0?Math.floor(maxAllowed/cashRiskPerLot):0;
+  return {lots,cashRisk:cashRiskPerLot,maxAllowed,riskPts};
+}
+
 async function runSignalEngine() {
-  const ticker = document.getElementById('se_index').value;
-  const period = document.getElementById('se_period').value;
-  const params = { maFast: parseInt(document.getElementById('se_ma_fast').value), maSlow: parseInt(document.getElementById('se_ma_slow').value), rsiOB: parseInt(document.getElementById('se_rsi_ob').value), rsiOS: parseInt(document.getElementById('se_rsi_os').value), slMult: parseFloat(document.getElementById('se_sl').value), tpMult: parseFloat(document.getElementById('se_tp').value) };
-  const capital = parseFloat(document.getElementById('se_capital').value)||100000;
-  const riskPct = parseFloat(document.getElementById('se_risk').value)||1.0;
-  const delta = parseFloat(document.getElementById('se_delta').value)||0.5;
-  const meta = SE_INDEX_MAP[ticker]||{name:ticker,lot:25};
-  const btn = document.querySelector('.se-sidebar button.btn-gold');
+  const ticker=document.getElementById('se_index').value;
+  const period=document.getElementById('se_period').value;
+  const params={ maFast:parseInt(document.getElementById('se_ma_fast').value), maSlow:parseInt(document.getElementById('se_ma_slow').value), rsiOB:parseInt(document.getElementById('se_rsi_ob').value), rsiOS:parseInt(document.getElementById('se_rsi_os').value), slMult:parseFloat(document.getElementById('se_sl').value), tpMult:parseFloat(document.getElementById('se_tp').value) };
+  const capital=parseFloat(document.getElementById('se_capital').value)||100000;
+  const riskPct=parseFloat(document.getElementById('se_risk').value)||1.0;
+  const delta=parseFloat(document.getElementById('se_delta').value)||0.5;
+  const meta=SE_INDEX_MAP[ticker]||{name:ticker,lot:25};
+  const btn=document.querySelector('.se-sidebar button.btn-gold');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Fetching…';
   document.getElementById('seEmpty').style.display='none';
   document.getElementById('seResult').style.display='none';
   try {
-    const { rows: data, simulated } = await fetchOHLC(ticker, period);
-    if (data.length < 30) throw new Error('Insufficient data bars generated.');
-    const res = computeSignal(data, params);
-    const sizing = calcLotSize(res.entry, res.sl, capital, riskPct, delta, meta.lot);
-    renderEngineResult(res, sizing, meta, params, capital, riskPct, delta, simulated);
-    showToast(simulated ? `${meta.name} — simulated OHLC (no proxy)` : `✓ ${meta.name} live data`, simulated ? '' : 'ok');
-  } catch(e) { document.getElementById('seEmpty').innerHTML=`<div style="color:var(--red);font-size:.82rem;padding:1.5rem">Error: ${e.message}</div>`; document.getElementById('seEmpty').style.display='block'; showToast(e.message,'err'); }
+    const {rows:data,simulated}=await fetchOHLC(ticker,period);
+    if (data.length<30) throw new Error('Insufficient data bars generated.');
+    const res=computeSignal(data,params);
+    const sizing=calcLotSize(res.entry,res.sl,capital,riskPct,delta,meta.lot);
+    renderEngineResult(res,sizing,meta,params,capital,riskPct,delta,simulated);
+    showToast(simulated?`${meta.name} — simulated OHLC (no proxy)`:`✓ ${meta.name} live data`,simulated?'':'ok');
+  } catch(e) {
+    document.getElementById('seEmpty').innerHTML=`<div style="color:var(--red);font-size:.82rem;padding:1.5rem">Error: ${e.message}</div>`;
+    document.getElementById('seEmpty').style.display='block';
+    showToast(e.message,'err');
+  }
   btn.disabled=false; btn.innerHTML='Run Engine →';
 }
-function renderEngineResult(res, sizing, meta, params, capital, riskPct, delta, simulated=false) {
-  const {signal,explanation,entry,sl,tp,price,maf,mas,rsiVal,atrVal,bbU,bbL,macdVal,macdSig} = res;
-  const isCall = signal.includes('CALL BUY'); const isPut = signal.includes('PUT BUY'); const isWait = signal.includes('POTENTIAL');
-  const boxClass = isCall?'call':isPut?'put':isWait?'wait':'hold';
-  const rr = (entry&&sl&&tp) ? (Math.abs(tp-entry)/Math.abs(sl-entry)).toFixed(2) : null;
-  let signalHTML = `<div class="se-signal-box ${boxClass}"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-bottom:.3rem"><div class="se-signal-title" style="margin-bottom:0">${signal}</div>${simulated?`<span class="datasource-badge ds-sim" style="font-size:.62rem">⚠ SIMULATED OHLC</span>`:`<span class="datasource-badge ds-live" style="font-size:.62rem">● LIVE DATA</span>`}</div><div class="se-signal-insight">${explanation}</div></div>`;
-  signalHTML += `<div class="se-metrics-grid"><div class="se-metric"><div class="se-metric-label">Spot Price</div><div class="se-metric-val">₹${price.toFixed(2)}</div><div class="se-metric-sub">${meta.name}</div></div><div class="se-metric"><div class="se-metric-label">RSI (14)</div><div class="se-metric-val" style="color:${rsiVal>params.rsiOB?'var(--green)':rsiVal<params.rsiOS?'var(--red)':'var(--ink)'}">${rsiVal.toFixed(1)}</div><div class="se-metric-sub">OB:${params.rsiOB} / OS:${params.rsiOS}</div></div><div class="se-metric"><div class="se-metric-label">ATR (14)</div><div class="se-metric-val">${atrVal.toFixed(2)}</div><div class="se-metric-sub">Volatility pts</div></div><div class="se-metric"><div class="se-metric-label">Fast MA (${params.maFast})</div><div class="se-metric-val">${maf.toFixed(2)}</div><div class="se-metric-sub">vs price ${price>maf?'↑ bullish':'↓ bearish'}</div></div><div class="se-metric"><div class="se-metric-label">Slow MA (${params.maSlow})</div><div class="se-metric-val">${mas.toFixed(2)}</div><div class="se-metric-sub">vs fast ${maf>mas?'↑ bullish':'↓ bearish'}</div></div><div class="se-metric"><div class="se-metric-label">MACD</div><div class="se-metric-val" style="color:${macdVal>macdSig?'var(--green)':'var(--red)'}">${macdVal.toFixed(2)}</div><div class="se-metric-sub">Signal: ${macdSig.toFixed(2)}</div></div><div class="se-metric"><div class="se-metric-label">BB Upper</div><div class="se-metric-val">${bbU.toFixed(2)}</div><div class="se-metric-sub">Resistance band</div></div><div class="se-metric"><div class="se-metric-label">BB Lower</div><div class="se-metric-val">${bbL.toFixed(2)}</div><div class="se-metric-sub">Support band</div></div></div>`;
+
+function renderEngineResult(res,sizing,meta,params,capital,riskPct,delta,simulated=false) {
+  const {signal,explanation,entry,sl,tp,price,maf,mas,rsiVal,atrVal,bbU,bbL,macdVal,macdSig}=res;
+  const isCall=signal.includes('CALL BUY'),isPut=signal.includes('PUT BUY'),isWait=signal.includes('POTENTIAL');
+  const boxClass=isCall?'call':isPut?'put':isWait?'wait':'hold';
+  const rr=(entry&&sl&&tp)?( Math.abs(tp-entry)/Math.abs(sl-entry)).toFixed(2):null;
+  const rrLabel = rr ? (rr>=2?'Excellent':rr>=1.5?'Good':'Acceptable') : '—';
+  let html=`<div class="se-signal-box ${boxClass}"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-bottom:.3rem"><div class="se-signal-title" style="margin-bottom:0">${signal}</div>${simulated?`<span class="datasource-badge ds-sim" style="font-size:.62rem">⚠ SIMULATED OHLC</span>`:`<span class="datasource-badge ds-live" style="font-size:.62rem">● LIVE DATA</span>`}</div><div class="se-signal-insight">${explanation}</div></div>`;
+  html+=`<div class="se-metrics-grid"><div class="se-metric"><div class="se-metric-label">Spot Price</div><div class="se-metric-val">₹${price.toFixed(2)}</div><div class="se-metric-sub">${meta.name}</div></div><div class="se-metric"><div class="se-metric-label">RSI (14)</div><div class="se-metric-val" style="color:${rsiVal>params.rsiOB?'var(--green)':rsiVal<params.rsiOS?'var(--red)':'var(--ink)'}">${rsiVal.toFixed(1)}</div><div class="se-metric-sub">OB:${params.rsiOB} / OS:${params.rsiOS}</div></div><div class="se-metric"><div class="se-metric-label">ATR (14)</div><div class="se-metric-val">${atrVal.toFixed(2)}</div><div class="se-metric-sub">Volatility pts</div></div><div class="se-metric"><div class="se-metric-label">Fast MA (${params.maFast})</div><div class="se-metric-val">${maf.toFixed(2)}</div><div class="se-metric-sub">vs price ${price>maf?'↑ bullish':'↓ bearish'}</div></div><div class="se-metric"><div class="se-metric-label">Slow MA (${params.maSlow})</div><div class="se-metric-val">${mas.toFixed(2)}</div><div class="se-metric-sub">vs fast ${maf>mas?'↑ bullish':'↓ bearish'}</div></div><div class="se-metric"><div class="se-metric-label">MACD</div><div class="se-metric-val" style="color:${macdVal>macdSig?'var(--green)':'var(--red)'}">${macdVal.toFixed(2)}</div><div class="se-metric-sub">Signal: ${macdSig.toFixed(2)}</div></div><div class="se-metric"><div class="se-metric-label">BB Upper</div><div class="se-metric-val">${bbU.toFixed(2)}</div><div class="se-metric-sub">Resistance band</div></div><div class="se-metric"><div class="se-metric-label">BB Lower</div><div class="se-metric-val">${bbL.toFixed(2)}</div><div class="se-metric-sub">Support band</div></div></div>`;
   if (entry&&sl&&tp) {
-    const tpDelta = (tp-entry).toFixed(2); const slDelta = (sl-entry).toFixed(2);
-    signalHTML += `<div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.6rem">Suggested Execution Levels</div><div class="se-exec-grid"><div class="se-exec-card se-exec-entry"><div class="label">Entry Zone</div><div class="val">₹${entry.toFixed(2)}</div><div class="sub">Current spot</div></div><div class="se-exec-card se-exec-tp"><div class="label">Target (TP)</div><div class="val">₹${tp.toFixed(2)}</div><div class="sub">${tpDelta>0?'+':''}${tpDelta} pts (${params.tpMult}× ATR)</div></div><div class="se-exec-card se-exec-sl"><div class="label">Stop Loss (SL)</div><div class="val">₹${sl.toFixed(2)}</div><div class="sub">${slDelta>0?'+':''}${slDelta} pts (${params.slMult}× ATR)</div></div><div class="se-exec-card se-exec-rr"><div class="label">R:R Ratio</div><div class="val">1 : ${rr}</div><div class="sub">${rr>=2?'Excellent':'rr>=1.5?\'Good\':\'Acceptable\''}</div></div></div>`;
-    signalHTML += `<div class="se-lot-box"><div class="se-lot-title">💼 Position Sizing — ${meta.name} Lot = ${meta.lot} qty</div><div class="se-lot-grid"><div class="se-lot-card"><div class="lc-label">Max Cash Risk</div><div class="lc-val">₹${sizing.maxAllowed.toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div><div class="se-lot-card"><div class="lc-label">Recommended Lots</div><div class="lc-val">${sizing.lots} lots <span style="font-size:.7rem;color:var(--muted)">(${sizing.lots*meta.lot} qty)</span></div></div><div class="se-lot-card"><div class="lc-label">Est. Risk / Lot</div><div class="lc-val">₹${sizing.cashRisk.toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div></div>${sizing.lots===0?`<div class="se-warn">⚠️ Volatility is too high or capital is too small to safely trade a single lot under your current risk parameters. Increase allowed risk % or reduce ATR stop multiplier.</div>`:''}<div style="font-size:.67rem;color:var(--muted2);margin-top:.6rem">Based on ${riskPct}% capital risk · Option delta ${delta} · ${params.slMult}× ATR stop = ₹${sizing.riskPts.toFixed(2)} underlying risk pts</div></div>`;
+    const tpDelta=(tp-entry).toFixed(2),slDelta=(sl-entry).toFixed(2);
+    html+=`<div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.6rem">Suggested Execution Levels</div><div class="se-exec-grid"><div class="se-exec-card se-exec-entry"><div class="label">Entry Zone</div><div class="val">₹${entry.toFixed(2)}</div><div class="sub">Current spot</div></div><div class="se-exec-card se-exec-tp"><div class="label">Target (TP)</div><div class="val">₹${tp.toFixed(2)}</div><div class="sub">${tpDelta>0?'+':''}${tpDelta} pts (${params.tpMult}× ATR)</div></div><div class="se-exec-card se-exec-sl"><div class="label">Stop Loss (SL)</div><div class="val">₹${sl.toFixed(2)}</div><div class="sub">${slDelta>0?'+':''}${slDelta} pts (${params.slMult}× ATR)</div></div><div class="se-exec-card se-exec-rr"><div class="label">R:R Ratio</div><div class="val">1 : ${rr}</div><div class="sub">${rrLabel}</div></div></div>`;
+    html+=`<div class="se-lot-box"><div class="se-lot-title">💼 Position Sizing — ${meta.name} Lot = ${meta.lot} qty</div><div class="se-lot-grid"><div class="se-lot-card"><div class="lc-label">Max Cash Risk</div><div class="lc-val">₹${sizing.maxAllowed.toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div><div class="se-lot-card"><div class="lc-label">Recommended Lots</div><div class="lc-val">${sizing.lots} lots <span style="font-size:.7rem;color:var(--muted)">(${sizing.lots*meta.lot} qty)</span></div></div><div class="se-lot-card"><div class="lc-label">Est. Risk / Lot</div><div class="lc-val">₹${sizing.cashRisk.toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div></div>${sizing.lots===0?`<div class="se-warn">⚠️ Volatility is too high or capital is too small to safely trade a single lot under your current risk parameters. Increase allowed risk % or reduce ATR stop multiplier.</div>`:''}<div style="font-size:.67rem;color:var(--muted2);margin-top:.6rem">Based on ${riskPct}% capital risk · Option delta ${delta} · ${params.slMult}× ATR stop = ₹${sizing.riskPts.toFixed(2)} underlying risk pts</div></div>`;
   }
-  signalHTML += `<div class="se-chart-area"><div class="se-chart-title">Price + Moving Averages + Bollinger Bands (last 60 bars)</div><canvas class="se-chart" id="seChartPrice" height="200"></canvas></div><div class="se-chart-area"><div class="se-chart-title">RSI (14)</div><canvas class="se-chart" id="seChartRSI" height="100"></canvas></div><div class="se-chart-area"><div class="se-chart-title">MACD vs Signal Line</div><canvas class="se-chart" id="seChartMACD" height="100"></canvas></div>`;
-  document.getElementById('seResult').innerHTML=signalHTML;
-  document.getElementById('seResult').style.display='block';
-  setTimeout(()=>drawSECharts(res, params), 50);
+  html+=`<div class="se-chart-area"><div class="se-chart-title">Price + Moving Averages + Bollinger Bands (last 60 bars)</div><canvas class="se-chart" id="seChartPrice" height="200"></canvas></div><div class="se-chart-area"><div class="se-chart-title">RSI (14)</div><canvas class="se-chart" id="seChartRSI" height="100"></canvas></div><div class="se-chart-area"><div class="se-chart-title">MACD vs Signal Line</div><canvas class="se-chart" id="seChartMACD" height="100"></canvas></div>`;
+  document.getElementById('seResult').innerHTML = html;
+  document.getElementById('seResult').style.display = 'block';
+  setTimeout(() => drawSECharts(res, params), 50);
 }
+
 function drawSECharts(res, params) {
-  const N = 60; const len = res.dates.length; const start = Math.max(0, len-N);
-  const slice = (arr) => arr.slice(start);
-  const labels = slice(res.dates);
-  const closes = slice(res.closes);
-  const maFast = slice(res.maFast);
-  const maSlow = slice(res.maSlow);
-  const bbU = slice(res.bb.upper);
-  const bbL = slice(res.bb.lower);
-  const rsiArr = slice(res.rsi);
-  const macdArr = slice(res.macdData.macd);
-  const sigArr = slice(res.macdData.signal);
-  const chartDefaults = { responsive:true, plugins:{legend:{display:true,labels:{font:{size:10},color:'#888'}},tooltip:{mode:'index',intersect:false}}, scales:{x:{ticks:{maxTicksLimit:8,color:'#aaa',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{color:'#aaa',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}} };
+  const N=60,len=res.dates.length,start=Math.max(0,len-N);
+  const slice=arr=>arr.slice(start);
+  const labels=slice(res.dates),closes=slice(res.closes),maFast=slice(res.maFast),maSlow=slice(res.maSlow),bbU=slice(res.bb.upper),bbL=slice(res.bb.lower),rsiArr=slice(res.rsi),macdArr=slice(res.macdData.macd),sigArr=slice(res.macdData.signal);
+  const chartDefaults={responsive:true,plugins:{legend:{display:true,labels:{font:{size:10},color:'#888'}},tooltip:{mode:'index',intersect:false}},scales:{x:{ticks:{maxTicksLimit:8,color:'#aaa',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{color:'#aaa',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}}};
   Object.values(_seCharts).forEach(c=>c.destroy&&c.destroy());
   _seCharts={};
-  const priceCtx = document.getElementById('seChartPrice')?.getContext('2d');
-  if(priceCtx) _seCharts.price = new Chart(priceCtx,{type:'line',data:{labels,datasets:[{label:'Close',data:closes,borderColor:'#0369a1',borderWidth:1.5,pointRadius:0,fill:false,tension:.3},{label:`MA${params.maFast}`,data:maFast,borderColor:'#d97706',borderWidth:1,pointRadius:0,fill:false,borderDash:[3,2],tension:.3},{label:`MA${params.maSlow}`,data:maSlow,borderColor:'#7e22ce',borderWidth:1,pointRadius:0,fill:false,borderDash:[3,2],tension:.3},{label:'BB Upper',data:bbU,borderColor:'rgba(156,163,175,.5)',borderWidth:1,pointRadius:0,fill:false,tension:.3},{label:'BB Lower',data:bbL,borderColor:'rgba(156,163,175,.5)',borderWidth:1,pointRadius:0,fill:'+1',backgroundColor:'rgba(156,163,175,.06)',tension:.3}]},options:chartDefaults});
-  const rsiCtx = document.getElementById('seChartRSI')?.getContext('2d');
-  if(rsiCtx) _seCharts.rsi = new Chart(rsiCtx,{type:'line',data:{labels,datasets:[{label:'RSI',data:rsiArr,borderColor:'#0369a1',borderWidth:1.5,pointRadius:0,fill:false,tension:.3}]},options:{...chartDefaults,scales:{...chartDefaults.scales,y:{...chartDefaults.scales.y,min:0,max:100,ticks:{...chartDefaults.scales.y.ticks,callback:v=>v}}}}});
-  const macdCtx = document.getElementById('seChartMACD')?.getContext('2d');
-  if(macdCtx) _seCharts.macd = new Chart(macdCtx,{type:'line',data:{labels,datasets:[{label:'MACD',data:macdArr,borderColor:'#0369a1',borderWidth:1.5,pointRadius:0,fill:false,tension:.3},{label:'Signal',data:sigArr,borderColor:'#d97706',borderWidth:1,pointRadius:0,fill:false,borderDash:[3,2],tension:.3}]},options:chartDefaults});
+  const priceCtx=document.getElementById('seChartPrice')?.getContext('2d');
+  if(priceCtx) _seCharts.price=new Chart(priceCtx,{type:'line',data:{labels,datasets:[{label:'Close',data:closes,borderColor:'#0369a1',borderWidth:1.5,pointRadius:0,fill:false,tension:.3},{label:`MA${params.maFast}`,data:maFast,borderColor:'#d97706',borderWidth:1,pointRadius:0,fill:false,borderDash:[3,2],tension:.3},{label:`MA${params.maSlow}`,data:maSlow,borderColor:'#7e22ce',borderWidth:1,pointRadius:0,fill:false,borderDash:[3,2],tension:.3},{label:'BB Upper',data:bbU,borderColor:'rgba(156,163,175,.5)',borderWidth:1,pointRadius:0,fill:false,tension:.3},{label:'BB Lower',data:bbL,borderColor:'rgba(156,163,175,.5)',borderWidth:1,pointRadius:0,fill:'+1',backgroundColor:'rgba(156,163,175,.06)',tension:.3}]},options:chartDefaults});
+  const rsiCtx=document.getElementById('seChartRSI')?.getContext('2d');
+  if(rsiCtx) _seCharts.rsi=new Chart(rsiCtx,{type:'line',data:{labels,datasets:[{label:'RSI',data:rsiArr,borderColor:'#0369a1',borderWidth:1.5,pointRadius:0,fill:false,tension:.3}]},options:{...chartDefaults,scales:{...chartDefaults.scales,y:{...chartDefaults.scales.y,min:0,max:100}}}});
+  const macdCtx=document.getElementById('seChartMACD')?.getContext('2d');
+  if(macdCtx) _seCharts.macd=new Chart(macdCtx,{type:'line',data:{labels,datasets:[{label:'MACD',data:macdArr,borderColor:'#0369a1',borderWidth:1.5,pointRadius:0,fill:false,tension:.3},{label:'Signal',data:sigArr,borderColor:'#d97706',borderWidth:1,pointRadius:0,fill:false,borderDash:[3,2],tension:.3}]},options:chartDefaults});
 }
 
 // ══════════════════════════════════════════════════════
 // CLOCK & BOOT
 // ══════════════════════════════════════════════════════
-function updateClock(){
-  const ist=new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date());
-  const h=parseInt(ist.split(':')[0]),m=parseInt(ist.split(':')[1]);
-  const open=(h>9||(h===9&&m>=15))&&(h<15||(h===15&&m<=30));
-  document.getElementById('mktBadge').textContent=`NSE F&O  ${ist} IST ${open?'🟢':'🔴'}`;
+function updateClock() {
+  const ist = new Intl.DateTimeFormat('en-IN', { timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false }).format(new Date());
+  const h=parseInt(ist.split(':')[0]), m=parseInt(ist.split(':')[1]);
+  const open = (h>9||(h===9&&m>=15)) && (h<15||(h===15&&m<=30));
+  document.getElementById('mktBadge').textContent = `NSE F&O  ${ist} IST ${open?'🟢':'🔴'}`;
 }
-setInterval(updateClock,1000);updateClock();
+setInterval(updateClock, 1000); updateClock();
 
-(function init(){
-  try{const s=localStorage.getItem('ts_session');if(s){SESSION=JSON.parse(s);if(SESSION?.access_token){onLogin();return;}}}catch(e){}
+(function init() {
+  try {
+    const s = localStorage.getItem('ts_session');
+    if (s) { SESSION = JSON.parse(s); if (SESSION?.access_token) { onLogin(); return; } }
+  } catch(e) {}
   document.getElementById('authOverlay').classList.remove('hidden');
-  document.getElementById('tj_status')?.addEventListener('change',toggleClosedFields);
-  document.getElementById('sentimentSym')?.addEventListener('change',async function(){await loadExpiriesForSym(this.value,'sentimentExpiry');});
-  document.getElementById('signalSym')?.addEventListener('change',async function(){if(this.value.length>=2) await loadExpiriesForSym(this.value.trim().toUpperCase(),'signalExpirySelect');});
-  document.getElementById('optSym')?.addEventListener('change',async function(){if(this.value.length>=2) await loadExpiriesForSym(this.value.trim().toUpperCase(),'expirySelect');});
+  // Wire up listeners
+  document.getElementById('sentimentSym')?.addEventListener('change', async function() { await loadExpiriesForSym(this.value, 'sentimentExpiry'); });
+  document.getElementById('signalSym')?.addEventListener('input', async function() { if (this.value.length >= 2) await loadExpiriesForSym(this.value.trim().toUpperCase(), 'signalExpirySelect'); });
+  document.getElementById('optSym')?.addEventListener('input', async function() { if (this.value.length >= 2) await loadExpiriesForSym(this.value.trim().toUpperCase(), 'expirySelect'); });
 })();
 </script>
 </body>
