@@ -30,8 +30,6 @@
     /* ════════ AUTH OVERLAY ════════ */
     #authOverlay{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem}
     #authOverlay.hidden{display:none}
-    .auth-tab-link{background:none;border:none;font-size:.75rem;color:var(--accent2);cursor:pointer;font-family:var(--sans);text-decoration:underline;padding:0}
-    .auth-tab-link:hover{color:var(--ink)}
     .auth-box{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:400px;box-shadow:var(--shadow-lg)}
     .auth-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem;margin-bottom:1.75rem}
     .auth-candles{display:flex;align-items:flex-end;gap:3px;height:22px}
@@ -46,6 +44,8 @@
     .auth-tab-row{display:flex;border-bottom:2px solid var(--border);margin-bottom:1.5rem}
     .auth-tab{flex:1;padding:.6rem;text-align:center;font-size:.85rem;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:none;font-family:var(--sans);border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s}
     .auth-tab.active{color:var(--accent2);border-bottom-color:var(--accent2)}
+    .auth-tab-link{background:none;border:none;font-size:.75rem;color:var(--accent2);cursor:pointer;font-family:var(--sans);text-decoration:underline;padding:0}
+    .auth-tab-link:hover{color:var(--ink)}
     .auth-msg{font-size:.78rem;padding:.6rem .9rem;border-radius:7px;margin-bottom:1rem;display:none}
     .auth-msg.err{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bdr);display:block}
     .auth-msg.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bdr);display:block}
@@ -311,10 +311,9 @@
       </div>
       Trade Screener
     </div>
-    <div class="auth-tab-row">
+    <div class="auth-tab-row" id="authTabRow">
       <button class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
       <button class="auth-tab" onclick="switchAuthTab('signup')">Create Account</button>
-      <button class="auth-tab" onclick="switchAuthTab('forgot')">Reset</button>
     </div>
     <div id="authMsg" class="auth-msg"></div>
     <div id="loginForm">
@@ -331,33 +330,7 @@
         <button class="auth-tab-link" onclick="switchAuthTab('forgot')">Forgot password?</button>
       </div>
     </div>
-    <!-- ── Forgot password form ── -->
-    <div id="forgotForm" style="display:none">
-      <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
-        Enter your email and we'll send a password reset link.
-      </p>
-      <div style="margin-bottom:1.4rem">
-        <label class="fl">Email</label>
-        <input type="email" id="forgotEmail" placeholder="you@example.com" autocomplete="email"/>
-      </div>
-      <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem" id="forgotBtn" onclick="doForgotPassword()">Send Reset Link</button>
-    </div>
-
-    <!-- ── Set new password form (shown after clicking email link) ── -->
-    <div id="resetForm" style="display:none">
-      <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
-        Choose a new password for your account.
-      </p>
-      <div style="margin-bottom:1rem">
-        <label class="fl">New Password</label>
-        <input type="password" id="newPass1" placeholder="Min 6 characters" autocomplete="new-password"/>
-      </div>
-      <div style="margin-bottom:1.4rem">
-        <label class="fl">Confirm Password</label>
-        <input type="password" id="newPass2" placeholder="Repeat password" autocomplete="new-password"/>
-      </div>
-      <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem" id="resetBtn" onclick="doResetPassword()">Set New Password</button>
-    </div>
+    <div id="signupForm" style="display:none">
       <div style="margin-bottom:1rem">
         <label class="fl">Email</label>
         <input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email"/>
@@ -370,7 +343,41 @@
     </div>
   </div>
 </div>
+<!-- ── Forgot password: email-only form ── -->
+    <div id="forgotForm" style="display:none">
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
+        Enter your email and we'll send a one-time reset link. The link expires in 1 hour.
+      </p>
+      <div style="margin-bottom:1.4rem">
+        <label class="fl">Email</label>
+        <input type="email" id="forgotEmail" placeholder="you@example.com" autocomplete="email"/>
+      </div>
+      <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem"
+              id="forgotBtn" onclick="doForgotPassword()">Send Reset Link</button>
+      <div style="text-align:center;margin-top:.85rem">
+        <button class="auth-tab-link" onclick="switchAuthTab('login')">← Back to Sign In</button>
+      </div>
+    </div>
 
+    <!-- ── Set new password: ONLY reachable via emailed link ── -->
+    <!-- This panel is hidden by default and shown only when a valid
+         type=recovery token is detected in the URL hash on page load.
+         There is no button, tab, or link that opens it directly. -->
+    <div id="resetForm" style="display:none">
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
+        Choose a strong new password for your account.
+      </p>
+      <div style="margin-bottom:1rem">
+        <label class="fl">New Password</label>
+        <input type="password" id="newPass1" placeholder="Min 6 characters" autocomplete="new-password"/>
+      </div>
+      <div style="margin-bottom:1.4rem">
+        <label class="fl">Confirm Password</label>
+        <input type="password" id="newPass2" placeholder="Repeat password" autocomplete="new-password"/>
+      </div>
+      <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem"
+              id="resetBtn" onclick="doResetPassword()">Set New Password</button>
+    </div>
 <!-- ════════════════ APP SHELL ════════════════ -->
 <div id="appShell">
   <header>
@@ -662,13 +669,16 @@ const POPULAR = ["TCS","RELIANCE","HDFCBANK","INFY","ICICIBANK","TATAMOTORS","SB
 
 // ═════════════════════════ AUTH ══════════════════════════
 function switchAuthTab(tab){
+  // resetForm is intentionally excluded — only accessible via recovery hash
   const tabs=["login","signup","forgot"];
-  document.querySelectorAll(".auth-tab").forEach((t,i)=>t.classList.toggle("active",tabs[i]===tab));
+  document.querySelectorAll("#authTabRow .auth-tab")
+    .forEach((t,i)=>t.classList.toggle("active",tabs[i]===tab));
   document.getElementById("loginForm").style.display  = tab==="login"  ?"block":"none";
   document.getElementById("signupForm").style.display = tab==="signup" ?"block":"none";
   document.getElementById("forgotForm").style.display = tab==="forgot" ?"block":"none";
-  document.getElementById("resetForm").style.display  = "none"; // only shown via hash
+  document.getElementById("resetForm").style.display  = "none"; // never via tab
   clearAuthMsg();
+  if(tab==="forgot") setTimeout(()=>document.getElementById("forgotEmail")?.focus(),60);
 }
 function authMsg(m,t){const el=document.getElementById("authMsg");el.textContent=m;el.className="auth-msg "+t;}
 function clearAuthMsg(){document.getElementById("authMsg").className="auth-msg";}
@@ -711,47 +721,61 @@ async function doSignup(){
   }catch(e){authMsg("Network error — try again","err");}
   btn.disabled=false;btn.textContent="Create Account";
 }
+
 async function doForgotPassword(){
   const email=document.getElementById("forgotEmail").value.trim();
   if(!email) return authMsg("Please enter your email address","err");
   const btn=document.getElementById("forgotBtn");
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
   try{
-    // redirectTo must be whitelisted in Supabase → Authentication → URL Configuration → Redirect URLs
     const redirectTo=window.location.origin+window.location.pathname;
     const d=await callAuth({action:"forgot_password",email,redirectTo});
-    // Supabase returns {} on success for the recover endpoint
-    if(d.error){authMsg(d.error_description||d.error||"Could not send reset email","err");}
-    else{authMsg("✓ Reset link sent — check your inbox (and spam folder)","ok");}
-  }catch(e){authMsg("Network error — try again","err");}
+    if(d.error){
+      authMsg(d.error_description||d.error||"Could not send reset email — try again","err");
+    } else {
+      authMsg("✓ Reset link sent — check your inbox (and spam folder). Link expires in 1 hour.","ok");
+      document.getElementById("forgotEmail").value="";
+    }
+  }catch(e){ authMsg("Network error — try again","err"); }
   btn.disabled=false;btn.textContent="Send Reset Link";
 }
 
-// Stores the recovery token extracted from the URL hash
+// Stores the one-time recovery token extracted from the URL hash.
+// Set only by handleRecoveryHash() below — never set by any user action.
 let _recoveryToken=null;
 
 async function doResetPassword(){
+  // Double-check: token must exist (i.e. user arrived via the emailed link)
+  if(!_recoveryToken){
+    authMsg("No valid reset token — please use the link from your email","err");
+    return;
+  }
   const p1=document.getElementById("newPass1").value;
   const p2=document.getElementById("newPass2").value;
   if(!p1||p1.length<6) return authMsg("Password must be at least 6 characters","err");
   if(p1!==p2) return authMsg("Passwords do not match","err");
-  if(!_recoveryToken) return authMsg("Invalid or expired reset link — request a new one","err");
   const btn=document.getElementById("resetBtn");
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
   try{
     const d=await callAuth({action:"reset_password",access_token:_recoveryToken,new_password:p1});
     if(d.id||d.email){
-      authMsg("✓ Password updated successfully! You can now sign in.","ok");
-      // Clean up the hash and switch to login
-      history.replaceState(null,"",window.location.pathname);
+      // Invalidate token immediately so it can't be reused in this session
       _recoveryToken=null;
-      setTimeout(()=>{switchAuthTab("login");clearAuthMsg();},2500);
-    }else{
-      authMsg(d.error_description||d.msg||"Could not update password — link may have expired","err");
+      // Remove hash from URL so a refresh doesn't re-trigger the flow
+      history.replaceState(null,"",window.location.pathname);
+      authMsg("✓ Password updated! Signing you in…","ok");
+      // Auto sign-in with the new password is not possible here (we don't store it).
+      // Redirect to login after a short delay.
+      document.getElementById("resetForm").style.display="none";
+      setTimeout(()=>{ switchAuthTab("login"); clearAuthMsg(); },2200);
+    } else {
+      authMsg(d.error_description||d.msg||"Link expired or already used — request a new one","err");
+      _recoveryToken=null;
     }
-  }catch(e){authMsg("Network error — try again","err");}
+  }catch(e){ authMsg("Network error — try again","err"); }
   btn.disabled=false;btn.textContent="Set New Password";
 }
+
 async function doLogout(){
   try{ if(SESSION) await callAuth({action:"logout"}); }catch(e){}
   SESSION=null;localStorage.removeItem("ts_session");
@@ -1508,25 +1532,30 @@ function updateMkt(){
 
 // ═════════════════ INIT ══════════════════════════════════
 (function init(){
-  // Restore session (will be validated by first API call — 401 forces re-login)
-  const saved=localStorage.getItem("ts_session");
-  if(saved){try{SESSION=JSON.parse(saved);}catch(e){}}
-  // Handle password-recovery link (Supabase appends #access_token=...&type=recovery)
+  // Detect Supabase password-recovery redirect.
+  // Supabase appends: #access_token=TOKEN&type=recovery&...
+  // This is the ONLY code path that can reveal #resetForm.
   (function handleRecoveryHash(){
     const hash=window.location.hash.slice(1);
     if(!hash) return;
-    const params=Object.fromEntries(hash.split("&").map(p=>p.split("=")));
-    if(params.type==="recovery"&&params.access_token){
+    const params=Object.fromEntries(
+      hash.split("&").map(p=>{ const [k,...v]=p.split("="); return [k,v.join("=")]; })
+    );
+    if(params.type==="recovery" && params.access_token){
       _recoveryToken=decodeURIComponent(params.access_token);
-      // Show the set-new-password panel
+      // Hide all other panels and tabs
       document.getElementById("loginForm").style.display="none";
       document.getElementById("signupForm").style.display="none";
       document.getElementById("forgotForm").style.display="none";
       document.getElementById("resetForm").style.display="block";
-      document.querySelectorAll(".auth-tab").forEach(t=>t.classList.remove("active"));
-      authMsg("Enter your new password below","ok");
+      document.querySelectorAll("#authTabRow .auth-tab").forEach(t=>t.classList.remove("active"));
+      authMsg("✓ Link verified — set your new password below","ok");
+      setTimeout(()=>document.getElementById("newPass1")?.focus(),60);
     }
   })();
+  // Restore session (will be validated by first API call — 401 forces re-login)
+  const saved=localStorage.getItem("ts_session");
+  if(saved){try{SESSION=JSON.parse(saved);}catch(e){}}
   if(SESSION?.access_token)onLogin();
 
   // Quick stock chips
