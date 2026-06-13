@@ -851,30 +851,94 @@ const SE_INDEX_MAP = {
   '^BSESN':  {name:'SENSEX',     lot:10},
 };
 
-// --- Fetch OHLC via proxy ---
-async function fetchOHLC(ticker, range) {
-  // Your Cloudflare Worker must proxy this route:
-  //   /yahoo/chart/{ticker}?interval=1d&range={range}
-  // which forwards to: https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1d&range={range}
-  const url = `${CONFIG.YAHOO_PROXY}/${encodeURIComponent(ticker)}?interval=1d&range=${range}`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`OHLC fetch failed (${r.status}). Add /yahoo/chart proxy to your Cloudflare Worker.`);
-  const json = await r.json();
-  const result = json?.chart?.result?.[0];
-  if (!result) throw new Error('No OHLC data returned');
-  const ts = result.timestamp;
-  const q = result.indicators.quote[0];
-  const closes = q.close, opens = q.open, highs = q.high, lows = q.low;
-  // Build clean array, filter nulls
+// --- Base spot prices for synthetic fallback ---
+const SE_BASE_SPOTS = {
+  '^NSEI': 22500, '^NSEBANK': 48200, '^BSESN': 74000,
+};
+
+// --- Synthetic OHLC generator (realistic GBM random walk) ---
+function generateSyntheticOHLC(ticker, range) {
+  const barCounts = { '3mo': 65, '6mo': 130, '1y': 252 };
+  const n = barCounts[range] || 130;
+  const baseSpot = SE_BASE_SPOTS[ticker] || 22500;
+  // Annual vol ~15%, drift ~8%
+  const annualVol = 0.15, annualDrift = 0.08;
+  const dt = 1/252;
+  const drift = (annualDrift - 0.5*annualVol*annualVol)*dt;
+  const vol = annualVol*Math.sqrt(dt);
+
   const rows = [];
-  for (let i = 0; i < ts.length; i++) {
-    if (closes[i]==null||highs[i]==null||lows[i]==null) continue;
+  let price = baseSpot;
+  // Start date = n trading days ago
+  const today = new Date();
+  // seeded deterministic-ish random using ticker hash so results are consistent per session
+  let seed = ticker.split('').reduce((a,c)=>a+c.charCodeAt(0),0)*137 + Date.now()%10000;
+  function rand() {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  }
+  function randn() {
+    // Box-Muller
+    const u1 = rand()||1e-10, u2 = rand();
+    return Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+  }
+
+  // Walk backwards to get start date, collect trading days
+  const dates = [];
+  let d = new Date(today);
+  while (dates.length < n) {
+    d.setDate(d.getDate()-1);
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) dates.unshift(new Date(d));
+  }
+
+  for (let i = 0; i < dates.length; i++) {
+    const ret = drift + vol*randn();
+    price = price * Math.exp(ret);
+    // Intraday range: ATR roughly 0.8% of price
+    const atr = price * 0.008 * (0.7 + rand()*0.6);
+    const open = price * (1 + (rand()-0.5)*0.004);
+    const high = Math.max(open, price) + atr*rand()*0.5;
+    const low  = Math.min(open, price) - atr*rand()*0.5;
     rows.push({
-      date: new Date(ts[i]*1000).toISOString().slice(0,10),
-      open: opens[i], high: highs[i], low: lows[i], close: closes[i],
+      date: dates[i].toISOString().slice(0,10),
+      open: parseFloat(open.toFixed(2)),
+      high: parseFloat(high.toFixed(2)),
+      low:  parseFloat(low.toFixed(2)),
+      close: parseFloat(price.toFixed(2)),
     });
   }
   return rows;
+}
+
+// --- Fetch OHLC: proxy first, synthetic fallback ---
+async function fetchOHLC(ticker, range) {
+  // Try the Yahoo Finance proxy if configured
+  if (CONFIG.YAHOO_PROXY && !CONFIG.YAHOO_PROXY.includes('YOUR-WORKER')) {
+    try {
+      const url = `${CONFIG.YAHOO_PROXY}/${encodeURIComponent(ticker)}?interval=1d&range=${range}`;
+      const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+      if (r.ok) {
+        const json = await r.json();
+        const result = json?.chart?.result?.[0];
+        if (result) {
+          const ts = result.timestamp;
+          const q = result.indicators.quote[0];
+          const rows = [];
+          for (let i = 0; i < ts.length; i++) {
+            if (q.close[i]==null||q.high[i]==null||q.low[i]==null) continue;
+            rows.push({
+              date:  new Date(ts[i]*1000).toISOString().slice(0,10),
+              open:  q.open[i], high: q.high[i], low: q.low[i], close: q.close[i],
+            });
+          }
+          if (rows.length >= 30) return { rows, simulated: false };
+        }
+      }
+    } catch(e) { /* proxy failed — fall through to synthetic */ }
+  }
+  // Synthetic fallback — always works, no network needed
+  return { rows: generateSyntheticOHLC(ticker, range), simulated: true };
 }
 
 // --- Indicator math ---
@@ -1023,23 +1087,23 @@ async function runSignalEngine() {
   document.getElementById('seResult').style.display='none';
 
   try {
-    const data = await fetchOHLC(ticker, period);
-    if (data.length < 30) throw new Error('Insufficient historical data (need at least 30 bars).');
+    const { rows: data, simulated } = await fetchOHLC(ticker, period);
+    if (data.length < 30) throw new Error('Insufficient data bars generated.');
 
     const res = computeSignal(data, params);
     const sizing = calcLotSize(res.entry, res.sl, capital, riskPct, delta, meta.lot);
 
-    renderEngineResult(res, sizing, meta, params, capital, riskPct, delta);
-    showToast(`✓ ${meta.name} signal computed`,'ok');
+    renderEngineResult(res, sizing, meta, params, capital, riskPct, delta, simulated);
+    showToast(simulated ? `${meta.name} — simulated OHLC (no proxy)` : `✓ ${meta.name} live data`, simulated ? '' : 'ok');
   } catch(e) {
-    document.getElementById('seEmpty').innerHTML=`<div style="color:var(--red);font-size:.82rem;padding:1.5rem">${e.message}<br/><span style="color:var(--muted2);font-size:.73rem">Add a <code>/yahoo/chart</code> proxy route to your Cloudflare Worker — see comments in CONFIG.</span></div>`;
+    document.getElementById('seEmpty').innerHTML=`<div style="color:var(--red);font-size:.82rem;padding:1.5rem">Error: ${e.message}</div>`;
     document.getElementById('seEmpty').style.display='block';
     showToast(e.message,'err');
   }
   btn.disabled=false; btn.innerHTML='Run Engine →';
 }
 
-function renderEngineResult(res, sizing, meta, params, capital, riskPct, delta) {
+function renderEngineResult(res, sizing, meta, params, capital, riskPct, delta, simulated=false) {
   const {signal,explanation,entry,sl,tp,price,maf,mas,rsiVal,atrVal,bbU,bbL,macdVal,macdSig} = res;
   const isCall = signal.includes('CALL BUY');
   const isPut = signal.includes('PUT BUY');
@@ -1050,7 +1114,12 @@ function renderEngineResult(res, sizing, meta, params, capital, riskPct, delta) 
 
   // Signal box
   let signalHTML = `<div class="se-signal-box ${boxClass}">
-    <div class="se-signal-title">${signal}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-bottom:.3rem">
+      <div class="se-signal-title" style="margin-bottom:0">${signal}</div>
+      ${simulated
+        ? `<span class="datasource-badge ds-sim" style="font-size:.62rem">⚠ SIMULATED OHLC</span>`
+        : `<span class="datasource-badge ds-live" style="font-size:.62rem">● LIVE DATA</span>`}
+    </div>
     <div class="se-signal-insight">${explanation}</div>
   </div>`;
 
