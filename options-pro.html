@@ -6,7 +6,6 @@
 <title>Options Analyser — Trade Screener Pro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -689,31 +688,53 @@ footer{text-align:center;padding:1.75rem 1rem;font-size:.69rem;color:var(--muted
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 // ══════════════════════════════════════════════════════
-// CONFIG — update these for your deployment
+// NO CONFIG – all calls go to /api/*
 // ══════════════════════════════════════════════════════
-// No CONFIG, no process.env, no supabase client
 
-// Helper to call your Supabase proxy
+// Helper to call your Supabase proxy (REST)
 async function querySupabase(path, options = {}) {
   const res = await fetch(`/api/supabase/rest/v1/${path}`, {
     headers: { 'Content-Type': 'application/json' },
     ...options
   });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Supabase proxy error ${res.status}: ${errText}`);
+  }
   return res.json();
 }
 
-// Example usage: fetch trade journal
-const data = await querySupabase(`trade_journal?select=*&user_id=eq.${userId}&order=created_at.desc&limit=100`);
-
-// For NSE proxy:
-const chain = await fetch('/api/nse/option-chain?symbol=NIFTY').then(r => r.json());
-
-// For Yahoo proxy:
-const chart = await fetch('/api/yahoo/chart/RELIANCE?interval=1d&range=6mo').then(r => r.json());
+// NSE proxy (your Pages Function)
+async function nseOptionChain(symbol, expiry='') {
+  const params = new URLSearchParams({ symbol });
+  if (expiry) params.set('expiry', expiry);
+  const r = await fetch(`/api/nse/option-chain?${params}`);
+  if (!r.ok) throw new Error(`NSE proxy error ${r.status}`);
+  return r.json();
+}
+async function nseExpiryDates(symbol) {
+  const r = await fetch(`/api/nse/expiry-dates?symbol=${symbol}`);
+  if (!r.ok) throw new Error('NSE expiry fetch failed');
+  return r.json();
+}
+async function nseQuote(symbol) {
+  const r = await fetch(`/api/nse/quote?symbol=${symbol}`);
+  if (!r.ok) throw new Error('NSE quote fetch failed');
+  return r.json();
+}
+// Yahoo proxy (your Pages Function)
+async function yahooChart(ticker, range) {
+  const r = await fetch(`/api/yahoo/chart/${encodeURIComponent(ticker)}?interval=1d&range=${range}`);
+  if (!r.ok) throw new Error('Yahoo proxy error');
+  return r.json();
+}
 
 // ══════════════════════════════════════════════════════
 // AUTH
 // ══════════════════════════════════════════════════════
+let SESSION = null;
+let _sessionExpiredShown = false;
+
 function switchAuthTab(tab){
   document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',i===(tab==='login'?0:1)));
   document.getElementById('loginForm').style.display=tab==='login'?'block':'none';
@@ -794,27 +815,6 @@ function showToast(msg,type=''){
 }
 
 // ══════════════════════════════════════════════════════
-// NSE PROXY
-// ══════════════════════════════════════════════════════
-async function nseOptionChain(symbol,expiry=''){
-  const params=new URLSearchParams({symbol});
-  if(expiry) params.set('expiry',expiry);
-  const r=await fetch(`${CONFIG.NSE_PROXY}/nse/option-chain?${params}`);
-  if(!r.ok){const err=await r.json().catch(()=>({}));throw new Error(err.error||`NSE proxy error ${r.status}`);}
-  return r.json();
-}
-async function nseExpiryDates(symbol){
-  const r=await fetch(`${CONFIG.NSE_PROXY}/nse/expiry-dates?symbol=${symbol}`);
-  if(!r.ok) throw new Error('NSE expiry fetch failed');
-  return r.json();
-}
-async function nseQuote(symbol){
-  const r=await fetch(`${CONFIG.NSE_PROXY}/nse/quote?symbol=${symbol}`);
-  if(!r.ok) throw new Error('NSE quote fetch failed');
-  return r.json();
-}
-
-// ══════════════════════════════════════════════════════
 // EXPIRY HELPERS
 // ══════════════════════════════════════════════════════
 async function loadExpiriesForSym(sym,selectId){
@@ -843,416 +843,13 @@ function fmtExpiry(d){
 }
 
 // ══════════════════════════════════════════════════════
-// ═══════ SIGNAL ENGINE — CORE ═══════
-// ══════════════════════════════════════════════════════
-
-// Map select values to Yahoo Finance tickers
-const SE_INDEX_MAP = {
-  '^NSEI':   {name:'NIFTY 50',   lot:25},
-  '^NSEBANK':{name:'BANK NIFTY', lot:15},
-  '^BSESN':  {name:'SENSEX',     lot:10},
-};
-
-// --- Base spot prices for synthetic fallback ---
-const SE_BASE_SPOTS = {
-  '^NSEI': 22500, '^NSEBANK': 48200, '^BSESN': 74000,
-};
-
-// --- Synthetic OHLC generator (realistic GBM random walk) ---
-function generateSyntheticOHLC(ticker, range) {
-  const barCounts = { '3mo': 65, '6mo': 130, '1y': 252 };
-  const n = barCounts[range] || 130;
-  const baseSpot = SE_BASE_SPOTS[ticker] || 22500;
-  // Annual vol ~15%, drift ~8%
-  const annualVol = 0.15, annualDrift = 0.08;
-  const dt = 1/252;
-  const drift = (annualDrift - 0.5*annualVol*annualVol)*dt;
-  const vol = annualVol*Math.sqrt(dt);
-
-  const rows = [];
-  let price = baseSpot;
-  // Start date = n trading days ago
-  const today = new Date();
-  // seeded deterministic-ish random using ticker hash so results are consistent per session
-  let seed = ticker.split('').reduce((a,c)=>a+c.charCodeAt(0),0)*137 + Date.now()%10000;
-  function rand() {
-    seed = (seed * 9301 + 49297) % 233280;
-    return seed / 233280;
-  }
-  function randn() {
-    // Box-Muller
-    const u1 = rand()||1e-10, u2 = rand();
-    return Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
-  }
-
-  // Walk backwards to get start date, collect trading days
-  const dates = [];
-  let d = new Date(today);
-  while (dates.length < n) {
-    d.setDate(d.getDate()-1);
-    const dow = d.getDay();
-    if (dow !== 0 && dow !== 6) dates.unshift(new Date(d));
-  }
-
-  for (let i = 0; i < dates.length; i++) {
-    const ret = drift + vol*randn();
-    price = price * Math.exp(ret);
-    // Intraday range: ATR roughly 0.8% of price
-    const atr = price * 0.008 * (0.7 + rand()*0.6);
-    const open = price * (1 + (rand()-0.5)*0.004);
-    const high = Math.max(open, price) + atr*rand()*0.5;
-    const low  = Math.min(open, price) - atr*rand()*0.5;
-    rows.push({
-      date: dates[i].toISOString().slice(0,10),
-      open: parseFloat(open.toFixed(2)),
-      high: parseFloat(high.toFixed(2)),
-      low:  parseFloat(low.toFixed(2)),
-      close: parseFloat(price.toFixed(2)),
-    });
-  }
-  return rows;
-}
-
-// --- Fetch OHLC: proxy first, synthetic fallback ---
-async function fetchOHLC(ticker, range) {
-  // Try the Yahoo Finance proxy if configured
-  if (CONFIG.YAHOO_PROXY && !CONFIG.YAHOO_PROXY.includes('YOUR-WORKER')) {
-    try {
-      const url = `${CONFIG.YAHOO_PROXY}/${encodeURIComponent(ticker)}?interval=1d&range=${range}`;
-      const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
-      if (r.ok) {
-        const json = await r.json();
-        const result = json?.chart?.result?.[0];
-        if (result) {
-          const ts = result.timestamp;
-          const q = result.indicators.quote[0];
-          const rows = [];
-          for (let i = 0; i < ts.length; i++) {
-            if (q.close[i]==null||q.high[i]==null||q.low[i]==null) continue;
-            rows.push({
-              date:  new Date(ts[i]*1000).toISOString().slice(0,10),
-              open:  q.open[i], high: q.high[i], low: q.low[i], close: q.close[i],
-            });
-          }
-          if (rows.length >= 30) return { rows, simulated: false };
-        }
-      }
-    } catch(e) { /* proxy failed — fall through to synthetic */ }
-  }
-  // Synthetic fallback — always works, no network needed
-  return { rows: generateSyntheticOHLC(ticker, range), simulated: true };
-}
-
-// --- Indicator math ---
-function calcSMA(arr, period) {
-  return arr.map((_,i) => {
-    if (i < period-1) return null;
-    return arr.slice(i-period+1,i+1).reduce((a,b)=>a+b,0)/period;
-  });
-}
-function calcEMA(arr, span) {
-  const k = 2/(span+1);
-  const out = new Array(arr.length).fill(null);
-  // find first non-null
-  let start = arr.findIndex(v=>v!=null);
-  if (start<0) return out;
-  out[start] = arr[start];
-  for (let i=start+1;i<arr.length;i++) {
-    if (arr[i]==null){out[i]=out[i-1];continue;}
-    out[i] = arr[i]*k + out[i-1]*(1-k);
-  }
-  return out;
-}
-function calcRSI(closes, period=14) {
-  const out = new Array(closes.length).fill(null);
-  for (let i=period;i<closes.length;i++) {
-    let gain=0,loss=0;
-    for (let j=i-period+1;j<=i;j++) {
-      const d=closes[j]-closes[j-1];
-      if(d>0) gain+=d; else loss+=Math.abs(d);
-    }
-    const avgG=gain/period, avgL=loss/period;
-    if(avgL===0){out[i]=100;continue;}
-    const rs=avgG/avgL;
-    out[i]=100-(100/(1+rs));
-  }
-  return out;
-}
-function calcATR(data, period=14) {
-  const tr=data.map((r,i)=>{
-    if(i===0) return r.high-r.low;
-    const prevClose=data[i-1].close;
-    return Math.max(r.high-r.low, Math.abs(r.high-prevClose), Math.abs(r.low-prevClose));
-  });
-  return calcSMA(tr, period);
-}
-function calcBB(closes, period=20, mult=2) {
-  const mid=calcSMA(closes,period);
-  const upper=[], lower=[];
-  for(let i=0;i<closes.length;i++){
-    if(mid[i]==null){upper.push(null);lower.push(null);continue;}
-    const slice=closes.slice(i-period+1,i+1);
-    const mean=mid[i];
-    const std=Math.sqrt(slice.reduce((a,v)=>a+(v-mean)**2,0)/period);
-    upper.push(mean+mult*std);
-    lower.push(mean-mult*std);
-  }
-  return {mid,upper,lower};
-}
-function calcMACD(closes, fast=12, slow=26, signal=9) {
-  const emaFast=calcEMA(closes,fast);
-  const emaSlow=calcEMA(closes,slow);
-  const macd=emaFast.map((v,i)=>v!=null&&emaSlow[i]!=null?v-emaSlow[i]:null);
-  const sig=calcEMA(macd.map(v=>v??0),signal);
-  return {macd,signal:sig};
-}
-
-// --- Signal logic (mirrors Python) ---
-function computeSignal(data, params) {
-  const closes = data.map(r=>r.close);
-  const maFast = calcSMA(closes, params.maFast);
-  const maSlow = calcSMA(closes, params.maSlow);
-  const rsi = calcRSI(closes, 14);
-  const atr = calcATR(data, 14);
-  const bb = calcBB(closes, 20, 2);
-  const macdData = calcMACD(closes, 12, 26, 9);
-
-  const n = closes.length-1;
-  const price = closes[n];
-  const maf = maFast[n], mas = maSlow[n];
-  const rsiVal = rsi[n];
-  const atrVal = atr[n];
-  const bbU = bb.upper[n], bbL = bb.lower[n];
-  const macdVal = macdData.macd[n], macdSig = macdData.signal[n];
-
-  let signal='HOLD', explanation='Indicators are conflicting or insufficient data. Avoid entries.';
-  let entry=null, sl=null, tp=null;
-
-  if (price>maf && maf>mas && rsiVal>params.rsiOB) {
-    if (macdVal>macdSig) {
-      signal='CALL BUY 📈';
-      explanation='Strong bullish momentum. Price is above both MAs and MACD confirms upside crossover.';
-      entry=price; sl=price-(params.slMult*atrVal); tp=price+(params.tpMult*atrVal);
-    } else {
-      signal='POTENTIAL CALL ⏳';
-      explanation='Trend is bullish (price above MAs, RSI elevated) but MACD momentum crossover not confirmed yet. Wait.';
-    }
-  } else if (price<maf && maf<mas && rsiVal<params.rsiOS) {
-    if (macdVal<macdSig) {
-      signal='PUT BUY 📉';
-      explanation='Strong bearish breakdown. Price is below both MAs and MACD confirms downward velocity.';
-      entry=price; sl=price+(params.slMult*atrVal); tp=price-(params.tpMult*atrVal);
-    } else {
-      signal='POTENTIAL PUT ⏳';
-      explanation='Trend is bearish (price below MAs, RSI depressed) but MACD breakdown not confirmed yet. Wait.';
-    }
-  }
-
-  return {
-    signal, explanation, entry, sl, tp,
-    price, maf, mas, rsiVal, atrVal, bbU, bbL, macdVal, macdSig,
-    closes, maFast, maSlow, rsi, bb, macdData, dates: data.map(r=>r.date),
-  };
-}
-
-// --- Position sizing ---
-function calcLotSize(entry, sl, capital, riskPct, delta, lotSize) {
-  if (!entry||!sl||!lotSize) return {lots:0,cashRisk:0,maxAllowed:0,riskPts:0};
-  const riskPts = Math.abs(entry-sl);
-  const optionRiskPts = riskPts * delta;
-  const cashRiskPerLot = optionRiskPts * lotSize;
-  const maxAllowed = capital * (riskPct/100);
-  const lots = cashRiskPerLot>0 ? Math.floor(maxAllowed/cashRiskPerLot) : 0;
-  return {lots, cashRisk: cashRiskPerLot, maxAllowed, riskPts};
-}
-
-// --- Main runner ---
-async function runSignalEngine() {
-  const ticker = document.getElementById('se_index').value;
-  const period = document.getElementById('se_period').value;
-  const params = {
-    maFast: parseInt(document.getElementById('se_ma_fast').value),
-    maSlow: parseInt(document.getElementById('se_ma_slow').value),
-    rsiOB: parseInt(document.getElementById('se_rsi_ob').value),
-    rsiOS: parseInt(document.getElementById('se_rsi_os').value),
-    slMult: parseFloat(document.getElementById('se_sl').value),
-    tpMult: parseFloat(document.getElementById('se_tp').value),
-  };
-  const capital = parseFloat(document.getElementById('se_capital').value)||100000;
-  const riskPct = parseFloat(document.getElementById('se_risk').value)||1.0;
-  const delta = parseFloat(document.getElementById('se_delta').value)||0.5;
-  const meta = SE_INDEX_MAP[ticker]||{name:ticker,lot:25};
-
-  const btn = document.querySelector('.se-sidebar button.btn-gold');
-  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Fetching…';
-  document.getElementById('seEmpty').style.display='none';
-  document.getElementById('seResult').style.display='none';
-
-  try {
-    const { rows: data, simulated } = await fetchOHLC(ticker, period);
-    if (data.length < 30) throw new Error('Insufficient data bars generated.');
-
-    const res = computeSignal(data, params);
-    const sizing = calcLotSize(res.entry, res.sl, capital, riskPct, delta, meta.lot);
-
-    renderEngineResult(res, sizing, meta, params, capital, riskPct, delta, simulated);
-    showToast(simulated ? `${meta.name} — simulated OHLC (no proxy)` : `✓ ${meta.name} live data`, simulated ? '' : 'ok');
-  } catch(e) {
-    document.getElementById('seEmpty').innerHTML=`<div style="color:var(--red);font-size:.82rem;padding:1.5rem">Error: ${e.message}</div>`;
-    document.getElementById('seEmpty').style.display='block';
-    showToast(e.message,'err');
-  }
-  btn.disabled=false; btn.innerHTML='Run Engine →';
-}
-
-function renderEngineResult(res, sizing, meta, params, capital, riskPct, delta, simulated=false) {
-  const {signal,explanation,entry,sl,tp,price,maf,mas,rsiVal,atrVal,bbU,bbL,macdVal,macdSig} = res;
-  const isCall = signal.includes('CALL BUY');
-  const isPut = signal.includes('PUT BUY');
-  const isWait = signal.includes('POTENTIAL');
-  const boxClass = isCall?'call':isPut?'put':isWait?'wait':'hold';
-
-  const rr = (entry&&sl&&tp) ? (Math.abs(tp-entry)/Math.abs(sl-entry)).toFixed(2) : null;
-
-  // Signal box
-  let signalHTML = `<div class="se-signal-box ${boxClass}">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-bottom:.3rem">
-      <div class="se-signal-title" style="margin-bottom:0">${signal}</div>
-      ${simulated
-        ? `<span class="datasource-badge ds-sim" style="font-size:.62rem">⚠ SIMULATED OHLC</span>`
-        : `<span class="datasource-badge ds-live" style="font-size:.62rem">● LIVE DATA</span>`}
-    </div>
-    <div class="se-signal-insight">${explanation}</div>
-  </div>`;
-
-  // Indicator metrics
-  signalHTML += `<div class="se-metrics-grid">
-    <div class="se-metric"><div class="se-metric-label">Spot Price</div><div class="se-metric-val">₹${price.toFixed(2)}</div><div class="se-metric-sub">${meta.name}</div></div>
-    <div class="se-metric"><div class="se-metric-label">RSI (14)</div><div class="se-metric-val" style="color:${rsiVal>params.rsiOB?'var(--green)':rsiVal<params.rsiOS?'var(--red)':'var(--ink)'}">${rsiVal.toFixed(1)}</div><div class="se-metric-sub">OB:${params.rsiOB} / OS:${params.rsiOS}</div></div>
-    <div class="se-metric"><div class="se-metric-label">ATR (14)</div><div class="se-metric-val">${atrVal.toFixed(2)}</div><div class="se-metric-sub">Volatility pts</div></div>
-    <div class="se-metric"><div class="se-metric-label">Fast MA (${params.maFast})</div><div class="se-metric-val">${maf.toFixed(2)}</div><div class="se-metric-sub">vs price ${price>maf?'↑ bullish':'↓ bearish'}</div></div>
-    <div class="se-metric"><div class="se-metric-label">Slow MA (${params.maSlow})</div><div class="se-metric-val">${mas.toFixed(2)}</div><div class="se-metric-sub">vs fast ${maf>mas?'↑ bullish':'↓ bearish'}</div></div>
-    <div class="se-metric"><div class="se-metric-label">MACD</div><div class="se-metric-val" style="color:${macdVal>macdSig?'var(--green)':'var(--red)'}">${macdVal.toFixed(2)}</div><div class="se-metric-sub">Signal: ${macdSig.toFixed(2)}</div></div>
-    <div class="se-metric"><div class="se-metric-label">BB Upper</div><div class="se-metric-val">${bbU.toFixed(2)}</div><div class="se-metric-sub">Resistance band</div></div>
-    <div class="se-metric"><div class="se-metric-label">BB Lower</div><div class="se-metric-val">${bbL.toFixed(2)}</div><div class="se-metric-sub">Support band</div></div>
-  </div>`;
-
-  // Execution levels (only if signal fired)
-  if (entry&&sl&&tp) {
-    const tpDelta = (tp-entry).toFixed(2);
-    const slDelta = (sl-entry).toFixed(2);
-    signalHTML += `<div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.6rem">Suggested Execution Levels</div>
-    <div class="se-exec-grid">
-      <div class="se-exec-card se-exec-entry"><div class="label">Entry Zone</div><div class="val">₹${entry.toFixed(2)}</div><div class="sub">Current spot</div></div>
-      <div class="se-exec-card se-exec-tp"><div class="label">Target (TP)</div><div class="val">₹${tp.toFixed(2)}</div><div class="sub">${tpDelta>0?'+':''}${tpDelta} pts (${params.tpMult}× ATR)</div></div>
-      <div class="se-exec-card se-exec-sl"><div class="label">Stop Loss (SL)</div><div class="val">₹${sl.toFixed(2)}</div><div class="sub">${slDelta>0?'+':''}${slDelta} pts (${params.slMult}× ATR)</div></div>
-      <div class="se-exec-card se-exec-rr"><div class="label">R:R Ratio</div><div class="val">1 : ${rr}</div><div class="sub">${rr>=2?'Excellent':'rr>=1.5?\'Good\':\'Acceptable\''}</div></div>
-    </div>`;
-
-    // Position sizing block
-    signalHTML += `<div class="se-lot-box">
-      <div class="se-lot-title">💼 Position Sizing — ${meta.name} Lot = ${meta.lot} qty</div>
-      <div class="se-lot-grid">
-        <div class="se-lot-card"><div class="lc-label">Max Cash Risk</div><div class="lc-val">₹${sizing.maxAllowed.toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div>
-        <div class="se-lot-card"><div class="lc-label">Recommended Lots</div><div class="lc-val">${sizing.lots} lots <span style="font-size:.7rem;color:var(--muted)">(${sizing.lots*meta.lot} qty)</span></div></div>
-        <div class="se-lot-card"><div class="lc-label">Est. Risk / Lot</div><div class="lc-val">₹${sizing.cashRisk.toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div>
-      </div>
-      ${sizing.lots===0?`<div class="se-warn">⚠️ Volatility is too high or capital is too small to safely trade a single lot under your current risk parameters. Increase allowed risk % or reduce ATR stop multiplier.</div>`:''}
-      <div style="font-size:.67rem;color:var(--muted2);margin-top:.6rem">Based on ${riskPct}% capital risk · Option delta ${delta} · ${params.slMult}× ATR stop = ₹${sizing.riskPts.toFixed(2)} underlying risk pts</div>
-    </div>`;
-  }
-
-  // Charts
-  signalHTML += renderSECharts(res, params);
-
-  document.getElementById('seResult').innerHTML=signalHTML;
-  document.getElementById('seResult').style.display='block';
-
-  // Draw charts after DOM insert
-  setTimeout(()=>drawSECharts(res, params), 50);
-}
-
-function renderSECharts(res, params) {
-  return `
-  <div class="se-chart-area">
-    <div class="se-chart-title">Price + Moving Averages + Bollinger Bands (last 60 bars)</div>
-    <canvas class="se-chart" id="seChartPrice" height="200"></canvas>
-  </div>
-  <div class="se-chart-area">
-    <div class="se-chart-title">RSI (14)</div>
-    <canvas class="se-chart" id="seChartRSI" height="100"></canvas>
-  </div>
-  <div class="se-chart-area">
-    <div class="se-chart-title">MACD vs Signal Line</div>
-    <canvas class="se-chart" id="seChartMACD" height="100"></canvas>
-  </div>`;
-}
-
-function drawSECharts(res, params) {
-  const N = 60; // show last 60 bars
-  const len = res.dates.length;
-  const start = Math.max(0, len-N);
-  const slice = (arr) => arr.slice(start);
-  const labels = slice(res.dates);
-  const closes = slice(res.closes);
-  const maFast = slice(res.maFast);
-  const maSlow = slice(res.maSlow);
-  const bbU = slice(res.bb.upper);
-  const bbL = slice(res.bb.lower);
-  const rsiArr = slice(res.rsi);
-  const macdArr = slice(res.macdData.macd);
-  const sigArr = slice(res.macdData.signal);
-
-  const chartDefaults = {
-    responsive:true,
-    plugins:{legend:{display:true,labels:{font:{size:10},color:'#888'}},tooltip:{mode:'index',intersect:false}},
-    scales:{x:{ticks:{maxTicksLimit:8,color:'#aaa',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{color:'#aaa',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}}
-  };
-
-  // Destroy old
-  Object.values(_seCharts).forEach(c=>c.destroy&&c.destroy());
-  _seCharts={};
-
-  // Price chart
-  const priceCtx = document.getElementById('seChartPrice')?.getContext('2d');
-  if(priceCtx) _seCharts.price = new Chart(priceCtx,{type:'line',data:{
-    labels,
-    datasets:[
-      {label:'Close',data:closes,borderColor:'#0369a1',borderWidth:1.5,pointRadius:0,fill:false,tension:.3},
-      {label:`MA${params.maFast}`,data:maFast,borderColor:'#d97706',borderWidth:1,pointRadius:0,fill:false,borderDash:[3,2],tension:.3},
-      {label:`MA${params.maSlow}`,data:maSlow,borderColor:'#7e22ce',borderWidth:1,pointRadius:0,fill:false,borderDash:[3,2],tension:.3},
-      {label:'BB Upper',data:bbU,borderColor:'rgba(156,163,175,.5)',borderWidth:1,pointRadius:0,fill:false,tension:.3},
-      {label:'BB Lower',data:bbL,borderColor:'rgba(156,163,175,.5)',borderWidth:1,pointRadius:0,fill:'+1',backgroundColor:'rgba(156,163,175,.06)',tension:.3},
-    ]
-  },options:chartDefaults});
-
-  // RSI chart
-  const rsiCtx = document.getElementById('seChartRSI')?.getContext('2d');
-  if(rsiCtx) _seCharts.rsi = new Chart(rsiCtx,{type:'line',data:{
-    labels,
-    datasets:[
-      {label:'RSI',data:rsiArr,borderColor:'#0369a1',borderWidth:1.5,pointRadius:0,fill:false,tension:.3},
-    ]
-  },options:{...chartDefaults,plugins:{...chartDefaults.plugins,annotation:{}},scales:{...chartDefaults.scales,
-    y:{...chartDefaults.scales.y,min:0,max:100,ticks:{...chartDefaults.scales.y.ticks,callback:v=>v},
-      gridLines:{drawBorder:false}
-    }
-  }}});
-
-  // MACD chart
-  const macdCtx = document.getElementById('seChartMACD')?.getContext('2d');
-  if(macdCtx) _seCharts.macd = new Chart(macdCtx,{type:'line',data:{
-    labels,
-    datasets:[
-      {label:'MACD',data:macdArr,borderColor:'#0369a1',borderWidth:1.5,pointRadius:0,fill:false,tension:.3},
-      {label:'Signal',data:sigArr,borderColor:'#d97706',borderWidth:1,pointRadius:0,fill:false,borderDash:[3,2],tension:.3},
-    ]
-  },options:chartDefaults});
-}
-
-// ══════════════════════════════════════════════════════
 // OPTION CHAIN
 // ══════════════════════════════════════════════════════
+const NSE_INDICES = ['NIFTY','BANKNIFTY','FINNIFTY','MIDCPNIFTY','NIFTYIT','SENSEX'];
+let _currentChainData = null;
+let _currentSpot = null;
+let _seCharts = {};
+
 function quickLoad(sym){document.getElementById('optSym').value=sym;loadChain();}
 async function loadChain(){
   const sym=document.getElementById('optSym').value.trim().toUpperCase();
@@ -1319,7 +916,8 @@ function renderChainFromNSE(chainData,depth,expiry){
   document.getElementById('chainMetrics').style.display='block';
   const maxCallOI=Math.max(...displayed.map(r=>r.call?.openInterest||0));
   const maxPutOI=Math.max(...displayed.map(r=>r.put?.openInterest||0));
-  const hdr=`<table class="chain"><thead><tr><th colspan="6" class="chain-call-hd">CALLS</th><th class="chain-strike-hd">STRIKE</th><th colspan="6" class="chain-put-hd">PUTS</th></tr><tr><th>OI</th><th>OI Chg</th><th>IV%</th><th>LTP</th><th>Vol</th><th>Bid/Ask</th><th>₹</th><th>OI</th><th>OI Chg</th><th>IV%</th><th>LTP</th><th>Vol</th><th>Bid/Ask</th></tr></thead><tbody>`;
+  const hdr=`<table class="chain"><thead><tr><th colspan="6" class="chain-call-hd">CALLS</th><th class="chain-strike-hd">STRIKE</th><th colspan="6" class="chain-put-hd">PUTS</th></tr>
+  <tr><th>OI</th><th>OI Chg</th><th>IV%</th><th>LTP</th><th>Vol</th><th>Bid/Ask</th><th>₹</th><th>OI</th><th>OI Chg</th><th>IV%</th><th>LTP</th><th>Vol</th><th>Bid/Ask</th></tr></thead><tbody>`;
   const tbody=displayed.map(r=>{
     const isAtm=r.strike===atm;const isITMCall=r.strike<spot;const isITMPut=r.strike>spot;
     const callHighOI=(r.call?.openInterest||0)>maxCallOI*0.6;const putHighOI=(r.put?.openInterest||0)>maxPutOI*0.6;
@@ -1339,7 +937,7 @@ function renderChainFromNSE(chainData,depth,expiry){
       <td class="${pf}"><strong>₹${(p.lastPrice||0).toFixed(2)}</strong></td>
       <td class="${pf}">${fmtOI(p.totalTradedVolume||0)}</td>
       <td class="${pf}" style="font-size:.64rem">${(p.bidprice||0).toFixed(0)}/${(p.askPrice||0).toFixed(0)}</td>
-    </tr>`;
+     </tr>`;
   }).join('');
   document.getElementById('chainTableWrap').innerHTML=`<div style="margin-bottom:.5rem;font-size:.7rem;color:var(--muted2)">🟡 ATM &nbsp;· <span style="color:var(--green)">Green = ITM Call</span> &nbsp;· <span style="color:var(--red)">Red = ITM Put</span> &nbsp;· 🔵 High OI</div><div class="chain-wrap">${hdr}${tbody}</tbody></table></div>`;
 }
@@ -1352,25 +950,7 @@ function calcMaxPainFromNSE(rows){
   });
   return mpStrike;
 }
-
-// ══════════════════════════════════════════════════════
-// BLACK-SCHOLES
-// ══════════════════════════════════════════════════════
-function normCDF(x){const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;const sign=x<0?-1:1;x=Math.abs(x)/Math.sqrt(2);const t=1/(1+p*x);const y=(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t;return 0.5*(1+sign*(1-y*Math.exp(-x*x)));}
-function normPDF(x){return Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI);}
-function bsPrice(S,K,T,sigma,r,type){
-  if(T<=0) return{price:type==='call'?Math.max(0,S-K):Math.max(0,K-S),delta:type==='call'?(S>K?1:0):(S<K?-1:0),gamma:0,theta:0,vega:0,rho:0};
-  const d1=(Math.log(S/K)+(r+0.5*sigma*sigma)*T)/(sigma*Math.sqrt(T));
-  const d2=d1-sigma*Math.sqrt(T);
-  const nd1=normCDF(d1),nd2=normCDF(d2),nd1_=normCDF(-d1),nd2_=normCDF(-d2),pdf1=normPDF(d1);
-  const price=type==='call'?S*nd1-K*Math.exp(-r*T)*nd2:K*Math.exp(-r*T)*nd2_-S*nd1_;
-  const delta=type==='call'?nd1:nd1-1;
-  const gamma=pdf1/(S*sigma*Math.sqrt(T));
-  const theta=type==='call'?(-(S*pdf1*sigma)/(2*Math.sqrt(T))-r*K*Math.exp(-r*T)*nd2)/365:(-(S*pdf1*sigma)/(2*Math.sqrt(T))+r*K*Math.exp(-r*T)*nd2_)/365;
-  const vega=S*pdf1*Math.sqrt(T)/100;
-  const rho=type==='call'?K*T*Math.exp(-r*T)*nd2/100:-K*T*Math.exp(-r*T)*nd2_/100;
-  return{price:Math.max(0,price),delta,gamma,theta,vega,rho};
-}
+function fmtOI(n){const abs=Math.abs(n),sign=n<0?'-':'';if(abs>=1e7) return sign+(abs/1e7).toFixed(1)+'Cr';if(abs>=1e5) return sign+(abs/1e5).toFixed(1)+'L';if(abs>=1000) return sign+(abs/1000).toFixed(1)+'K';return sign+abs;}
 
 // ══════════════════════════════════════════════════════
 // SYNTHETIC CHAIN (fallback)
@@ -1406,7 +986,25 @@ function renderChainMetrics(sym,spot,chain,expiry,live){
   document.getElementById('chainMetrics').style.display='block';
 }
 function renderChainTable(chain,spot){renderChainFromNSE({chain:chain.chain||chain.rows,underlyingValue:spot,symbol:chain.symbol},20,'');}
-function fmtOI(n){const abs=Math.abs(n),sign=n<0?'-':'';if(abs>=1e7) return sign+(abs/1e7).toFixed(1)+'Cr';if(abs>=1e5) return sign+(abs/1e5).toFixed(1)+'L';if(abs>=1000) return sign+(abs/1000).toFixed(1)+'K';return sign+abs;}
+
+// ══════════════════════════════════════════════════════
+// BLACK-SCHOLES
+// ══════════════════════════════════════════════════════
+function normCDF(x){const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;const sign=x<0?-1:1;x=Math.abs(x)/Math.sqrt(2);const t=1/(1+p*x);const y=(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t;return 0.5*(1+sign*(1-y*Math.exp(-x*x)));}
+function normPDF(x){return Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI);}
+function bsPrice(S,K,T,sigma,r,type){
+  if(T<=0) return{price:type==='call'?Math.max(0,S-K):Math.max(0,K-S),delta:type==='call'?(S>K?1:0):(S<K?-1:0),gamma:0,theta:0,vega:0,rho:0};
+  const d1=(Math.log(S/K)+(r+0.5*sigma*sigma)*T)/(sigma*Math.sqrt(T));
+  const d2=d1-sigma*Math.sqrt(T);
+  const nd1=normCDF(d1),nd2=normCDF(d2),nd1_=normCDF(-d1),nd2_=normCDF(-d2),pdf1=normPDF(d1);
+  const price=type==='call'?S*nd1-K*Math.exp(-r*T)*nd2:K*Math.exp(-r*T)*nd2_-S*nd1_;
+  const delta=type==='call'?nd1:nd1-1;
+  const gamma=pdf1/(S*sigma*Math.sqrt(T));
+  const theta=type==='call'?(-(S*pdf1*sigma)/(2*Math.sqrt(T))-r*K*Math.exp(-r*T)*nd2)/365:(-(S*pdf1*sigma)/(2*Math.sqrt(T))+r*K*Math.exp(-r*T)*nd2_)/365;
+  const vega=S*pdf1*Math.sqrt(T)/100;
+  const rho=type==='call'?K*T*Math.exp(-r*T)*nd2/100:-K*T*Math.exp(-r*T)*nd2_/100;
+  return{price:Math.max(0,price),delta,gamma,theta,vega,rho};
+}
 
 // ══════════════════════════════════════════════════════
 // TRADE SIGNALS (NSE strategy recommendation)
@@ -1449,7 +1047,7 @@ async function generateTradeSignal(){
     renderStrategy(strategy,sym,spot,selectedExpiry,recId,isLive);
     showToast('Strategy saved to journal','ok');
   }catch(e){showToast(`Error: ${e.message}`,'err');document.getElementById('signalResult').innerHTML=`<div class="empty-state">⚠️ ${e.message}</div>`;document.getElementById('signalResult').style.display='block';}
-  btn.disabled=false;btn.innerHTML='Generate Signal →';
+  btn.disabled=false;btn.textContent='Generate Signal →';
 }
 function estimateDaysToExpiry(s){if(!s) return 7;const p=s.split('-');const m={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};const ed=new Date(parseInt(p[2]||2025),m[p[1]]||0,parseInt(p[0]||1));return Math.max(1,Math.ceil((ed-new Date())/(1000*60*60*24)));}
 function recommendStrategy({sym,spot,rows,pcr,maxPain,atm,baseIV,si,lotSize,T,rfr,daysToExp,priceOpt}){
@@ -1478,8 +1076,12 @@ async function saveRecommendation({sym,spot,expiry,pcr,baseIV,maxPain,totalCallO
   try{
     const userId=SESSION?.user?.id;if(!userId) return null;
     const rec={user_id:userId,symbol:sym,expiry_date:expiry,spot_price:spot,underlying:sym,strategy_name:strategy.name,strategy_type:strategy.type,bias:strategy.bias||null,rationale:strategy.rationale,pcr:parseFloat(pcr)||null,iv_percentile:null,max_pain:maxPain||null,total_call_oi:totalCallOI||null,total_put_oi:totalPutOI||null,net_credit:strategy.netCredit||null,net_debit:strategy.netDebit||null,max_profit:typeof strategy.maxProfit==='number'?strategy.maxProfit:null,max_loss:typeof strategy.maxLoss==='number'?strategy.maxLoss:null,breakevens:strategy.breakevens||[],capital_required:typeof strategy.capitalRequired==='number'?strategy.capitalRequired:null,probability:strategy.probability||null,lot_size:strategy.lotSize||lotSize,legs:strategy.legs,status:'open'};
-    const{data,error}=await _sb.from('strategy_recommendations').insert(rec).select('id').single();
-    if(error) throw error;return data?.id||null;
+    const result = await querySupabase('strategy_recommendations', {
+      method: 'POST',
+      body: JSON.stringify(rec)
+    });
+    // Supabase returns array of inserted records; assume first has id
+    return result?.[0]?.id || null;
   }catch(e){console.warn('Failed to save recommendation:',e.message);return null;}
 }
 
@@ -1524,19 +1126,24 @@ function calcBS(){
 }
 
 // ══════════════════════════════════════════════════════
-// JOURNAL
+// JOURNAL (using querySupabase)
 // ══════════════════════════════════════════════════════
 async function loadJournal(){
   const filter=document.getElementById('journalFilter')?.value||'all';const sort=document.getElementById('journalSort')?.value||'newest';const userId=SESSION?.user?.id;if(!userId) return;
-  const{data:pnl}=await _sb.from('pnl_summary').select('*').eq('user_id',userId).single();renderPnLSummary(pnl);
-  let q=_sb.from('trade_journal').select('*').eq('user_id',userId);
-  if(filter!=='all') q=q.eq('status',filter);
-  if(sort==='newest') q=q.order('created_at',{ascending:false});
-  else if(sort==='pnl_desc') q=q.order('net_pnl',{ascending:false,nullsLast:true});
-  else if(sort==='pnl_asc') q=q.order('net_pnl',{ascending:true,nullsLast:true});
-  const{data,error}=await q.limit(100);
-  if(error){document.getElementById('journalList').innerHTML=`<div class="empty-state">⚠️ ${error.message}</div>`;return;}
-  renderJournalList(data||[]);
+  try{
+    const pnl = await querySupabase(`pnl_summary?select=*&user_id=eq.${userId}`);
+    renderPnLSummary(pnl?.[0]||null);
+  }catch(e){console.warn(e);}
+  let q = `trade_journal?select=*&user_id=eq.${userId}`;
+  if(filter!=='all') q+=`&status=eq.${filter}`;
+  if(sort==='newest') q+=`&order=created_at.desc`;
+  else if(sort==='pnl_desc') q+=`&order=net_pnl.desc.nullsfirst`;
+  else if(sort==='pnl_asc') q+=`&order=net_pnl.asc.nullsfirst`;
+  q+=`&limit=100`;
+  try{
+    const data = await querySupabase(q);
+    renderJournalList(data||[]);
+  }catch(e){document.getElementById('journalList').innerHTML=`<div class="empty-state">⚠️ ${e.message}</div>`;}
 }
 function renderPnLSummary(pnl){
   const cards=pnl?[{l:'Total Trades',v:pnl.total_trades||0,s:''},{l:'Win Rate',v:`${(pnl.win_rate||0).toFixed(1)}%`,s:`${pnl.winning_trades||0}W / ${pnl.losing_trades||0}L`},{l:'Net P&L',v:`₹${(pnl.total_net_pnl||0).toLocaleString('en-IN')}`,s:'After charges',col:pnl.total_net_pnl>=0?'var(--green)':'var(--red)'},{l:'Profit Factor',v:pnl.profit_factor||'—',s:'Avg win / avg loss'},{l:'Best Trade',v:`₹${(pnl.best_trade_pnl||0).toLocaleString('en-IN')}`,s:'',col:'var(--green)'},{l:'Worst Trade',v:`₹${(pnl.worst_trade_pnl||0).toLocaleString('en-IN')}`,s:'',col:'var(--red)'}]:[{l:'P&L Summary',v:'—',s:'Close a trade to see stats'}];
@@ -1544,7 +1151,7 @@ function renderPnLSummary(pnl){
 }
 function renderJournalList(entries){
   if(!entries.length){document.getElementById('journalList').innerHTML=`<div class="empty-state">No trades yet. Generate a signal and click <strong>Log to Journal</strong>, or click <strong>+ Log Trade</strong> above.</div>`;return;}
-  document.getElementById('journalList').innerHTML=entries.map(e=>{const pnlClass=e.net_pnl>0?'g-txt':e.net_pnl<0?'r-txt':'';const legsArr=e.legs||[];const legsSummary=legsArr.slice(0,3).map(l=>`<span class="pill ${l.action==='BUY'?'pill-blue':'pill-red'}">${l.action} ${l.type} ${l.strike}</span>`).join(' ');return `<div class="journal-entry"><div class="je-header"><div><span class="je-sym">${e.symbol}</span><span style="font-family:var(--mono);font-size:.75rem;color:var(--muted2);margin-left:.6rem">${e.strategy_name}</span><span class="pill pill-${e.status==='active'?'blue':e.status==='closed'?'green':e.status==='stopped_out'?'red':'gold'}" style="margin-left:.4rem">${e.status}</span>${e.is_paper_trade?'<span class="pill pill-purple" style="margin-left:.3rem">Paper</span>':''}</div><div style="display:flex;align-items:center;gap:.6rem">${e.net_pnl!=null?`<span class="je-pnl ${pnlClass}">₹${e.net_pnl.toLocaleString('en-IN')}</span>`:''}<div class="je-actions"><button class="btn btn-ghost btn-sm" onclick="openEditTrade('${e.id}')">Edit</button><button class="btn btn-red btn-sm" onclick="deleteTrade('${e.id}')">Del</button></div></div></div><div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.4rem">${legsSummary}</div><div class="je-meta">Expiry: ${e.expiry_date} · Entry: ${e.entry_date||'—'} · Spot: ₹${e.entry_spot||'—'}${e.capital_used?` · Capital: ₹${e.capital_used.toLocaleString('en-IN')}`:''}</div>${e.entry_notes?`<div style="font-size:.73rem;color:var(--muted);margin-top:.3rem">${e.entry_notes}</div>`:''}</div>`;}).join('');
+  document.getElementById('journalList').innerHTML=entries.map(e=>{const pnlClass=e.net_pnl>0?'g-txt':e.net_pnl<0?'r-txt':'';const legsArr=e.legs||[];const legsSummary=legsArr.slice(0,3).map(l=>`<span class="pill ${l.action==='BUY'?'pill-blue':'pill-red'}">${l.action} ${l.type} ${l.strike}</span>`).join(' '); return `<div class="journal-entry"><div class="je-header"><div><span class="je-sym">${e.symbol}</span><span style="font-family:var(--mono);font-size:.75rem;color:var(--muted2);margin-left:.6rem">${e.strategy_name}</span><span class="pill pill-${e.status==='active'?'blue':e.status==='closed'?'green':e.status==='stopped_out'?'red':'gold'}" style="margin-left:.4rem">${e.status}</span>${e.is_paper_trade?'<span class="pill pill-purple" style="margin-left:.3rem">Paper</span>':''}</div><div style="display:flex;align-items:center;gap:.6rem">${e.net_pnl!=null?`<span class="je-pnl ${pnlClass}">₹${e.net_pnl.toLocaleString('en-IN')}</span>`:''}<div class="je-actions"><button class="btn btn-ghost btn-sm" onclick="openEditTrade('${e.id}')">Edit</button><button class="btn btn-red btn-sm" onclick="deleteTrade('${e.id}')">Del</button></div></div></div><div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.4rem">${legsSummary}</div><div class="je-meta">Expiry: ${e.expiry_date} · Entry: ${e.entry_date||'—'} · Spot: ₹${e.entry_spot||'—'}${e.capital_used?` · Capital: ₹${e.capital_used.toLocaleString('en-IN')}`:''}</div>${e.entry_notes?`<div style="font-size:.73rem;color:var(--muted);margin-top:.3rem">${e.entry_notes}</div>`:''}</div>`;}).join('');
 }
 function openAddTradeModal(){
   document.getElementById('modalTitle').textContent='Log Trade';
@@ -1558,12 +1165,16 @@ function openAddTradeFromRec(recId,sym,expiry,strategy){
   if(_currentSpot) document.getElementById('tj_entry_spot').value=_currentSpot;
 }
 async function openEditTrade(id){
-  const{data,error}=await _sb.from('trade_journal').select('*').eq('id',id).single();if(error||!data){showToast('Could not load trade','err');return;}
-  document.getElementById('modalTitle').textContent='Edit Trade';
-  const fields={tj_edit_id:'id',tj_rec_id:'recommendation_id',tj_sym:'symbol',tj_strategy:'strategy_name',tj_expiry:'expiry_date',tj_entry_date:'entry_date',tj_entry_spot:'entry_spot',tj_capital:'capital_used',tj_max_loss:'max_loss_defined',tj_entry_notes:'entry_notes',tj_lesson:'lesson_learned',tj_gross_pnl:'gross_pnl',tj_charges:'charges',tj_exit_date:'exit_date',tj_exit_spot:'exit_spot'};
-  Object.entries(fields).forEach(([id,key])=>document.getElementById(id).value=data[key]||'');
-  document.getElementById('tj_status').value=data.status||'planned';document.getElementById('tj_paper').checked=data.is_paper_trade||false;document.getElementById('tj_quality').value=data.setup_quality||'';
-  toggleClosedFields();document.getElementById('tradeModal').classList.remove('hidden');
+  try{
+    const data = await querySupabase(`trade_journal?select=*&id=eq.${id}`);
+    if(!data||!data.length){showToast('Could not load trade','err');return;}
+    const trade=data[0];
+    document.getElementById('modalTitle').textContent='Edit Trade';
+    const fields={tj_edit_id:'id',tj_rec_id:'recommendation_id',tj_sym:'symbol',tj_strategy:'strategy_name',tj_expiry:'expiry_date',tj_entry_date:'entry_date',tj_entry_spot:'entry_spot',tj_capital:'capital_used',tj_max_loss:'max_loss_defined',tj_entry_notes:'entry_notes',tj_lesson:'lesson_learned',tj_gross_pnl:'gross_pnl',tj_charges:'charges',tj_exit_date:'exit_date',tj_exit_spot:'exit_spot'};
+    Object.entries(fields).forEach(([id,key])=>document.getElementById(id).value=trade[key]||'');
+    document.getElementById('tj_status').value=trade.status||'planned';document.getElementById('tj_paper').checked=trade.is_paper_trade||false;document.getElementById('tj_quality').value=trade.setup_quality||'';
+    toggleClosedFields();document.getElementById('tradeModal').classList.remove('hidden');
+  }catch(e){showToast('Error loading trade','err');}
 }
 function toggleClosedFields(){const s=document.getElementById('tj_status').value;document.getElementById('closedFields').style.display=['closed','expired','stopped_out'].includes(s)?'block':'none';}
 function closeTradeModal(){document.getElementById('tradeModal').classList.add('hidden');}
@@ -1574,21 +1185,184 @@ async function saveTrade(){
   if(!sym||!strategy){showToast('Symbol and strategy are required','err');btn.disabled=false;btn.textContent='Save Trade';return;}
   const grossPnl=parseFloat(document.getElementById('tj_gross_pnl').value)||null;const charges=parseFloat(document.getElementById('tj_charges').value)||0;const netPnl=grossPnl!=null?grossPnl-charges:null;const capital=parseFloat(document.getElementById('tj_capital').value)||null;
   const payload={user_id:userId,symbol:sym,strategy_name:strategy,expiry_date:document.getElementById('tj_expiry').value,trade_type:'options',status:document.getElementById('tj_status').value,entry_date:document.getElementById('tj_entry_date').value||null,entry_spot:parseFloat(document.getElementById('tj_entry_spot').value)||null,capital_used:capital,max_loss_defined:parseFloat(document.getElementById('tj_max_loss').value)||null,entry_notes:document.getElementById('tj_entry_notes').value||null,lesson_learned:document.getElementById('tj_lesson').value||null,is_paper_trade:document.getElementById('tj_paper').checked,setup_quality:parseInt(document.getElementById('tj_quality').value)||null,gross_pnl:grossPnl,charges:charges||0,net_pnl:netPnl,pnl_pct:netPnl&&capital?parseFloat((netPnl/capital*100).toFixed(2)):null,exit_date:document.getElementById('tj_exit_date').value||null,exit_spot:parseFloat(document.getElementById('tj_exit_spot').value)||null,recommendation_id:document.getElementById('tj_rec_id').value||null,legs:[]};
-  const editId=document.getElementById('tj_edit_id').value;let error;
-  if(editId){({error}=await _sb.from('trade_journal').update(payload).eq('id',editId).eq('user_id',userId));}
-  else{({error}=await _sb.from('trade_journal').insert(payload));}
-  if(error){showToast(`Save failed: ${error.message}`,'err');}
-  else{showToast(editId?'Trade updated ✓':'Trade saved ✓','ok');closeTradeModal();if(payload.status==='closed'){_sb.rpc('refresh_pnl_summary',{p_user_id:userId}).then(()=>loadJournal());}else{loadJournal();}}
+  const editId=document.getElementById('tj_edit_id').value;
+  try{
+    if(editId){
+      await querySupabase(`trade_journal?id=eq.${editId}`, {method:'PATCH',body:JSON.stringify(payload)});
+    }else{
+      await querySupabase('trade_journal', {method:'POST',body:JSON.stringify(payload)});
+    }
+    showToast(editId?'Trade updated ✓':'Trade saved ✓','ok');
+    closeTradeModal();
+    if(payload.status==='closed'){
+      // Call RPC via proxy: we need to POST to /api/supabase/rpc/refresh_pnl_summary
+      await fetch('/api/supabase/rpc/refresh_pnl_summary', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({p_user_id:userId})});
+    }
+    loadJournal();
+  }catch(e){showToast(`Save failed: ${e.message}`,'err');}
   btn.disabled=false;btn.textContent='Save Trade';
 }
 async function deleteTrade(id){
   if(!confirm('Delete this journal entry?')) return;
-  const{error}=await _sb.from('trade_journal').delete().eq('id',id).eq('user_id',SESSION?.user?.id);
-  if(error) showToast('Delete failed','err');else{showToast('Entry deleted');loadJournal();}
+  try{
+    await querySupabase(`trade_journal?id=eq.${id}`, {method:'DELETE'});
+    showToast('Entry deleted');loadJournal();
+  }catch(e){showToast('Delete failed','err');}
 }
 
 // ══════════════════════════════════════════════════════
-// CLOCK
+// SIGNAL ENGINE (Yahoo proxy + synthetic)
+// ══════════════════════════════════════════════════════
+const SE_INDEX_MAP = {
+  '^NSEI':   {name:'NIFTY 50',   lot:25},
+  '^NSEBANK':{name:'BANK NIFTY', lot:15},
+  '^BSESN':  {name:'SENSEX',     lot:10},
+};
+const SE_BASE_SPOTS = {
+  '^NSEI': 22500, '^NSEBANK': 48200, '^BSESN': 74000,
+};
+
+function generateSyntheticOHLC(ticker, range) {
+  const barCounts = { '3mo': 65, '6mo': 130, '1y': 252 };
+  const n = barCounts[range] || 130;
+  const baseSpot = SE_BASE_SPOTS[ticker] || 22500;
+  const annualVol = 0.15, annualDrift = 0.08;
+  const dt = 1/252;
+  const drift = (annualDrift - 0.5*annualVol*annualVol)*dt;
+  const vol = annualVol*Math.sqrt(dt);
+  const rows = [];
+  let price = baseSpot;
+  let seed = ticker.split('').reduce((a,c)=>a+c.charCodeAt(0),0)*137 + Date.now()%10000;
+  function rand() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+  function randn() { const u1 = rand()||1e-10, u2 = rand(); return Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2); }
+  const dates = [];
+  let d = new Date();
+  while (dates.length < n) { d.setDate(d.getDate()-1); const dow = d.getDay(); if (dow !== 0 && dow !== 6) dates.unshift(new Date(d)); }
+  for (let i = 0; i < dates.length; i++) {
+    const ret = drift + vol*randn();
+    price = price * Math.exp(ret);
+    const atr = price * 0.008 * (0.7 + rand()*0.6);
+    const open = price * (1 + (rand()-0.5)*0.004);
+    const high = Math.max(open, price) + atr*rand()*0.5;
+    const low  = Math.min(open, price) - atr*rand()*0.5;
+    rows.push({ date: dates[i].toISOString().slice(0,10), open: parseFloat(open.toFixed(2)), high: parseFloat(high.toFixed(2)), low: parseFloat(low.toFixed(2)), close: parseFloat(price.toFixed(2)) });
+  }
+  return rows;
+}
+async function fetchOHLC(ticker, range) {
+  try {
+    const json = await yahooChart(ticker, range);
+    const result = json?.chart?.result?.[0];
+    if (result) {
+      const ts = result.timestamp;
+      const q = result.indicators.quote[0];
+      const rows = [];
+      for (let i = 0; i < ts.length; i++) {
+        if (q.close[i]==null||q.high[i]==null||q.low[i]==null) continue;
+        rows.push({ date: new Date(ts[i]*1000).toISOString().slice(0,10), open: q.open[i], high: q.high[i], low: q.low[i], close: q.close[i] });
+      }
+      if (rows.length >= 30) return { rows, simulated: false };
+    }
+  } catch(e) { /* fall through */ }
+  return { rows: generateSyntheticOHLC(ticker, range), simulated: true };
+}
+function calcSMA(arr, period) { return arr.map((_,i)=>{if(i<period-1)return null;return arr.slice(i-period+1,i+1).reduce((a,b)=>a+b,0)/period;}); }
+function calcEMA(arr, span) { const k=2/(span+1); const out=Array(arr.length).fill(null); let start=arr.findIndex(v=>v!=null); if(start<0)return out; out[start]=arr[start]; for(let i=start+1;i<arr.length;i++){if(arr[i]==null){out[i]=out[i-1];continue;}out[i]=arr[i]*k+out[i-1]*(1-k);} return out; }
+function calcRSI(closes, period=14) { const out=Array(closes.length).fill(null); for(let i=period;i<closes.length;i++){let gain=0,loss=0;for(let j=i-period+1;j<=i;j++){const d=closes[j]-closes[j-1];if(d>0)gain+=d;else loss+=Math.abs(d);}const avgG=gain/period, avgL=loss/period;if(avgL===0){out[i]=100;continue;}const rs=avgG/avgL;out[i]=100-(100/(1+rs));} return out; }
+function calcATR(data, period=14) { const tr=data.map((r,i)=>{if(i===0)return r.high-r.low;const prevClose=data[i-1].close;return Math.max(r.high-r.low, Math.abs(r.high-prevClose), Math.abs(r.low-prevClose));}); return calcSMA(tr, period); }
+function calcBB(closes, period=20, mult=2) { const mid=calcSMA(closes,period); const upper=[], lower=[]; for(let i=0;i<closes.length;i++){if(mid[i]==null){upper.push(null);lower.push(null);continue;}const slice=closes.slice(i-period+1,i+1);const mean=mid[i];const std=Math.sqrt(slice.reduce((a,v)=>a+(v-mean)**2,0)/period);upper.push(mean+mult*std);lower.push(mean-mult*std);} return {mid,upper,lower}; }
+function calcMACD(closes, fast=12, slow=26, signal=9) { const emaFast=calcEMA(closes,fast); const emaSlow=calcEMA(closes,slow); const macd=emaFast.map((v,i)=>v!=null&&emaSlow[i]!=null?v-emaSlow[i]:null); const sig=calcEMA(macd.map(v=>v??0),signal); return {macd,signal:sig}; }
+function computeSignal(data, params) {
+  const closes = data.map(r=>r.close);
+  const maFast = calcSMA(closes, params.maFast);
+  const maSlow = calcSMA(closes, params.maSlow);
+  const rsi = calcRSI(closes, 14);
+  const atr = calcATR(data, 14);
+  const bb = calcBB(closes, 20, 2);
+  const macdData = calcMACD(closes, 12, 26, 9);
+  const n = closes.length-1;
+  const price = closes[n];
+  const maf = maFast[n], mas = maSlow[n];
+  const rsiVal = rsi[n];
+  const atrVal = atr[n];
+  const bbU = bb.upper[n], bbL = bb.lower[n];
+  const macdVal = macdData.macd[n], macdSig = macdData.signal[n];
+  let signal='HOLD', explanation='Indicators are conflicting or insufficient data. Avoid entries.';
+  let entry=null, sl=null, tp=null;
+  if (price>maf && maf>mas && rsiVal>params.rsiOB) {
+    if (macdVal>macdSig) { signal='CALL BUY 📈'; explanation='Strong bullish momentum. Price is above both MAs and MACD confirms upside crossover.'; entry=price; sl=price-(params.slMult*atrVal); tp=price+(params.tpMult*atrVal); }
+    else { signal='POTENTIAL CALL ⏳'; explanation='Trend is bullish (price above MAs, RSI elevated) but MACD momentum crossover not confirmed yet. Wait.'; }
+  } else if (price<maf && maf<mas && rsiVal<params.rsiOS) {
+    if (macdVal<macdSig) { signal='PUT BUY 📉'; explanation='Strong bearish breakdown. Price is below both MAs and MACD confirms downward velocity.'; entry=price; sl=price+(params.slMult*atrVal); tp=price-(params.tpMult*atrVal); }
+    else { signal='POTENTIAL PUT ⏳'; explanation='Trend is bearish (price below MAs, RSI depressed) but MACD breakdown not confirmed yet. Wait.'; }
+  }
+  return { signal, explanation, entry, sl, tp, price, maf, mas, rsiVal, atrVal, bbU, bbL, macdVal, macdSig, closes, maFast, maSlow, rsi, bb, macdData, dates: data.map(r=>r.date) };
+}
+function calcLotSize(entry, sl, capital, riskPct, delta, lotSize) { if (!entry||!sl||!lotSize) return {lots:0,cashRisk:0,maxAllowed:0,riskPts:0}; const riskPts = Math.abs(entry-sl); const optionRiskPts = riskPts * delta; const cashRiskPerLot = optionRiskPts * lotSize; const maxAllowed = capital * (riskPct/100); const lots = cashRiskPerLot>0 ? Math.floor(maxAllowed/cashRiskPerLot) : 0; return {lots, cashRisk: cashRiskPerLot, maxAllowed, riskPts}; }
+async function runSignalEngine() {
+  const ticker = document.getElementById('se_index').value;
+  const period = document.getElementById('se_period').value;
+  const params = { maFast: parseInt(document.getElementById('se_ma_fast').value), maSlow: parseInt(document.getElementById('se_ma_slow').value), rsiOB: parseInt(document.getElementById('se_rsi_ob').value), rsiOS: parseInt(document.getElementById('se_rsi_os').value), slMult: parseFloat(document.getElementById('se_sl').value), tpMult: parseFloat(document.getElementById('se_tp').value) };
+  const capital = parseFloat(document.getElementById('se_capital').value)||100000;
+  const riskPct = parseFloat(document.getElementById('se_risk').value)||1.0;
+  const delta = parseFloat(document.getElementById('se_delta').value)||0.5;
+  const meta = SE_INDEX_MAP[ticker]||{name:ticker,lot:25};
+  const btn = document.querySelector('.se-sidebar button.btn-gold');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Fetching…';
+  document.getElementById('seEmpty').style.display='none';
+  document.getElementById('seResult').style.display='none';
+  try {
+    const { rows: data, simulated } = await fetchOHLC(ticker, period);
+    if (data.length < 30) throw new Error('Insufficient data bars generated.');
+    const res = computeSignal(data, params);
+    const sizing = calcLotSize(res.entry, res.sl, capital, riskPct, delta, meta.lot);
+    renderEngineResult(res, sizing, meta, params, capital, riskPct, delta, simulated);
+    showToast(simulated ? `${meta.name} — simulated OHLC (no proxy)` : `✓ ${meta.name} live data`, simulated ? '' : 'ok');
+  } catch(e) { document.getElementById('seEmpty').innerHTML=`<div style="color:var(--red);font-size:.82rem;padding:1.5rem">Error: ${e.message}</div>`; document.getElementById('seEmpty').style.display='block'; showToast(e.message,'err'); }
+  btn.disabled=false; btn.innerHTML='Run Engine →';
+}
+function renderEngineResult(res, sizing, meta, params, capital, riskPct, delta, simulated=false) {
+  const {signal,explanation,entry,sl,tp,price,maf,mas,rsiVal,atrVal,bbU,bbL,macdVal,macdSig} = res;
+  const isCall = signal.includes('CALL BUY'); const isPut = signal.includes('PUT BUY'); const isWait = signal.includes('POTENTIAL');
+  const boxClass = isCall?'call':isPut?'put':isWait?'wait':'hold';
+  const rr = (entry&&sl&&tp) ? (Math.abs(tp-entry)/Math.abs(sl-entry)).toFixed(2) : null;
+  let signalHTML = `<div class="se-signal-box ${boxClass}"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-bottom:.3rem"><div class="se-signal-title" style="margin-bottom:0">${signal}</div>${simulated?`<span class="datasource-badge ds-sim" style="font-size:.62rem">⚠ SIMULATED OHLC</span>`:`<span class="datasource-badge ds-live" style="font-size:.62rem">● LIVE DATA</span>`}</div><div class="se-signal-insight">${explanation}</div></div>`;
+  signalHTML += `<div class="se-metrics-grid"><div class="se-metric"><div class="se-metric-label">Spot Price</div><div class="se-metric-val">₹${price.toFixed(2)}</div><div class="se-metric-sub">${meta.name}</div></div><div class="se-metric"><div class="se-metric-label">RSI (14)</div><div class="se-metric-val" style="color:${rsiVal>params.rsiOB?'var(--green)':rsiVal<params.rsiOS?'var(--red)':'var(--ink)'}">${rsiVal.toFixed(1)}</div><div class="se-metric-sub">OB:${params.rsiOB} / OS:${params.rsiOS}</div></div><div class="se-metric"><div class="se-metric-label">ATR (14)</div><div class="se-metric-val">${atrVal.toFixed(2)}</div><div class="se-metric-sub">Volatility pts</div></div><div class="se-metric"><div class="se-metric-label">Fast MA (${params.maFast})</div><div class="se-metric-val">${maf.toFixed(2)}</div><div class="se-metric-sub">vs price ${price>maf?'↑ bullish':'↓ bearish'}</div></div><div class="se-metric"><div class="se-metric-label">Slow MA (${params.maSlow})</div><div class="se-metric-val">${mas.toFixed(2)}</div><div class="se-metric-sub">vs fast ${maf>mas?'↑ bullish':'↓ bearish'}</div></div><div class="se-metric"><div class="se-metric-label">MACD</div><div class="se-metric-val" style="color:${macdVal>macdSig?'var(--green)':'var(--red)'}">${macdVal.toFixed(2)}</div><div class="se-metric-sub">Signal: ${macdSig.toFixed(2)}</div></div><div class="se-metric"><div class="se-metric-label">BB Upper</div><div class="se-metric-val">${bbU.toFixed(2)}</div><div class="se-metric-sub">Resistance band</div></div><div class="se-metric"><div class="se-metric-label">BB Lower</div><div class="se-metric-val">${bbL.toFixed(2)}</div><div class="se-metric-sub">Support band</div></div></div>`;
+  if (entry&&sl&&tp) {
+    const tpDelta = (tp-entry).toFixed(2); const slDelta = (sl-entry).toFixed(2);
+    signalHTML += `<div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.6rem">Suggested Execution Levels</div><div class="se-exec-grid"><div class="se-exec-card se-exec-entry"><div class="label">Entry Zone</div><div class="val">₹${entry.toFixed(2)}</div><div class="sub">Current spot</div></div><div class="se-exec-card se-exec-tp"><div class="label">Target (TP)</div><div class="val">₹${tp.toFixed(2)}</div><div class="sub">${tpDelta>0?'+':''}${tpDelta} pts (${params.tpMult}× ATR)</div></div><div class="se-exec-card se-exec-sl"><div class="label">Stop Loss (SL)</div><div class="val">₹${sl.toFixed(2)}</div><div class="sub">${slDelta>0?'+':''}${slDelta} pts (${params.slMult}× ATR)</div></div><div class="se-exec-card se-exec-rr"><div class="label">R:R Ratio</div><div class="val">1 : ${rr}</div><div class="sub">${rr>=2?'Excellent':'rr>=1.5?\'Good\':\'Acceptable\''}</div></div></div>`;
+    signalHTML += `<div class="se-lot-box"><div class="se-lot-title">💼 Position Sizing — ${meta.name} Lot = ${meta.lot} qty</div><div class="se-lot-grid"><div class="se-lot-card"><div class="lc-label">Max Cash Risk</div><div class="lc-val">₹${sizing.maxAllowed.toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div><div class="se-lot-card"><div class="lc-label">Recommended Lots</div><div class="lc-val">${sizing.lots} lots <span style="font-size:.7rem;color:var(--muted)">(${sizing.lots*meta.lot} qty)</span></div></div><div class="se-lot-card"><div class="lc-label">Est. Risk / Lot</div><div class="lc-val">₹${sizing.cashRisk.toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div></div>${sizing.lots===0?`<div class="se-warn">⚠️ Volatility is too high or capital is too small to safely trade a single lot under your current risk parameters. Increase allowed risk % or reduce ATR stop multiplier.</div>`:''}<div style="font-size:.67rem;color:var(--muted2);margin-top:.6rem">Based on ${riskPct}% capital risk · Option delta ${delta} · ${params.slMult}× ATR stop = ₹${sizing.riskPts.toFixed(2)} underlying risk pts</div></div>`;
+  }
+  signalHTML += `<div class="se-chart-area"><div class="se-chart-title">Price + Moving Averages + Bollinger Bands (last 60 bars)</div><canvas class="se-chart" id="seChartPrice" height="200"></canvas></div><div class="se-chart-area"><div class="se-chart-title">RSI (14)</div><canvas class="se-chart" id="seChartRSI" height="100"></canvas></div><div class="se-chart-area"><div class="se-chart-title">MACD vs Signal Line</div><canvas class="se-chart" id="seChartMACD" height="100"></canvas></div>`;
+  document.getElementById('seResult').innerHTML=signalHTML;
+  document.getElementById('seResult').style.display='block';
+  setTimeout(()=>drawSECharts(res, params), 50);
+}
+function drawSECharts(res, params) {
+  const N = 60; const len = res.dates.length; const start = Math.max(0, len-N);
+  const slice = (arr) => arr.slice(start);
+  const labels = slice(res.dates);
+  const closes = slice(res.closes);
+  const maFast = slice(res.maFast);
+  const maSlow = slice(res.maSlow);
+  const bbU = slice(res.bb.upper);
+  const bbL = slice(res.bb.lower);
+  const rsiArr = slice(res.rsi);
+  const macdArr = slice(res.macdData.macd);
+  const sigArr = slice(res.macdData.signal);
+  const chartDefaults = { responsive:true, plugins:{legend:{display:true,labels:{font:{size:10},color:'#888'}},tooltip:{mode:'index',intersect:false}}, scales:{x:{ticks:{maxTicksLimit:8,color:'#aaa',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{color:'#aaa',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}} };
+  Object.values(_seCharts).forEach(c=>c.destroy&&c.destroy());
+  _seCharts={};
+  const priceCtx = document.getElementById('seChartPrice')?.getContext('2d');
+  if(priceCtx) _seCharts.price = new Chart(priceCtx,{type:'line',data:{labels,datasets:[{label:'Close',data:closes,borderColor:'#0369a1',borderWidth:1.5,pointRadius:0,fill:false,tension:.3},{label:`MA${params.maFast}`,data:maFast,borderColor:'#d97706',borderWidth:1,pointRadius:0,fill:false,borderDash:[3,2],tension:.3},{label:`MA${params.maSlow}`,data:maSlow,borderColor:'#7e22ce',borderWidth:1,pointRadius:0,fill:false,borderDash:[3,2],tension:.3},{label:'BB Upper',data:bbU,borderColor:'rgba(156,163,175,.5)',borderWidth:1,pointRadius:0,fill:false,tension:.3},{label:'BB Lower',data:bbL,borderColor:'rgba(156,163,175,.5)',borderWidth:1,pointRadius:0,fill:'+1',backgroundColor:'rgba(156,163,175,.06)',tension:.3}]},options:chartDefaults});
+  const rsiCtx = document.getElementById('seChartRSI')?.getContext('2d');
+  if(rsiCtx) _seCharts.rsi = new Chart(rsiCtx,{type:'line',data:{labels,datasets:[{label:'RSI',data:rsiArr,borderColor:'#0369a1',borderWidth:1.5,pointRadius:0,fill:false,tension:.3}]},options:{...chartDefaults,scales:{...chartDefaults.scales,y:{...chartDefaults.scales.y,min:0,max:100,ticks:{...chartDefaults.scales.y.ticks,callback:v=>v}}}}});
+  const macdCtx = document.getElementById('seChartMACD')?.getContext('2d');
+  if(macdCtx) _seCharts.macd = new Chart(macdCtx,{type:'line',data:{labels,datasets:[{label:'MACD',data:macdArr,borderColor:'#0369a1',borderWidth:1.5,pointRadius:0,fill:false,tension:.3},{label:'Signal',data:sigArr,borderColor:'#d97706',borderWidth:1,pointRadius:0,fill:false,borderDash:[3,2],tension:.3}]},options:chartDefaults});
+}
+
+// ══════════════════════════════════════════════════════
+// CLOCK & BOOT
 // ══════════════════════════════════════════════════════
 function updateClock(){
   const ist=new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date());
@@ -1598,9 +1372,6 @@ function updateClock(){
 }
 setInterval(updateClock,1000);updateClock();
 
-// ══════════════════════════════════════════════════════
-// BOOT
-// ══════════════════════════════════════════════════════
 (function init(){
   try{const s=localStorage.getItem('ts_session');if(s){SESSION=JSON.parse(s);if(SESSION?.access_token){onLogin();return;}}}catch(e){}
   document.getElementById('authOverlay').classList.remove('hidden');
