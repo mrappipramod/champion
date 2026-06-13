@@ -57,7 +57,15 @@ function json(data, status = 200) {
     },
   });
 }
+} else if (action === "update_password") {
+  endpoint = `${base}/auth/v1/user`;
 
+  headers["Authorization"] = request.headers.get("Authorization");
+
+  body = JSON.stringify({
+    password: password
+  });
+}
 export async function onRequestOptions() {
   return new Response(null, {
     headers: {
