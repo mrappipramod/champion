@@ -646,131 +646,253 @@ let _sessionExpiredShown = false;
 const POPULAR = ["TCS","RELIANCE","HDFCBANK","INFY","ICICIBANK","TATAMOTORS","SBIN","BAJFINANCE","TITAN","MARUTI","SUNPHARMA","AXISBANK","LT","ITC","WIPRO"];
 
 // ═════════════════════════ AUTH ══════════════════════════
+// ═════════════════════════ AUTH STATE ══════════════════════════
+let SESSION = null;
+let _sessionExpiredShown = false;
+
+// ═════════════════════════ UI HELPERS ══════════════════════════
 function switchAuthTab(tab){
-  // Update the top tabs: index 0 is login, index 1 is signup. If 'forgot', neither is active.
   document.querySelectorAll(".auth-tab").forEach((t,i) => {
-    t.classList.toggle("active", (tab === "login" && i === 0) || (tab === "signup" && i === 1));
+    t.classList.toggle(
+      "active",
+      (tab === "login" && i === 0) ||
+      (tab === "signup" && i === 1)
+    );
   });
-  
-  // Toggle visibility of the three forms
-  document.getElementById("loginForm").style.display = tab === "login" ? "block" : "none";
+
+  document.getElementById("loginForm").style.display  = tab === "login" ? "block" : "none";
   document.getElementById("signupForm").style.display = tab === "signup" ? "block" : "none";
   document.getElementById("forgotForm").style.display = tab === "forgot" ? "block" : "none";
-  
+
   clearAuthMsg();
 }
 
-function authMsg(m,t){const el=document.getElementById("authMsg");el.textContent=m;el.className="auth-msg "+t;}
-function clearAuthMsg(){document.getElementById("authMsg").className="auth-msg";}
+function authMsg(m,t){
+  const el=document.getElementById("authMsg");
+  el.textContent=m;
+  el.className="auth-msg "+t;
+}
 
-async function callAuth(body){
-  const r=await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+function clearAuthMsg(){
+  document.getElementById("authMsg").className="auth-msg";
+}
+
+// ═════════════════════════ API CALL ══════════════════════════
+async function callAuth(body, token=null){
+  const headers = {
+    "Content-Type":"application/json"
+  };
+
+  if(token){
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const r = await fetch("/api/auth", {
+    method:"POST",
+    headers,
+    body: JSON.stringify(body)
+  });
+
   return r.json();
 }
 
+// ═════════════════════════ LOGIN ══════════════════════════
 async function doLogin(){
-  const email=document.getElementById("loginEmail").value.trim();
-  const pass =document.getElementById("loginPass").value;
-  if(!email||!pass) return authMsg("Email and password required","err");
-  const btn=document.getElementById("loginBtn");
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
-  try{
-    const d=await callAuth({action:"login",email,password:pass});
+  const email = document.getElementById("loginEmail").value.trim();
+  const pass  = document.getElementById("loginPass").value;
+
+  if(!email || !pass)
+    return authMsg("Email and password required","err");
+
+  const btn = document.getElementById("loginBtn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    const d = await callAuth({
+      action:"login",
+      email,
+      password:pass
+    });
+
     if(d.access_token){
-      SESSION={access_token:d.access_token,user:d.user};
-      localStorage.setItem("ts_session",JSON.stringify(SESSION));
-      _sessionExpiredShown=false;
+      SESSION = { access_token:d.access_token, user:d.user };
+      localStorage.setItem("ts_session", JSON.stringify(SESSION));
+      _sessionExpiredShown = false;
       onLogin();
-    }else{
-      authMsg(d.error_description||d.msg||"Login failed — check your credentials","err");
-    }
-  }catch(e){authMsg("Network error — try again","err");}
-  btn.disabled=false;btn.textContent="Sign In";
-}
-
-async function doSignup(){
-  const email=document.getElementById("signupEmail").value.trim();
-  const pass =document.getElementById("signupPass").value;
-  if(!email||!pass) return authMsg("Email and password required","err");
-  const btn=document.getElementById("signupBtn");
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
-  try{
-    const d=await callAuth({action:"signup",email,password:pass});
-    if(d.id||d.user?.id) authMsg("Account created! Check your email to confirm, then sign in.","ok");
-    else authMsg(d.msg||d.error_description||"Signup failed","err");
-  }catch(e){authMsg("Network error — try again","err");}
-  btn.disabled=false;btn.textContent="Create Account";
-}
-
-// NEW: doForgot function utilizing your existing callAuth and authMsg helpers
-async function doForgot(){
-  const email=document.getElementById("forgotEmail").value.trim();
-  if(!email) return authMsg("Please enter your email","err");
-  const btn=document.getElementById("forgotBtn");
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
-  try{
-    const d=await callAuth({action:"forgot",email});
-    if(d.error || d.error_description || d.msg){
-      authMsg(d.error?.message||d.error_description||d.msg||"Failed to send reset link","err");
     } else {
-      authMsg("Reset link sent! Please check your inbox.","ok");
+      authMsg(d.error_description || d.msg || "Login failed","err");
+    }
+  } catch(e){
+    authMsg("Network error — try again","err");
+  }
+
+  btn.disabled = false;
+  btn.textContent = "Sign In";
+}
+
+// ═════════════════════════ SIGNUP ══════════════════════════
+async function doSignup(){
+  const email = document.getElementById("signupEmail").value.trim();
+  const pass  = document.getElementById("signupPass").value;
+
+  if(!email || !pass)
+    return authMsg("Email and password required","err");
+
+  const btn = document.getElementById("signupBtn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    const d = await callAuth({
+      action:"signup",
+      email,
+      password:pass
+    });
+
+    if(d.id || d.user?.id){
+      authMsg("Account created! Check email to verify.","ok");
+    } else {
+      authMsg(d.msg || d.error_description || "Signup failed","err");
+    }
+  } catch(e){
+    authMsg("Network error — try again","err");
+  }
+
+  btn.disabled = false;
+  btn.textContent = "Create Account";
+}
+
+// ═════════════════════════ FORGOT PASSWORD ══════════════════════════
+async function doForgot(){
+  const email = document.getElementById("forgotEmail").value.trim();
+
+  if(!email)
+    return authMsg("Please enter your email","err");
+
+  const btn = document.getElementById("forgotBtn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    const d = await callAuth({
+      action:"forgot",
+      email
+    });
+
+    if(d.error){
+      authMsg(d.error_description || d.msg || "Failed to send reset link","err");
+    } else {
+      authMsg("Reset link sent! Check your email.","ok");
       document.getElementById("forgotEmail").value = "";
     }
-  }catch(e){authMsg("Network error — try again","err");}
-  btn.disabled=false;btn.textContent="Send Reset Link";
+  } catch(e){
+    authMsg("Network error — try again","err");
+  }
+
+  btn.disabled = false;
+  btn.textContent = "Send Reset Link";
 }
 
-async function doLogout(){
-  try{ if(SESSION) await callAuth({action:"logout"}); }catch(e){}
-  SESSION=null;localStorage.removeItem("ts_session");
-  document.getElementById("authOverlay").classList.remove("hidden");
-  document.getElementById("appShell").classList.remove("visible");
-}
+// ═════════════════════════ RESET PASSWORD ══════════════════════════
+async function updatePassword(){
 
-// Called when any API returns 401 — deleted user / expired session
-function handleSessionExpired(){
-  if(_sessionExpiredShown) return;
-  _sessionExpiredShown=true;
-  SESSION=null;localStorage.removeItem("ts_session");
-  document.getElementById("appShell").classList.remove("visible");
-  document.getElementById("authOverlay").classList.remove("hidden");
-  switchAuthTab("login");
-  authMsg("Your session is no longer valid — the account may have been removed or the session expired. Please sign in again.","err");
-}
-
-function onLogin(){
-  document.getElementById("authOverlay").classList.add("hidden");
-  document.getElementById("appShell").classList.add("visible");
-  document.getElementById("userEmail").textContent=SESSION.user?.email||"";
-  loadResults();
-  loadWatchlist();
-}
-async function updatePassword() {
   const password = document.getElementById("newPassword").value;
 
   const hash = new URLSearchParams(window.location.hash.substring(1));
   const access_token = hash.get("access_token");
 
-  const r = await fetch("/api/auth", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${access_token}`
-    },
-    body: JSON.stringify({
-      action: "update_password",
-      password
-    })
-  });
-
-  const data = await r.json();
-
-  if (!data.error) {
-    alert("Password updated successfully!");
-    window.location.href = "/";
-  } else {
-    alert(data.error_description || "Failed to update password");
+  // VALIDATION
+  if(!access_token){
+    alert("Invalid or expired reset link. Please request a new one.");
+    return;
   }
+
+  if(!password || password.length < 6){
+    alert("Password must be at least 6 characters.");
+    return;
+  }
+
+  try {
+
+    const r = await fetch("/api/auth", {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization":`Bearer ${access_token}`
+      },
+      body: JSON.stringify({
+        action:"update_password",
+        password
+      })
+    });
+
+    const data = await r.json();
+
+    if(!data.error){
+      alert("Password updated successfully!");
+      window.location.href = "/";
+    } else {
+      alert(data.error_description || data.msg || "Password update failed");
+    }
+
+  } catch(e){
+    alert("Network error — try again");
+  }
+}
+
+// AUTO SHOW RESET UI
+window.addEventListener("load", () => {
+  const hash = new URLSearchParams(window.location.hash.substring(1));
+
+  if(hash.get("access_token")){
+    const box = document.getElementById("resetBox");
+    if(box) box.style.display = "block";
+  }
+});
+
+// ═════════════════════════ LOGOUT ══════════════════════════
+async function doLogout(){
+  try {
+    if(SESSION)
+      await callAuth({action:"logout"});
+  } catch(e){}
+
+  SESSION = null;
+  localStorage.removeItem("ts_session");
+
+  document.getElementById("authOverlay").classList.remove("hidden");
+  document.getElementById("appShell").classList.remove("visible");
+}
+
+// ═════════════════════════ SESSION EXPIRED ══════════════════════════
+function handleSessionExpired(){
+  if(_sessionExpiredShown) return;
+
+  _sessionExpiredShown = true;
+  SESSION = null;
+  localStorage.removeItem("ts_session");
+
+  document.getElementById("appShell").classList.remove("visible");
+  document.getElementById("authOverlay").classList.remove("hidden");
+
+  switchAuthTab("login");
+  authMsg(
+    "Session expired. Please login again.",
+    "err"
+  );
+}
+
+// ═════════════════════════ ON LOGIN ══════════════════════════
+function onLogin(){
+  document.getElementById("authOverlay").classList.add("hidden");
+  document.getElementById("appShell").classList.add("visible");
+
+  document.getElementById("userEmail").textContent =
+    SESSION.user?.email || "";
+
+  loadResults();
+  loadWatchlist();
 }
 // ═════════════════════════ NAV ═══════════════════════════
 function showPage(name){
