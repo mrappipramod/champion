@@ -1,58 +1,59 @@
+// functions/api/supabase.js
 export async function onRequest(context) {
   const { request, env } = context;
 
-  // 1. Handle CORS Preflight
+  // Handle CORS preflight
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, apikey, Authorization',
+        'Access-Control-Allow-Headers': 'Content-Type, apikey, Authorization, Prefer',
+        'Access-Control-Max-Age': '86400',
       },
     });
   }
 
-  // 2. Build target URL
+  // Build target URL
   const url = new URL(request.url);
-  // Ensure the path correctly strips the prefix and maps to the Supabase REST v1 structure
-  const path = url.pathname.replace('/api/supabase', '');
+  const path = url.pathname.replace('/api/supabase', ''); // remove prefix
   const targetUrl = `${env.SUPABASE_URL}${path}${url.search}`;
 
-  // 3. Prepare headers (Clean and set required ones)
-  const newHeaders = new Headers(request.headers);
-  newHeaders.set('apikey', env.SUPABASE_ANON_KEY);
-  newHeaders.set('Authorization', `Bearer ${env.SUPABASE_ANON_KEY}`);
-  // Important: Remove host header so it doesn't conflict with target
-  newHeaders.delete('host'); 
+  // ----- Read request body for mutations -----
+  let body = undefined;
+  if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
+    // clone the request before reading body
+    body = await request.text();
+  }
 
-  // 4. Handle body correctly
-  // If it's a POST/PUT, we need to pass the body stream. 
-  // For requests with bodies, fetch usually requires the method and the headers.
-  const fetchOptions = {
+  // ----- Construct clean headers -----
+  const headers = new Headers();
+  headers.set('apikey', env.SUPABASE_ANON_KEY);
+  headers.set('Authorization', `Bearer ${env.SUPABASE_ANON_KEY}`);
+  headers.set('Content-Type', 'application/json');
+  
+  // Forward the Prefer header if present (the frontend sends it)
+  const prefer = request.headers.get('Prefer');
+  if (prefer) headers.set('Prefer', prefer);
+
+  // ----- Make the request to Supabase -----
+  const response = await fetch(targetUrl, {
     method: request.method,
-    headers: newHeaders,
-  };
+    headers,
+    body: body,
+  });
 
-  if (request.method !== 'GET' && request.method !== 'HEAD') {
-    fetchOptions.body = request.body;
-    // Explicitly set duplex for streaming bodies in Cloudflare Workers
-    fetchOptions.duplex = 'half';
-  }
+  // ----- Return the response to the browser -----
+  const responseHeaders = new Headers(response.headers);
+  // Add CORS headers for the browser
+  responseHeaders.set('Access-Control-Allow-Origin', '*');
+  responseHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, apikey, Authorization, Prefer');
 
-  try {
-    const response = await fetch(targetUrl, fetchOptions);
-    
-    // Return the response directly
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-    });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: 'Proxy failed', details: err.message }), {
-      status: 502,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: responseHeaders,
+  });
 }
