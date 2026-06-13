@@ -3,29 +3,40 @@ export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   
-  // Extract the path after /api/supabase
-  // Example: /api/supabase/rest/v1/pnl_summary?select=*...
-  // becomes /rest/v1/pnl_summary?select=*...
+  // Strip the leading '/api/supabase' to get the actual Supabase REST path
   const path = url.pathname.replace('/api/supabase', '');
   const targetUrl = `${env.SUPABASE_URL}${path}${url.search}`;
   
-  // Forward the request with Supabase auth headers
-  const response = await fetch(targetUrl, {
+  // Clone headers and add Supabase authentication
+  const headers = new Headers(request.headers);
+  headers.set('apikey', env.SUPABASE_ANON_KEY);
+  headers.set('Authorization', `Bearer ${env.SUPABASE_ANON_KEY}`);
+  
+  // Ensure Content-Type is set for POST/PUT/PATCH requests
+  if (request.method !== 'GET' && request.method !== 'HEAD' && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+  
+  // Create a new request with the correct method, headers, and body
+  const proxyRequest = new Request(targetUrl, {
     method: request.method,
-    headers: {
-      'apikey': env.SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-      // Forward other headers if needed (range, prefer, etc.)
-      ...Object.fromEntries(request.headers),
-    },
+    headers: headers,
     body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined,
   });
   
-  // Return the response (same status, same body)
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: response.headers,
-  });
+  try {
+    const response = await fetch(proxyRequest);
+    // Return the response as-is (status, headers, body)
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
+  } catch (err) {
+    console.error('Supabase proxy error:', err);
+    return new Response(JSON.stringify({ error: 'Failed to reach Supabase' }), {
+      status: 502,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }
