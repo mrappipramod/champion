@@ -687,14 +687,34 @@ footer{text-align:center;padding:1.75rem 1rem;font-size:.69rem;color:var(--muted
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-async function querySupabase(path, options = {}) {
+
+  async function querySupabase(path, options = {}) {
+  const method = options.method || 'GET';
+  const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+  // Add Prefer header for mutations (required by Supabase REST)
+  if (isMutation) {
+    headers['Prefer'] = options.method === 'DELETE' ? 'return=minimal' : 'return=representation';
+  }
+
   const res = await fetch(`/api/supabase/rest/v1/${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options
+    ...options,
+    method,
+    headers,
   });
+
   if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Supabase proxy error ${res.status}: ${errText}`);
+    const text = await res.text();
+    console.error('Supabase proxy error:', res.status, text.slice(0, 200));
+    throw new Error(`Supabase proxy error ${res.status}: ${text.slice(0, 100)}`);
+  }
+  // DELETE with return=minimal returns empty body – handle gracefully
+  if (method === 'DELETE' && res.headers.get('content-length') === '0') {
+    return { success: true };
   }
   return res.json();
 }
