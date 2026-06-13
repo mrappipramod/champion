@@ -1,5 +1,10 @@
+/**
+ * Cloudflare Pages Function — /api/auth
+ * POST { action: "login"|"signup"|"logout"|"forgot", email, password }
+ * Proxies to Supabase Auth so the Supabase anon key stays server-side.
+ */
 export async function onRequestPost({ request, env }) {
-  const { action, email, password, token } = await request.json();
+  const { action, email, password } = await request.json();
   const base = env.SUPABASE_URL;
   const key  = env.SUPABASE_ANON_KEY;
 
@@ -17,25 +22,28 @@ export async function onRequestPost({ request, env }) {
     endpoint = `${base}/auth/v1/token?grant_type=password`;
     body = JSON.stringify({ email, password });
   } else if (action === "logout") {
-    const authHeader = request.headers.get("Authorization");
+    const token = request.headers.get("Authorization");
     endpoint = `${base}/auth/v1/logout`;
-    headers["Authorization"] = authHeader;
+    headers["Authorization"] = token;
     body = JSON.stringify({});
-  } else if (action === "forgot_password") {
-    // Send recovery email
+  } else if (action === "forgot") {
     endpoint = `${base}/auth/v1/recover`;
     body = JSON.stringify({ email });
-  } else if (action === "reset_password") {
-    // Change password with recovery token
-    endpoint = `${base}/auth/v1/user`;
-    headers["Authorization"] = `Bearer ${token}`;
-    body = JSON.stringify({ password });
   } else {
     return json({ error: "Unknown action" }, 400);
   }
 
-  const r = await fetch(endpoint, { method: "PATCH", headers, body });
-  const data = await r.json();
+  const r = await fetch(endpoint, { method: "POST", headers, body });
+  
+  // Supabase occasionally returns an empty response for logout/recover, 
+  // so we catch the parsing error to avoid crashing the worker.
+  let data;
+  try {
+    data = await r.json();
+  } catch (err) {
+    data = {};
+  }
+  
   return json(data, r.status);
 }
 
