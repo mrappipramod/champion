@@ -1,56 +1,63 @@
-/**
- * Cloudflare Pages Function — /api/auth
- * POST { action: "login"|"signup"|"logout", email, password }
- * Proxies to Supabase Auth so the Supabase anon key stays server-side.
- */
-export async function onRequestPost({ request, env }) {
-  const { action, email, password } = await request.json();
-  const base = env.SUPABASE_URL;
-  const key  = env.SUPABASE_ANON_KEY;
+// Existing tab switching – extend to hide/show forgot form
+function switchAuthTab(tab) {
+  document.getElementById('loginForm').style.display = (tab === 'login') ? '' : 'none';
+  document.getElementById('signupForm').style.display = (tab === 'signup') ? '' : 'none';
+  document.getElementById('forgotForm').style.display = 'none';  // always hide
 
-  const headers = {
-    "Content-Type": "application/json",
-    "apikey": key,
-  };
+  // update tab active states
+  document.querySelectorAll('.auth-tab').forEach(btn => btn.classList.remove('active'));
+  if (tab === 'login') document.querySelector('.auth-tab:nth-child(1)').classList.add('active');
+  if (tab === 'signup') document.querySelector('.auth-tab:nth-child(2)').classList.add('active');
+  clearAuthMsg();
+}
 
-  let endpoint, body;
+// Show only the forgot password form
+function showForgotForm() {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('signupForm').style.display = 'none';
+  document.getElementById('forgotForm').style.display = '';
+  document.querySelectorAll('.auth-tab').forEach(btn => btn.classList.remove('active'));
+  clearAuthMsg();
+}
 
-  if (action === "signup") {
-    endpoint = `${base}/auth/v1/signup`;
-    body = JSON.stringify({ email, password });
-  } else if (action === "login") {
-    endpoint = `${base}/auth/v1/token?grant_type=password`;
-    body = JSON.stringify({ email, password });
-  } else if (action === "logout") {
-    const token = request.headers.get("Authorization");
-    endpoint = `${base}/auth/v1/logout`;
-    headers["Authorization"] = token;
-    body = JSON.stringify({});
-  } else {
-    return json({ error: "Unknown action" }, 400);
+// Call our proxy to send recovery email
+async function doForgotPassword() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  const msgEl = document.getElementById('authMsg');
+  if (!email) {
+    msgEl.innerText = 'Please enter your email.';
+    return;
   }
 
-  const r = await fetch(endpoint, { method: "POST", headers, body });
-  const data = await r.json();
-  return json(data, r.status);
+  const btn = document.querySelector('#forgotForm .btn');
+  btn.disabled = true;
+  btn.innerText = 'Sending...';
+  msgEl.innerText = '';
+
+  try {
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'forgot_password', email })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      msgEl.innerText = 'If that email is registered, a recovery link has been sent.';
+      // Optionally switch back to login after a delay
+      setTimeout(() => switchAuthTab('login'), 3000);
+    } else {
+      msgEl.innerText = data.msg || data.error || 'Something went wrong.';
+    }
+  } catch (err) {
+    msgEl.innerText = 'Network error. Please try again.';
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Send Reset Link';
+  }
 }
 
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    },
-  });
-}
-
-export async function onRequestOptions() {
-  return new Response(null, {
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    },
-  });
+// Optional helper
+function clearAuthMsg() {
+  document.getElementById('authMsg').innerText = '';
 }
