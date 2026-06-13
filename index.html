@@ -356,6 +356,19 @@
   </div>
 </div>
 
+<div id="resetBox" style="display:none; margin-top:15px;">
+  <div style="margin-bottom:1rem">
+    <label class="fl">New Password</label>
+    <input type="password" id="newPassword" placeholder="Enter new password" />
+  </div>
+
+  <button class="btn btn-ink"
+    style="width:100%;justify-content:center;padding:.7rem"
+    onclick="updatePassword()">
+    Update Password
+  </button>
+</div>
+
 <!-- ════════════════ APP SHELL ════════════════ -->
 <div id="appShell">
   <header>
@@ -645,13 +658,15 @@ let ALL_RESULTS_CACHE = [];
 let _sessionExpiredShown = false;
 const POPULAR = ["TCS","RELIANCE","HDFCBANK","INFY","ICICIBANK","TATAMOTORS","SBIN","BAJFINANCE","TITAN","MARUTI","SUNPHARMA","AXISBANK","LT","ITC","WIPRO"];
 
-// ═════════════════════════ AUTH ══════════════════════════
 // ═════════════════════════ AUTH STATE ══════════════════════════
+
+// ═════════════════════════ STATE ══════════════════════════
 let SESSION = null;
 let _sessionExpiredShown = false;
 
 // ═════════════════════════ UI HELPERS ══════════════════════════
 function switchAuthTab(tab){
+
   document.querySelectorAll(".auth-tab").forEach((t,i) => {
     t.classList.toggle(
       "active",
@@ -679,6 +694,7 @@ function clearAuthMsg(){
 
 // ═════════════════════════ API CALL ══════════════════════════
 async function callAuth(body, token=null){
+
   const headers = {
     "Content-Type":"application/json"
   };
@@ -698,198 +714,209 @@ async function callAuth(body, token=null){
 
 // ═════════════════════════ LOGIN ══════════════════════════
 async function doLogin(){
-  const email = document.getElementById("loginEmail").value.trim();
-  const pass  = document.getElementById("loginPass").value;
 
-  if(!email || !pass)
+  const email=document.getElementById("loginEmail").value.trim();
+  const pass =document.getElementById("loginPass").value;
+
+  if(!email||!pass)
     return authMsg("Email and password required","err");
 
-  const btn = document.getElementById("loginBtn");
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>';
+  const btn=document.getElementById("loginBtn");
+  btn.disabled=true;
 
-  try {
-    const d = await callAuth({
+  try{
+
+    const d=await callAuth({
       action:"login",
       email,
       password:pass
     });
 
     if(d.access_token){
-      SESSION = { access_token:d.access_token, user:d.user };
-      localStorage.setItem("ts_session", JSON.stringify(SESSION));
-      _sessionExpiredShown = false;
+      SESSION={access_token:d.access_token,user:d.user};
+      localStorage.setItem("ts_session",JSON.stringify(SESSION));
       onLogin();
     } else {
-      authMsg(d.error_description || d.msg || "Login failed","err");
+      authMsg(d.error_description||"Login failed","err");
     }
+
   } catch(e){
-    authMsg("Network error — try again","err");
+    authMsg("Network error","err");
   }
 
-  btn.disabled = false;
-  btn.textContent = "Sign In";
+  btn.disabled=false;
+  btn.textContent="Sign In";
 }
 
 // ═════════════════════════ SIGNUP ══════════════════════════
 async function doSignup(){
-  const email = document.getElementById("signupEmail").value.trim();
-  const pass  = document.getElementById("signupPass").value;
 
-  if(!email || !pass)
+  const email=document.getElementById("signupEmail").value.trim();
+  const pass =document.getElementById("signupPass").value;
+
+  if(!email||!pass)
     return authMsg("Email and password required","err");
 
-  const btn = document.getElementById("signupBtn");
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>';
+  const btn=document.getElementById("signupBtn");
+  btn.disabled=true;
 
-  try {
-    const d = await callAuth({
+  try{
+
+    const d=await callAuth({
       action:"signup",
       email,
       password:pass
     });
 
-    if(d.id || d.user?.id){
-      authMsg("Account created! Check email to verify.","ok");
+    if(d.id||d.user?.id){
+      authMsg("Account created! Check email.","ok");
     } else {
-      authMsg(d.msg || d.error_description || "Signup failed","err");
+      authMsg(d.error_description||"Signup failed","err");
     }
+
   } catch(e){
-    authMsg("Network error — try again","err");
+    authMsg("Network error","err");
   }
 
-  btn.disabled = false;
-  btn.textContent = "Create Account";
+  btn.disabled=false;
+  btn.textContent="Create Account";
 }
 
 // ═════════════════════════ FORGOT PASSWORD ══════════════════════════
 async function doForgot(){
-  const email = document.getElementById("forgotEmail").value.trim();
+
+  const email=document.getElementById("forgotEmail").value.trim();
 
   if(!email)
-    return authMsg("Please enter your email","err");
+    return authMsg("Enter email","err");
 
-  const btn = document.getElementById("forgotBtn");
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>';
+  const btn=document.getElementById("forgotBtn");
+  btn.disabled=true;
 
-  try {
-    const d = await callAuth({
+  try{
+
+    const d=await callAuth({
       action:"forgot",
       email
     });
 
     if(d.error){
-      authMsg(d.error_description || d.msg || "Failed to send reset link","err");
+      authMsg("Failed to send reset link","err");
     } else {
-      authMsg("Reset link sent! Check your email.","ok");
-      document.getElementById("forgotEmail").value = "";
+      authMsg("Reset link sent","ok");
+      document.getElementById("forgotEmail").value="";
     }
+
   } catch(e){
-    authMsg("Network error — try again","err");
+    authMsg("Network error","err");
   }
 
-  btn.disabled = false;
-  btn.textContent = "Send Reset Link";
+  btn.disabled=false;
+  btn.textContent="Send Reset Link";
 }
 
 // ═════════════════════════ RESET PASSWORD ══════════════════════════
 async function updatePassword(){
 
-  const password = document.getElementById("newPassword").value;
+  const password=document.getElementById("newPassword").value;
 
-  const hash = new URLSearchParams(window.location.hash.substring(1));
-  const access_token = hash.get("access_token");
+  const hash=new URLSearchParams(window.location.hash.substring(1));
+  const access_token=hash.get("access_token");
 
-  // VALIDATION
   if(!access_token){
-    alert("Invalid or expired reset link. Please request a new one.");
+    authMsg("Invalid or expired link","err");
     return;
   }
 
-  if(!password || password.length < 6){
-    alert("Password must be at least 6 characters.");
+  if(!password || password.length<6){
+    authMsg("Min 6 characters","err");
     return;
   }
 
-  try {
+  try{
 
-    const r = await fetch("/api/auth", {
+    const r=await fetch("/api/auth",{
       method:"POST",
       headers:{
         "Content-Type":"application/json",
         "Authorization":`Bearer ${access_token}`
       },
-      body: JSON.stringify({
+      body:JSON.stringify({
         action:"update_password",
         password
       })
     });
 
-    const data = await r.json();
+    const data=await r.json();
 
     if(!data.error){
-      alert("Password updated successfully!");
-      window.location.href = "/";
+
+      history.replaceState(null,null,window.location.pathname);
+
+      authMsg("Password updated! Please login.","ok");
+      switchAuthTab("login");
+
     } else {
-      alert(data.error_description || data.msg || "Password update failed");
+      authMsg("Update failed","err");
     }
 
   } catch(e){
-    alert("Network error — try again");
+    authMsg("Network error","err");
   }
 }
 
-// AUTO SHOW RESET UI
-window.addEventListener("load", () => {
-  const hash = new URLSearchParams(window.location.hash.substring(1));
+// ═════════════════════════ RECOVERY AUTO DETECT ══════════════════════════
+window.addEventListener("load",()=>{
 
-  if(hash.get("access_token")){
-    const box = document.getElementById("resetBox");
-    if(box) box.style.display = "block";
+  const hash=new URLSearchParams(window.location.hash.substring(1));
+
+  const token=hash.get("access_token");
+  const type=hash.get("type");
+
+  if(token && type==="recovery"){
+
+    document.getElementById("authOverlay").classList.remove("hidden");
+
+    switchAuthTab("forgot");
+
+    document.getElementById("forgotForm").innerHTML=`
+      <div style="margin-bottom:1rem">
+        <label class="fl">New Password</label>
+        <input type="password" id="newPassword" placeholder="New password"/>
+      </div>
+
+      <button class="btn btn-ink"
+        style="width:100%;padding:.7rem"
+        onclick="updatePassword()">
+        Update Password
+      </button>
+    `;
   }
+
 });
 
 // ═════════════════════════ LOGOUT ══════════════════════════
 async function doLogout(){
-  try {
-    if(SESSION)
-      await callAuth({action:"logout"});
+
+  try{
+    if(SESSION) await callAuth({action:"logout"});
   } catch(e){}
 
-  SESSION = null;
+  SESSION=null;
   localStorage.removeItem("ts_session");
 
   document.getElementById("authOverlay").classList.remove("hidden");
   document.getElementById("appShell").classList.remove("visible");
-}
-
-// ═════════════════════════ SESSION EXPIRED ══════════════════════════
-function handleSessionExpired(){
-  if(_sessionExpiredShown) return;
-
-  _sessionExpiredShown = true;
-  SESSION = null;
-  localStorage.removeItem("ts_session");
-
-  document.getElementById("appShell").classList.remove("visible");
-  document.getElementById("authOverlay").classList.remove("hidden");
-
-  switchAuthTab("login");
-  authMsg(
-    "Session expired. Please login again.",
-    "err"
-  );
 }
 
 // ═════════════════════════ ON LOGIN ══════════════════════════
 function onLogin(){
+
   document.getElementById("authOverlay").classList.add("hidden");
   document.getElementById("appShell").classList.add("visible");
 
-  document.getElementById("userEmail").textContent =
-    SESSION.user?.email || "";
+  document.getElementById("userEmail").textContent=
+    SESSION.user?.email||"";
 
   loadResults();
   loadWatchlist();
