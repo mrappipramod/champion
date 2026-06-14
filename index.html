@@ -1419,7 +1419,7 @@ async function deleteResult(id){
 }
 
 async function clearAllResults(){
-  if(!confirm("Delete ALL saved results? This cannot be undone."))return;
+  if(!confirm("Clear all results from your view? Other users won't be affected."))return;
   try{
     await apiFetch("/api/results?clear=1",{method:"DELETE"});
     ALL_RESULTS_CACHE=[];
