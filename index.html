@@ -6,6 +6,8 @@
   <title>Trade Screener</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <!-- Razorpay Checkout -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -243,6 +245,37 @@
 
     footer{text-align:center;padding:1.75rem 1rem;font-size:.69rem;color:var(--muted2);border-top:1px solid var(--border);line-height:1.8}
 
+    /* ════════ SUBSCRIPTION WALL ════════ */
+    #subWall{display:none;position:fixed;inset:0;background:rgba(26,26,46,.72);backdrop-filter:blur(10px);z-index:400;align-items:center;justify-content:center;padding:1rem}
+    #subWall.on{display:flex}
+    .sub-box{background:var(--surface);border:1.5px solid var(--border);border-radius:20px;padding:2rem 1.75rem;width:100%;max-width:560px;box-shadow:var(--shadow-lg);max-height:92vh;overflow-y:auto}
+    .sub-header{text-align:center;margin-bottom:1.75rem}
+    .sub-logo{font-size:2rem;margin-bottom:.5rem}
+    .sub-title{font-size:1.2rem;font-weight:800;letter-spacing:-.03em;margin-bottom:.35rem}
+    .sub-desc{font-size:.8rem;color:var(--muted);line-height:1.6}
+    .sub-trial-badge{display:inline-block;background:var(--green-bg);color:var(--green);border:1px solid var(--green-bdr);font-family:var(--mono);font-size:.68rem;font-weight:700;padding:3px 12px;border-radius:20px;margin-top:.5rem}
+    .plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.5rem}
+    .plan-card{border:2px solid var(--border);border-radius:14px;padding:1.1rem .9rem;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:var(--surface)}
+    .plan-card:hover{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(3,105,161,.08)}
+    .plan-card.selected{border-color:var(--accent2);background:var(--blue-bg);box-shadow:0 0 0 3px rgba(3,105,161,.12)}
+    .plan-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:.58rem;font-weight:700;padding:2px 10px;border-radius:20px;white-space:nowrap;font-family:var(--mono)}
+    .plan-label{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.4rem}
+    .plan-price{font-size:1.5rem;font-weight:800;letter-spacing:-.04em;color:var(--ink)}
+    .plan-price sup{font-size:.7rem;font-weight:700;vertical-align:super}
+    .plan-per{font-size:.62rem;color:var(--muted);margin-top:.15rem}
+    .plan-save{font-size:.6rem;font-weight:700;color:var(--green);margin-top:.3rem}
+    .sub-features{display:flex;flex-direction:column;gap:.45rem;margin-bottom:1.4rem;padding:.9rem 1rem;background:var(--card);border-radius:10px;border:1px solid var(--border)}
+    .sub-feat{font-size:.76rem;color:var(--ink);display:flex;gap:.5rem;align-items:flex-start}
+    .sub-feat span{flex-shrink:0}
+    .sub-pay-btn{width:100%;padding:.85rem;background:var(--ink);color:#fff;border:none;border-radius:10px;font-family:var(--sans);font-size:.9rem;font-weight:700;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+    .sub-pay-btn:hover{background:var(--ink2)}
+    .sub-pay-btn:disabled{opacity:.5;cursor:not-allowed}
+    .sub-secure{text-align:center;font-size:.65rem;color:var(--muted2);margin-top:.85rem;line-height:1.6}
+
+    /* Trial banner inside app */
+    #trialBanner{background:var(--gold-bg);border:1.5px solid var(--gold-bdr);border-radius:10px;padding:.7rem 1rem;margin-bottom:1.2rem;font-size:.78rem;color:#92400e;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+    #trialBanner.hidden{display:none}
+
     @media(max-width:700px){
       nav.side-nav{display:none}
       header{padding:0 .9rem;height:52px}
@@ -273,6 +306,8 @@
       #toast{bottom:calc(64px + env(safe-area-inset-bottom))}
       .card{padding:1.1rem}
       .btn-gold,.btn-blue{padding:.55rem 1rem;font-size:.78rem}
+      .plan-grid{grid-template-columns:1fr}
+      .sub-box{padding:1.5rem 1.25rem}
     }
     @media(max-width:420px){
       .sc-grid{grid-template-columns:1fr}
@@ -285,7 +320,6 @@
 <!-- ════════════════ AUTH OVERLAY ════════════════ -->
 <div id="authOverlay">
   <div class="auth-box">
-
     <div class="auth-logo">
       <div class="auth-candles">
         <div class="candle c-bull"><div class="candle-wick"></div><div class="candle-body"></div><div class="candle-wick candle-wick-b"></div></div>
@@ -294,16 +328,12 @@
       </div>
       Trade Screener
     </div>
-
-    <!-- Tab row — only Sign In / Create Account; Reset is revealed programmatically -->
     <div class="auth-tab-row" id="authTabRow">
       <button class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
       <button class="auth-tab" onclick="switchAuthTab('signup')">Create Account</button>
     </div>
-
     <div id="authMsg" class="auth-msg"></div>
-
-    <!-- ── Sign In form ── -->
+    <!-- Sign In -->
     <div id="loginForm">
       <div style="margin-bottom:1rem">
         <label class="fl">Email</label>
@@ -318,9 +348,11 @@
         <button class="auth-tab-link" onclick="switchAuthTab('forgot')">Forgot password?</button>
       </div>
     </div>
-
-    <!-- ── Create Account form ── -->
+    <!-- Create Account -->
     <div id="signupForm" style="display:none">
+      <div style="margin-bottom:.75rem;padding:.65rem .9rem;background:var(--green-bg);border:1px solid var(--green-bdr);border-radius:8px;font-size:.74rem;color:var(--green)">
+        🎁 <strong>3-day free trial</strong> included — no card required to start.
+      </div>
       <div style="margin-bottom:1rem">
         <label class="fl">Email</label>
         <input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email"/>
@@ -329,14 +361,11 @@
         <label class="fl">Password</label>
         <input type="password" id="signupPass" placeholder="Min 6 characters" autocomplete="new-password"/>
       </div>
-      <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem" id="signupBtn" onclick="doSignup()">Create Account</button>
+      <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem" id="signupBtn" onclick="doSignup()">Create Account — Free Trial</button>
     </div>
-
-    <!-- ── Forgot Password form (email only — no password fields here) ── -->
+    <!-- Forgot Password -->
     <div id="forgotForm" style="display:none">
-      <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
-        Enter your email and we'll send a one-time reset link. The link expires in 1 hour.
-      </p>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">Enter your email and we'll send a one-time reset link. The link expires in 1 hour.</p>
       <div style="margin-bottom:1.4rem">
         <label class="fl">Email</label>
         <input type="email" id="forgotEmail" placeholder="you@example.com" autocomplete="email"/>
@@ -346,14 +375,9 @@
         <button class="auth-tab-link" onclick="switchAuthTab('login')">← Back to Sign In</button>
       </div>
     </div>
-
-    <!-- ── Set New Password form ──
-         ONLY shown when a valid type=recovery token is in the URL hash.
-         No tab, button, or link can open this directly. ── -->
+    <!-- Reset Password (recovery token only) -->
     <div id="resetForm" style="display:none">
-      <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
-        Choose a strong new password for your account.
-      </p>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">Choose a strong new password for your account.</p>
       <div style="margin-bottom:1rem">
         <label class="fl">New Password</label>
         <input type="password" id="newPass1" placeholder="Min 6 characters" autocomplete="new-password"/>
@@ -364,9 +388,58 @@
       </div>
       <button class="btn btn-ink" style="width:100%;justify-content:center;padding:.7rem" id="resetBtn" onclick="doResetPassword()">Set New Password</button>
     </div>
+  </div>
+</div>
 
-  </div><!-- /.auth-box -->
-</div><!-- /#authOverlay -->
+<!-- ════════════════ SUBSCRIPTION WALL ════════════════ -->
+<div id="subWall">
+  <div class="sub-box">
+    <div class="sub-header">
+      <div class="sub-logo">📈</div>
+      <div class="sub-title">Upgrade to Continue</div>
+      <div class="sub-desc">Your free trial has ended.<br/>Subscribe to unlock all screeners, watchlist &amp; AI analysis.</div>
+      <div class="sub-trial-badge">✓ 3-day free trial included on signup</div>
+    </div>
+    <div class="plan-grid">
+      <div class="plan-card" data-plan="monthly" onclick="selectPlan('monthly')">
+        <div class="plan-label">Monthly</div>
+        <div class="plan-price"><sup>₹</sup>299</div>
+        <div class="plan-per">per month</div>
+      </div>
+      <div class="plan-card selected" data-plan="quarterly" onclick="selectPlan('quarterly')">
+        <div class="plan-badge">BEST VALUE</div>
+        <div class="plan-label">3 Months</div>
+        <div class="plan-price"><sup>₹</sup>499</div>
+        <div class="plan-per">₹166/month</div>
+        <div class="plan-save">Save ₹398</div>
+      </div>
+      <div class="plan-card" data-plan="yearly" onclick="selectPlan('yearly')">
+        <div class="plan-label">1 Year</div>
+        <div class="plan-price"><sup>₹</sup>2000</div>
+        <div class="plan-per">₹167/month</div>
+        <div class="plan-save">Save ₹1588</div>
+      </div>
+    </div>
+    <div class="sub-features">
+      <div class="sub-feat"><span>🔍</span> All 6 market screeners (Large, Mid, Small, Intraday…)</div>
+      <div class="sub-feat"><span>📊</span> Unlimited single stock techno-fundamental analysis</div>
+      <div class="sub-feat"><span>🤖</span> AI-powered narrative reports (Claude Sonnet)</div>
+      <div class="sub-feat"><span>⭐</span> Watchlist with live P&amp;L &amp; auto-refresh</div>
+      <div class="sub-feat"><span>📬</span> Telegram alert integration</div>
+      <div class="sub-feat"><span>📋</span> Saved screener results — unlimited history</div>
+    </div>
+    <button class="sub-pay-btn" id="subPayBtn" onclick="startPayment()">
+      🔒 Pay ₹499 &amp; Activate — 3 Months
+    </button>
+    <div class="sub-secure">
+      🔒 Secured by Razorpay · UPI, Cards, NetBanking, Wallets accepted<br/>
+      Questions? <a href="mailto:support@champ.iamnewuser.com" style="color:var(--accent2)">support@champ.iamnewuser.com</a>
+    </div>
+    <div style="text-align:center;margin-top:1rem">
+      <button style="background:none;border:none;font-size:.72rem;color:var(--muted);cursor:pointer;font-family:var(--sans)" onclick="doLogout()">← Sign out</button>
+    </div>
+  </div>
+</div>
 
 <!-- ════════════════ APP SHELL ════════════════ -->
 <div id="appShell">
@@ -400,6 +473,12 @@
     </nav>
 
     <div class="page">
+
+      <!-- Trial Banner -->
+      <div id="trialBanner" class="hidden">
+        <div>🎁 <strong id="trialDaysText">3 days</strong> left on your free trial. Upgrade to keep full access.</div>
+        <button class="btn btn-gold btn-sm" onclick="showSubWall()">Upgrade Now →</button>
+      </div>
 
       <!-- ▸ SCREENERS -->
       <div id="page-screeners">
@@ -446,10 +525,7 @@
         <div id="scStatus" style="font-size:.78rem;color:var(--muted);margin-bottom:1.4rem"></div>
         <hr class="div"/>
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.85rem">
-          <div>
-            <div class="section-label">Recent Results</div>
-            <h2 style="margin-bottom:0">Latest Screener Output</h2>
-          </div>
+          <div><div class="section-label">Recent Results</div><h2 style="margin-bottom:0">Latest Screener Output</h2></div>
           <button class="btn btn-ghost btn-sm" onclick="loadResults()">↻ Refresh</button>
         </div>
         <div class="tbl-wrap">
@@ -573,6 +649,16 @@
       <div id="page-settings" style="display:none">
         <div class="section-label">Settings</div>
         <h2>Account &amp; Integrations</h2>
+
+        <!-- Subscription info card -->
+        <div class="card" style="margin-bottom:1rem" id="subInfoCard">
+          <div class="section-label" style="margin-bottom:.5rem">Subscription</div>
+          <div id="subInfoContent" style="font-size:.8rem;color:var(--muted)">Loading…</div>
+          <div class="btn-row" style="margin-top:.85rem">
+            <button class="btn btn-gold btn-sm" onclick="showSubWall()">Upgrade Plan</button>
+          </div>
+        </div>
+
         <div class="card" style="margin-bottom:1rem">
           <div class="section-label" style="margin-bottom:.5rem">AI Analysis</div>
           <label class="fl">Anthropic API Key</label>
@@ -585,7 +671,7 @@
             <div><label class="fl">Bot Token</label><input type="password" id="tgTok" placeholder="7xxx:AAF…"/></div>
             <div><label class="fl">Group IDs (comma-separated)</label><input type="text" id="tgIds" placeholder="-5277461725, -100…"/></div>
           </div>
-          <div class="hint">Used by the "Send to Telegram" button on analysis results. Scheduled screener alerts come from the server config, not these.</div>
+          <div class="hint">Used by the "Send to Telegram" button on analysis results.</div>
         </div>
         <div class="btn-row"><button class="btn btn-ink" onclick="saveSettings()">Save Settings</button><span id="settingsMsg"></span></div>
       </div>
@@ -596,9 +682,7 @@
   <nav class="bottom-nav">
     <button class="bn-item active" onclick="showPage('screeners')" data-page="screeners"><span class="bi">🔍</span>Screeners</button>
     <button class="bn-item" onclick="showPage('single')" data-page="single"><span class="bi">📊</span>Analyse</button>
-    <button class="bn-item" onclick="window.location.href='options.html'" data-page="options">
-    <span class="bi">📈</span>Options Trading
-</button>
+    <button class="bn-item" onclick="window.location.href='options.html'" data-page="options"><span class="bi">📈</span>Options</button>
     <button class="bn-item" onclick="showPage('results')" data-page="results"><span class="bi">📋</span>Results</button>
     <button class="bn-item" onclick="showPage('watchlist')" data-page="watchlist"><span class="bi">⭐</span>Watchlist</button>
     <button class="bn-item" onclick="showPage('settings')" data-page="settings"><span class="bi">⚙️</span>Settings</button>
@@ -651,28 +735,160 @@ let LAST_RESULT = null;
 let AI_RUNNING = false;
 let WL_ITEMS = [];
 let ALL_RESULTS_CACHE = [];
+let SUB_STATUS = null;
+let SELECTED_PLAN = "quarterly";
 let _sessionExpiredShown = false;
-let _recoveryToken = null; // set ONLY by handleRecoveryHash()
+let _recoveryToken = null;
 const POPULAR = ["TCS","RELIANCE","HDFCBANK","INFY","ICICIBANK","TATAMOTORS","SBIN","BAJFINANCE","TITAN","MARUTI","SUNPHARMA","AXISBANK","LT","ITC","WIPRO"];
 
+// ═════════════════════════ SUBSCRIPTION ══════════════════
+function showSubWall() {
+  document.getElementById("subWall").classList.add("on");
+}
+function hideSubWall() {
+  document.getElementById("subWall").classList.remove("on");
+}
+
+function selectPlan(plan) {
+  SELECTED_PLAN = plan;
+  document.querySelectorAll(".plan-card").forEach(c => {
+    c.classList.toggle("selected", c.dataset.plan === plan);
+  });
+  const labels = { monthly:"₹299 — Monthly", quarterly:"₹499 — 3 Months", yearly:"₹2000 — 1 Year" };
+  const btn = document.getElementById("subPayBtn");
+  btn.textContent = `🔒 Pay ${labels[plan]} & Activate`;
+}
+
+async function checkSubscriptionAccess() {
+  try {
+    const res = await apiFetch("/api/subscription");
+    SUB_STATUS = res;
+
+    // Update settings page sub info
+    const infoEl = document.getElementById("subInfoContent");
+    if (infoEl) {
+      if (res.effective_status === "trial") {
+        infoEl.innerHTML = `<span style="color:var(--green);font-weight:600">🎁 Free Trial</span> — <strong>${res.days_remaining} day${res.days_remaining!==1?"s":""}</strong> remaining`;
+      } else if (res.effective_status === "active") {
+        const until = new Date(res.access_until).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+        infoEl.innerHTML = `<span style="color:var(--green);font-weight:600">✅ Active — ${(res.plan||"").replace("_"," ")}</span><br/>Renews / expires: <strong>${until}</strong>`;
+      } else {
+        infoEl.innerHTML = `<span style="color:var(--red);font-weight:600">⚠️ Expired</span> — please upgrade to restore access`;
+      }
+    }
+
+    if (res.effective_status === "expired") {
+      showSubWall();
+      return false;
+    }
+
+    // Trial banner
+    const banner = document.getElementById("trialBanner");
+    if (res.effective_status === "trial") {
+      banner.classList.remove("hidden");
+      document.getElementById("trialDaysText").textContent =
+        `${res.days_remaining} day${res.days_remaining!==1?"s":""}`;
+    } else {
+      banner.classList.add("hidden");
+    }
+    return true;
+  } catch(e) {
+    console.error("Subscription check failed:", e);
+    return true; // fail open
+  }
+}
+
+async function startPayment() {
+  if (!SESSION) return;
+  const btn = document.getElementById("subPayBtn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Creating order…';
+
+  try {
+    const data = await apiFetch("/api/subscription", {
+      method: "POST",
+      body: JSON.stringify({ action: "create_order", plan: SELECTED_PLAN }),
+    });
+
+    if (data.error) {
+      showToast(`⚠️ ${data.error}`, true);
+      btn.disabled = false;
+      selectPlan(SELECTED_PLAN);
+      return;
+    }
+
+    const options = {
+      key: data.key_id,
+      amount: data.amount,
+      currency: "INR",
+      name: "Trade Screener",
+      description: `${data.plan_label} Subscription`,
+      order_id: data.order_id,
+      prefill: { email: data.user_email, name: data.user_name },
+      theme: { color: "#1a1a2e" },
+      modal: {
+        ondismiss: () => {
+          btn.disabled = false;
+          selectPlan(SELECTED_PLAN);
+        },
+      },
+      handler: async function(response) {
+        btn.innerHTML = '<span class="spinner"></span> Activating…';
+        await pollSubscriptionActivation();
+      },
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+
+  } catch(e) {
+    showToast(`⚠️ ${e.message}`, true);
+    btn.disabled = false;
+    selectPlan(SELECTED_PLAN);
+  }
+}
+
+async function pollSubscriptionActivation(attempts = 0) {
+  if (attempts > 8) {
+    const btn = document.getElementById("subPayBtn");
+    btn.disabled = false;
+    btn.innerHTML = "✅ Payment received! <span onclick='location.reload()' style='cursor:pointer;text-decoration:underline;color:var(--accent2)'>Click to activate →</span>";
+    return;
+  }
+  await new Promise(r => setTimeout(r, 2000));
+  try {
+    const res = await apiFetch("/api/subscription");
+    if (res.effective_status === "active") {
+      hideSubWall();
+      showToast(`🎉 Welcome! Your ${res.plan} subscription is active.`);
+      SUB_STATUS = res;
+      document.getElementById("trialBanner").classList.add("hidden");
+      loadResults();
+      loadWatchlist();
+    } else {
+      await pollSubscriptionActivation(attempts + 1);
+    }
+  } catch(e) {
+    await pollSubscriptionActivation(attempts + 1);
+  }
+}
+
 // ═════════════════════════ AUTH ══════════════════════════
-function switchAuthTab(tab){
-  // 'reset' is intentionally not in this list — it cannot be opened via any tab
+function switchAuthTab(tab) {
   const tabs = ["login","signup","forgot"];
   document.querySelectorAll("#authTabRow .auth-tab")
     .forEach((t,i) => t.classList.toggle("active", tabs[i] === tab));
-  document.getElementById("loginForm").style.display  = tab==="login"  ? "block" : "none";
-  document.getElementById("signupForm").style.display = tab==="signup" ? "block" : "none";
-  document.getElementById("forgotForm").style.display = tab==="forgot" ? "block" : "none";
-  document.getElementById("resetForm").style.display  = "none"; // never via tab
+  document.getElementById("loginForm").style.display  = tab==="login"  ? "block":"none";
+  document.getElementById("signupForm").style.display = tab==="signup" ? "block":"none";
+  document.getElementById("forgotForm").style.display = tab==="forgot" ? "block":"none";
+  document.getElementById("resetForm").style.display  = "none";
   clearAuthMsg();
-  if(tab==="forgot") setTimeout(()=>document.getElementById("forgotEmail")?.focus(), 60);
+  if(tab==="forgot") setTimeout(()=>document.getElementById("forgotEmail")?.focus(),60);
 }
 
 function authMsg(m,t){
   const el=document.getElementById("authMsg");
-  el.textContent=m;
-  el.className="auth-msg "+t;
+  el.textContent=m; el.className="auth-msg "+t;
 }
 function clearAuthMsg(){ document.getElementById("authMsg").className="auth-msg"; }
 
@@ -709,10 +925,10 @@ async function doSignup(){
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
   try{
     const d=await callAuth({action:"signup",email,password:pass});
-    if(d.id||d.user?.id) authMsg("Account created! Check your email to confirm, then sign in.","ok");
+    if(d.id||d.user?.id) authMsg("Account created! Check your email to confirm, then sign in. Your 3-day trial starts now.","ok");
     else authMsg(d.msg||d.error_description||"Signup failed","err");
   }catch(e){ authMsg("Network error — try again","err"); }
-  btn.disabled=false; btn.textContent="Create Account";
+  btn.disabled=false; btn.textContent="Create Account — Free Trial";
 }
 
 async function doForgotPassword(){
@@ -734,10 +950,7 @@ async function doForgotPassword(){
 }
 
 async function doResetPassword(){
-  if(!_recoveryToken){
-    authMsg("No valid reset token — please use the link from your email","err");
-    return;
-  }
+  if(!_recoveryToken){ authMsg("No valid reset token — please use the link from your email","err"); return; }
   const p1=document.getElementById("newPass1").value;
   const p2=document.getElementById("newPass2").value;
   if(!p1||p1.length<6) return authMsg("Password must be at least 6 characters","err");
@@ -747,8 +960,8 @@ async function doResetPassword(){
   try{
     const d=await callAuth({action:"reset_password",access_token:_recoveryToken,new_password:p1});
     if(d.id||d.email){
-      _recoveryToken=null; // invalidate immediately
-      history.replaceState(null,"",window.location.pathname); // strip hash
+      _recoveryToken=null;
+      history.replaceState(null,"",window.location.pathname);
       authMsg("✓ Password updated! You can now sign in.","ok");
       document.getElementById("resetForm").style.display="none";
       setTimeout(()=>{ switchAuthTab("login"); clearAuthMsg(); },2200);
@@ -763,6 +976,7 @@ async function doResetPassword(){
 async function doLogout(){
   try{ if(SESSION) await callAuth({action:"logout"}); }catch(e){}
   SESSION=null; localStorage.removeItem("ts_session");
+  hideSubWall();
   document.getElementById("authOverlay").classList.remove("hidden");
   document.getElementById("appShell").classList.remove("visible");
 }
@@ -777,12 +991,17 @@ function handleSessionExpired(){
   authMsg("Your session is no longer valid — please sign in again.","err");
 }
 
-function onLogin(){
+async function onLogin(){
   document.getElementById("authOverlay").classList.add("hidden");
   document.getElementById("appShell").classList.add("visible");
   document.getElementById("userEmail").textContent=SESSION.user?.email||"";
-  loadResults();
-  loadWatchlist();
+
+  // Check subscription access first
+  const hasAccess = await checkSubscriptionAccess();
+  if(hasAccess){
+    loadResults();
+    loadWatchlist();
+  }
 }
 
 // ═════════════════════════ NAV ═══════════════════════════
@@ -792,6 +1011,7 @@ function showPage(name){
   document.querySelectorAll("[data-page]").forEach(n=>n.classList.toggle("active",n.dataset.page===name));
   if(name==="results") loadAllResults();
   if(name==="watchlist") loadWatchlist();
+  if(name==="settings") checkSubscriptionAccess();
   window.scrollTo({top:0});
 }
 
@@ -805,7 +1025,7 @@ async function apiFetch(path,opts={}){
   return r.json();
 }
 
-// ═════════════════════ SCREENER TRIGGER ══════════════════
+// ═════════════════ SCREENER TRIGGER ══════════════════════
 async function triggerScreener(btn){
   if(!SESSION) return;
   const card=btn.closest(".sc-card");
@@ -1463,9 +1683,7 @@ function updateMkt(){
 // ═════════════════ INIT ══════════════════════════════════
 (function init(){
 
-  // ── STEP 1: Check for Supabase password-recovery hash ──
-  // Supabase appends: #access_token=TOKEN&type=recovery&...
-  // This is the ONLY code path that can reveal #resetForm.
+  // Check for Supabase password-recovery hash
   (function handleRecoveryHash(){
     const hash=window.location.hash.slice(1);
     if(!hash) return;
@@ -1484,7 +1702,7 @@ function updateMkt(){
     }
   })();
 
-  // ── STEP 2: Restore session ──
+  // Restore session
   const saved=localStorage.getItem("ts_session");
   if(saved){try{SESSION=JSON.parse(saved);}catch(e){}}
   if(SESSION?.access_token) onLogin();
