@@ -3,7 +3,6 @@
  *
  * GET  → returns current user's subscription status
  * POST → { action: "create_order", plan: "monthly"|"quarterly"|"yearly" }
- *         creates a Razorpay order and returns order_id + key_id for checkout
  */
 
 const PLANS = {
@@ -12,13 +11,14 @@ const PLANS = {
   yearly:    { amount: 200000, label: "1 Year",     days: 365 },
 };
 
-// ── Helpers ──────────────────────────────────────────────
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
+      // ── No caching — always fresh ──
+      "Cache-Control": "no-store, no-cache, must-revalidate",
     },
   });
 }
@@ -27,7 +27,6 @@ async function getSupabaseUser(request, env) {
   const auth = request.headers.get("Authorization") || "";
   const token = auth.replace("Bearer ", "").trim();
   if (!token) return null;
-
   const r = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
     headers: {
       "apikey": env.SUPABASE_ANON_KEY,
@@ -45,33 +44,72 @@ async function getSubscription(userId, env) {
       headers: {
         "apikey": env.SUPABASE_SERVICE_KEY,
         "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+        // No caching on Supabase side either
+        "Cache-Control": "no-cache",
       },
     }
   );
+  if (!r.ok) {
+    console.error("Supabase fetch failed:", r.status, await r.text());
+    return null;
+  }
   const rows = await r.json();
+  console.log(`[subscription] user=${userId} row=`, JSON.stringify(rows?.[0]));
   return rows?.[0] || null;
 }
 
 function computeStatus(sub) {
-  if (!sub) return { effective_status: "expired", days_remaining: 0 };
+  if (!sub) {
+    console.log("[computeStatus] No subscription row found → expired");
+    return { effective_status: "expired", days_remaining: 0 };
+  }
+
   const now = Date.now();
-  if (sub.plan !== "trial" && sub.status === "active" && new Date(sub.plan_end) > now) {
+
+  // ── PAID PLAN CHECK ──
+  // plan is not 'trial', status is 'active', and plan_end is a valid future date
+  const planEndMs = sub.plan_end ? new Date(sub.plan_end).getTime() : 0;
+  const isPaidActive = sub.plan !== "trial"
+    && sub.status === "active"
+    && planEndMs > 0
+    && planEndMs > now;
+
+  if (isPaidActive) {
+    const days = Math.ceil((planEndMs - now) / 86400000);
+    console.log(`[computeStatus] ACTIVE paid plan=${sub.plan} days=${days} plan_end=${sub.plan_end}`);
     return {
       effective_status: "active",
       plan: sub.plan,
-      days_remaining: Math.ceil((new Date(sub.plan_end) - now) / 86400000),
+      days_remaining: days,
       access_until: sub.plan_end,
     };
   }
-  if (sub.plan === "trial" && sub.status === "active" && new Date(sub.trial_end) > now) {
+
+  // ── TRIAL CHECK ──
+  const trialEndMs = sub.trial_end ? new Date(sub.trial_end).getTime() : 0;
+  const isTrialActive = sub.plan === "trial"
+    && sub.status === "active"
+    && trialEndMs > 0
+    && trialEndMs > now;
+
+  if (isTrialActive) {
+    const days = Math.ceil((trialEndMs - now) / 86400000);
+    console.log(`[computeStatus] TRIAL active days=${days} trial_end=${sub.trial_end}`);
     return {
       effective_status: "trial",
       plan: "trial",
-      days_remaining: Math.ceil((new Date(sub.trial_end) - now) / 86400000),
+      days_remaining: days,
       access_until: sub.trial_end,
     };
   }
-  return { effective_status: "expired", plan: sub.plan, days_remaining: 0 };
+
+  // ── EXPIRED ──
+  console.log(`[computeStatus] EXPIRED plan=${sub.plan} status=${sub.status} plan_end=${sub.plan_end} trial_end=${sub.trial_end}`);
+  return {
+    effective_status: "expired",
+    plan: sub.plan,
+    days_remaining: 0,
+  };
 }
 
 // ── GET: subscription status ──────────────────────────────
@@ -85,6 +123,13 @@ export async function onRequestGet({ request, env }) {
   return json({
     user_id: user.id,
     email: user.email,
+    // Raw fields for debugging — remove in production if desired
+    _raw: {
+      plan: sub?.plan,
+      status: sub?.status,
+      trial_end: sub?.trial_end,
+      plan_end: sub?.plan_end,
+    },
     ...status,
     plans: PLANS,
   });
@@ -101,7 +146,6 @@ export async function onRequestPost({ request, env }) {
     const plan = PLANS[body.plan];
     if (!plan) return json({ error: "Invalid plan" }, 400);
 
-    // Create Razorpay order
     const rzpAuth = btoa(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`);
     const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
@@ -127,7 +171,6 @@ export async function onRequestPost({ request, env }) {
     }
 
     const order = await orderRes.json();
-
     return json({
       order_id: order.id,
       amount: plan.amount,
