@@ -435,8 +435,9 @@
       🔒 Secured by Razorpay · UPI, Cards, NetBanking, Wallets accepted<br/>
       Questions? <a href="mailto:support@champ.iamnewuser.com" style="color:var(--accent2)">support@champ.iamnewuser.com</a>
     </div>
-    <div style="text-align:center;margin-top:1rem">
+    <div style="text-align:center;margin-top:1rem;display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap">
       <button style="background:none;border:none;font-size:.72rem;color:var(--muted);cursor:pointer;font-family:var(--sans)" onclick="doLogout()">← Sign out</button>
+      <button style="background:none;border:none;font-size:.72rem;color:var(--accent2);cursor:pointer;font-family:var(--sans);text-decoration:underline" onclick="refreshAccessCheck()">↻ Already subscribed? Refresh access</button>
     </div>
   </div>
 </div>
@@ -759,42 +760,59 @@ function selectPlan(plan) {
   btn.textContent = `🔒 Pay ${labels[plan]} & Activate`;
 }
 
-async function checkSubscriptionAccess() {
+async function checkSubscriptionAccess(silent = false) {
   try {
-    const res = await apiFetch("/api/subscription");
-    SUB_STATUS = res;
+    // Force no-cache so we always get the freshest DB state
+    const token = SESSION?.access_token || "";
+    const res = await fetch("/api/subscription?" + Date.now(), {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Cache-Control": "no-cache, no-store",
+        "Pragma": "no-cache",
+      },
+    });
+
+    if (res.status === 401) { handleSessionExpired(); return false; }
+    const data = await res.json();
+
+    console.log("[subscription] status check:", data.effective_status, "| plan:", data._raw?.plan, "| plan_end:", data._raw?.plan_end, "| trial_end:", data._raw?.trial_end);
+
+    SUB_STATUS = data;
 
     // Update settings page sub info
     const infoEl = document.getElementById("subInfoContent");
     if (infoEl) {
-      if (res.effective_status === "trial") {
-        infoEl.innerHTML = `<span style="color:var(--green);font-weight:600">🎁 Free Trial</span> — <strong>${res.days_remaining} day${res.days_remaining!==1?"s":""}</strong> remaining`;
-      } else if (res.effective_status === "active") {
-        const until = new Date(res.access_until).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
-        infoEl.innerHTML = `<span style="color:var(--green);font-weight:600">✅ Active — ${(res.plan||"").replace("_"," ")}</span><br/>Renews / expires: <strong>${until}</strong>`;
+      if (data.effective_status === "trial") {
+        infoEl.innerHTML = `<span style="color:var(--green);font-weight:600">🎁 Free Trial</span> — <strong>${data.days_remaining} day${data.days_remaining!==1?"s":""}</strong> remaining`;
+      } else if (data.effective_status === "active") {
+        const until = new Date(data.access_until).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+        infoEl.innerHTML = `<span style="color:var(--green);font-weight:600">✅ Active — ${(data.plan||"").replace(/_/g," ")}</span><br/>Expires: <strong>${until}</strong> (${data.days_remaining} days left)`;
       } else {
         infoEl.innerHTML = `<span style="color:var(--red);font-weight:600">⚠️ Expired</span> — please upgrade to restore access`;
       }
     }
 
-    if (res.effective_status === "expired") {
-      showSubWall();
+    if (data.effective_status === "expired") {
+      if (!silent) showSubWall();
       return false;
     }
 
+    // Has valid access — hide the wall if it was showing
+    hideSubWall();
+
     // Trial banner
     const banner = document.getElementById("trialBanner");
-    if (res.effective_status === "trial") {
+    if (data.effective_status === "trial") {
       banner.classList.remove("hidden");
       document.getElementById("trialDaysText").textContent =
-        `${res.days_remaining} day${res.days_remaining!==1?"s":""}`;
+        `${data.days_remaining} day${data.days_remaining!==1?"s":""}`;
     } else {
       banner.classList.add("hidden");
     }
     return true;
   } catch(e) {
     console.error("Subscription check failed:", e);
-    return true; // fail open
+    return true; // fail open — don't block on network error
   }
 }
 
@@ -870,6 +888,20 @@ async function pollSubscriptionActivation(attempts = 0) {
     }
   } catch(e) {
     await pollSubscriptionActivation(attempts + 1);
+  }
+}
+
+async function refreshAccessCheck() {
+  const btn = document.querySelector("#subWall button[onclick='refreshAccessCheck()']");
+  if (btn) { btn.textContent = "↻ Checking…"; btn.disabled = true; }
+  const hasAccess = await checkSubscriptionAccess();
+  if (hasAccess) {
+    showToast("✅ Access restored!");
+    loadResults();
+    loadWatchlist();
+  } else {
+    showToast("No active subscription found yet — try again in a moment.", true);
+    if (btn) { btn.textContent = "↻ Already subscribed? Refresh access"; btn.disabled = false; }
   }
 }
 
@@ -1747,6 +1779,22 @@ function updateMkt(){
 
   updateMkt();
   setInterval(updateMkt,30000);
+
+  // Re-check subscription when user returns to this tab
+  // (handles the case where admin extended in Supabase while user had tab open)
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && SESSION?.access_token) {
+      checkSubscriptionAccess(true).then(hasAccess => {
+        if (hasAccess && document.getElementById("subWall").classList.contains("on")) {
+          // Wall was showing but now has access — unlock
+          hideSubWall();
+          showToast("✅ Access restored!");
+          loadResults();
+          loadWatchlist();
+        }
+      });
+    }
+  });
 })();
 </script>
 </body>
