@@ -957,7 +957,7 @@ async function doSignup(){
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
   try{
     const d=await callAuth({action:"signup",email,password:pass});
-    if(d.id||d.user?.id) authMsg("Account created! Check your email to confirm, then sign in. Your 3-day trial starts now.","ok");
+    if(d.id||d.user?.id) authMsg("Account created! Check your email to confirm, then sign in. Check your Spam folder if not in Inbox. Your 3-day trial starts now.","ok");
     else authMsg(d.msg||d.error_description||"Signup failed","err");
   }catch(e){ authMsg("Network error — try again","err"); }
   btn.disabled=false; btn.textContent="Create Account — Free Trial";
