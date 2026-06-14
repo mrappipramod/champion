@@ -1070,7 +1070,7 @@ async function triggerScreener(btn){
     btn.disabled=false; card.classList.remove("loading");
     if(d.ok){
       btn.textContent="✓ Queued"; card.classList.add("done");
-      setScStatus("ok",`✓ ${label} running on GitHub Actions (~2 min). Auto-refreshing results…`);
+      setScStatus("ok",`✓ ${label} running on please be patient (~2 min). Auto-refreshing results…`);
       setTimeout(()=>{btn.textContent="▶ Run";card.classList.remove("done");},12000);
       pollForResults();
     }else{
